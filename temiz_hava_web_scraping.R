@@ -1,4 +1,4 @@
-webScraping <- function () {
+
   library(RSelenium)
   library(netstat)
   library(wdman)
@@ -32,4 +32,3 @@ webScraping <- function () {
   inputElement$clickElement()
   Sys.sleep(2) # Sayfanın yüklenmesi için bekleyin
   
-}
