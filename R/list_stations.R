@@ -29,6 +29,7 @@ list_stations <- function(processed_data, param_name) {
   } else {
     cat("İstasyon adlari bulunamadi.\n")
   }
+  station_name
 }
 
 

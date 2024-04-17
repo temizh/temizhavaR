@@ -30,4 +30,5 @@ if (!is.null(station_name)) {
 } else {
   cat("Station names not found.\n")
 }
+  num_stations
 }
