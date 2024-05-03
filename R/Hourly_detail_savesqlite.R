@@ -1,0 +1,49 @@
+
+#' Hourly detail save to database
+#'
+#' @param processed_data processed data.
+#' @export
+
+hourly_detail_save_to_database <- function(processed_data, station_name) {
+  data <- processed_data$data
+  param_names <- processed_data$param_names
+  station_name <- processed_data$station_name
+
+  mydb <- dbConnect(RSQLite::SQLite(), dbname = "temiz-hava.sqlite", encoding = "UTF-8")
+
+  data$Tarih <- format(data$Tarih, "%Y-%m-%d %H:%M:%S")
+  col_mapping <- c("Istasyon" = "Istasyon" ,"location_id"= "location_id","Tarih" = "Tarih", "PM10" = "PM10", "PM2.5" = "\"PM2.5\"", "SO2" = "SO2","CO" = "CO", "NO2" = "NO2", "NOX" = "NOX", "NO" = "NO", "O3" = "O3")
+  data$Istasyon <- station_name
+
+
+ query_check <- paste0("SELECT COUNT(*) FROM hourly_detail WHERE Istasyon = '", station_name, "'")
+ station_count <- dbGetQuery(mydb, query_check)
+
+
+ if (station_count == 0) {
+   dbWriteTable(mydb, "hourly_detail", data, col.names = col_mapping, append = TRUE, fileEncoding = "UTF-8")
+
+   query_update <- paste0("
+      UPDATE hourly_detail
+      SET location_id = (
+        SELECT location.Id
+        FROM location
+        WHERE location.Sehir_Istasyon = '", station_name, "'
+      )
+      WHERE Istasyon = '", station_name, "'
+    ")
+
+   dbExecute(mydb, query_update)
+ }
+
+ query <- paste0("SELECT * FROM hourly_detail WHERE Istasyon = '", station_name, "'")
+ query_result <- dbGetQuery(mydb, query)
+
+
+  dbDisconnect(mydb)
+  return(head(query_result))
+}
+
+
+
+

@@ -2,111 +2,152 @@ library(DBI)
 library(readxl)
 library(uuid)
 #library(RSQLite)
-# reading excel
-# data_dir <- "C:/Fonksiyon_sehirler/"
-# istasyon <- read_excel(paste0(data_dir, "adana-catalan-saatlik-detay.xlsx"))
+
 # create a connection to database
 mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-# Write the istasyon dataset into a table
-# dbWriteTable(mydb, "adana-catalan-saatlik-detay", istasyon)
-#dbListTables(mydb)
+
+
+
+ dbDisconnect(mydb)
+
+ hourly_detail <- dbReadTable(mydb, "hourly_detail")
+ veriii <- dbReadTable(mydb, "location")
 
 mydb_location <- "
 CREATE TABLE location (
     Bolge TEXT,
     Sehir TEXT,
     Plaka TEXT,
-    Istasyon TEXT
-    Id INTEGER PRIMARY KEY
+    Istasyonlar TEXT,
+    Sehir_Istasyon TEXT,
+    Id TEXT PRIMARY KEY
 );
 "
 mydb_hourly_detail <- "
 CREATE TABLE hourly_detail (
-    Istasyon TEXT
-    Tarih TIMESTAMP
-    PM10 DOUBLE
-    PM2.5 DOUBLE
-    SO2 DOUBLE
-    NO2 DOUBLE
-    NOX DOUBLE
-    NO DOUBLE
+    Istasyon TEXT,
+    location_id TEXT,
+    Tarih DATETIME,
+    PM10 DOUBLE,
+    \"PM2.5\" DOUBLE,
+    SO2 DOUBLE,
+    CO DOUBLE,
+    NO2 DOUBLE,
+    NOX DOUBLE,
+    NO DOUBLE,
     O3 DOUBLE
 
-);
-"
-mydb_hourly_sum <- "
-CREATE TABLE hourly_sum(
-   Istasyon TEXT
-    Tarih TIMESTAMP
-    PM10 DOUBLE
-    PM2.5 DOUBLE
-    SO2 DOUBLE
-    NO2 DOUBLE
-    NOX DOUBLE
-    NO DOUBLE
-    O3 DOUBLE
 );
 "
 
 mydb_daily_detail <- "
 CREATE TABLE daily_detail(
-   Istasyon TEXT
-    Tarih TIMESTAMP
-    PM10 DOUBLE
-    PM2.5 DOUBLE
-    SO2 DOUBLE
-    NO2 DOUBLE
-    NOX DOUBLE
-    NO DOUBLE
+   Istasyon TEXT,
+    location_id TEXT,
+    Tarih DATETIME,
+    PM10 DOUBLE,
+    \"PM2.5\" DOUBLE,
+    SO2 DOUBLE,
+    CO DOUBLE,
+    NO2 DOUBLE,
+    NOX DOUBLE,
+    NO DOUBLE,
     O3 DOUBLE
 );
 "
 
-mydb_daily_sum <- "
-CREATE TABLE daily_sum(
-   Istasyon TEXT
-    Tarih TIMESTAMP
-    PM10 DOUBLE
-    PM2.5 DOUBLE
-    SO2 DOUBLE
-    NO2 DOUBLE
-    NOX DOUBLE
-    NO DOUBLE
-    O3 DOUBLE
-);
-"
 
-dbExecute(mydb, mydb_location)
-dbExecute(mydb, mydb_hourly_detail)
-dbExecute(mydb, mydb_hourly_sum)
-dbExecute(mydb, mydb_daily_detail)
-dbExecute(mydb, mydb_daily_sum)
+# CREATE TABLE
+ dbExecute(mydb, mydb_location)
+ dbExecute(mydb, mydb_hourly_detail)
 
-dbExecute(mydb, "DROP TABLE IF EXISTS location")
+# dbExecute(mydb, mydb_daily_detail)
+
+#
+
+# delete table
+dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
 
 
-location_data <- read_excel("C:/Users/Hp/location_veri.xlsx")
+location_data <- read_excel("C:/location_veri/")
+location_data$Id <- sapply(1:nrow(location_data), function(i) as.character(UUIDgenerate()))
 
 
-location_data$Id <- NA  # Id sütununu ilk olarak NA değerleriyle doldur
+
+
+# location_id sütununu doldur
+# for (i in 1:nrow(location_data)) {
+#   station <- location_data$Istasyonlar[i]
+#   location_id <- location_data$Id[i]
+#
+#
+#   Istasyon = station,
+#   location_id = location_id,
+
+
+
+query_update <- "
+UPDATE hourly_detail
+SET location_id = (
+    SELECT location.Id
+    FROM location
+    WHERE location.Sehir_Istasyon = hourly_detail.Istasyon
+);"
+
+dbExecute(mydb, query_update)
+
+
+
+
+
+
+
+#location_data$Id <- NA  # Id sütununu ilk olarak NA değerleriyle doldur
 
 # Her satır için benzersiz bir UUID oluştur ve bunları Id sütununa ekle
-for (i in 1:nrow(location_data)) {
-  location_data$Id[i] <- UUIDgenerate()
-}
+# for (i in 1:nrow(location_data)) {
+#   location_data$Id[i] <- UUIDgenerate()
+# }
 dbWriteTable(mydb, "location", location_data, append = TRUE, row.names = FALSE)
 
-query_result <- dbGetQuery(mydb, "SELECT * FROM location LIMIT 10")
+query_result1 <- dbGetQuery(mydb, "SELECT * FROM hourly_detail LIMIT 10")
 
 
-print(query_result)
+print(query_result1)
+
+# Tablo içeriğini sorgulayın
+# query <- "SELECT * FROM hourly_detail"
+ result <- dbGetQuery(mydb, query)
+
+query_step1 <- "ALTER TABLE hourly_detail ADD COLUMN location_id INTEGER;"
+dbExecute(mydb, query_step1)
+
+# sonrasında burdan itibaren bu adımı öbür tablolar için de yap.
+
+query_step2 <- "
+UPDATE hourly_detail
+SET location_id = (
+    SELECT Id FROM location WHERE location.Istasyonlar = hourly_detail.Istasyon
+);"
+dbExecute(mydb, query_step2)
+
+# Adım 3: location tablosundan istasyonun diğer bilgilerini çekmek için sorgu
+query_step3 <- "
+SELECT hourly_detail.Istasyon, hourly_detail.Tarih, hourly_detail.PM10, hourly_detail.\"PM2.5\", hourly_detail.SO2, hourly_detail.NO2, hourly_detail.NOX, hourly_detail.NO, hourly_detail.O3, location.Sehir, location.Plaka
+FROM hourly_detail
+JOIN location ON hourly_detail.location_id = location.Id;"
+dbGetQuery(mydb, query_step3)
 
 
 
 
 
 
-      #  ('AKDENIZ THM', 'ADANA', '01', 'Catalan'),
+
+
+
+
+#  ('AKDENIZ THM', 'ADANA', '01', 'Catalan'),
       #  ('AKDENIZ THM', 'ADANA', '01', 'Cukurova'),
       #  ('AKDENIZ THM', 'ADANA', '01', 'Dogankent'),
       #  ('AKDENIZ THM', 'ADANA', '01', 'Meteoroloji'),
@@ -447,18 +488,6 @@ print(query_result)
 
 
 
-
-
-
-
-# reading excel
- # data_dir <- "C:/Fonksiyon_sehirler/"
- # stations <- read_excel(paste0(data_dir, "adana-catalan-saatlik-detay.xlsx"))
- #
- # dbWriteTable(mydb, "hourly_detail", stations, append = TRUE, row.names = FALSE)
- #
- # hourly_detail <- dbReadTable(mydb, "hourly_detail")
- # head(hourly_detail, 10)
 
  dbDisconnect(mydb)
 
