@@ -11,7 +11,7 @@ mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
  dbDisconnect(mydb)
 
  hourly_detail <- dbReadTable(mydb, "hourly_detail")
- veriii <- dbReadTable(mydb, "location")
+ location <- dbReadTable(mydb, "location")
 
 mydb_location <- "
 CREATE TABLE location (
@@ -66,48 +66,13 @@ CREATE TABLE daily_detail(
 #
 
 # delete table
-dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
+dbExecute(mydb, "DROP TABLE IF EXISTS location")
 
 
-location_data <- read_excel("C:/location_veri/")
+location_data <- read_excel("C:/Users/Hp/Desktop/location_veri_birlesik.xlsx")
 location_data$Id <- sapply(1:nrow(location_data), function(i) as.character(UUIDgenerate()))
 
 
-
-
-# location_id sütununu doldur
-# for (i in 1:nrow(location_data)) {
-#   station <- location_data$Istasyonlar[i]
-#   location_id <- location_data$Id[i]
-#
-#
-#   Istasyon = station,
-#   location_id = location_id,
-
-
-
-query_update <- "
-UPDATE hourly_detail
-SET location_id = (
-    SELECT location.Id
-    FROM location
-    WHERE location.Sehir_Istasyon = hourly_detail.Istasyon
-);"
-
-dbExecute(mydb, query_update)
-
-
-
-
-
-
-
-#location_data$Id <- NA  # Id sütununu ilk olarak NA değerleriyle doldur
-
-# Her satır için benzersiz bir UUID oluştur ve bunları Id sütununa ekle
-# for (i in 1:nrow(location_data)) {
-#   location_data$Id[i] <- UUIDgenerate()
-# }
 dbWriteTable(mydb, "location", location_data, append = TRUE, row.names = FALSE)
 
 query_result1 <- dbGetQuery(mydb, "SELECT * FROM hourly_detail LIMIT 10")

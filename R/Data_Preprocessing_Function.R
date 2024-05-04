@@ -6,6 +6,7 @@
 data_preprocessing <- function(data) {
   # take station name
   station_name <- colnames(data)[2]
+  #station_name <- iconv(station_name, to = "UTF-8")
 
   colnames(data) <- data[1, ]
   param_names_with_units <- colnames(data)

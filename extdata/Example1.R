@@ -12,10 +12,10 @@ library(dygraphs)
 
 data_dir <- "C:/Hourly_detail/"
 
-istasyon <- read_excel(paste0(data_dir, "adana-meteoroloji-saatlik-detay.xlsx"))
+istasyon <- read_excel(paste0(data_dir, "adana-catalan-saatlik-detay.xlsx"))
 processed_data <- data_preprocessing(istasyon)
-hourly_detail_save_to_database(processed_data, "Adana - Meteoroloji")
-aa <- hourly_detail_load_from_database(processed_data, "Adana - Meteoroloji")
+hourly_detail_save_to_database(processed_data, "Adana-Çatalan")
+aa <- hourly_detail_load_from_database(processed_data, "Mersin - Tarsus")
 #### database'den gelen veriler
 create_station_graph(aa, "Tarih", "PM10")
 calculate_parameter_mean(aa, "NOX")
