@@ -12,6 +12,7 @@ mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
  hourly_detail <- dbReadTable(mydb, "hourly_detail")
  location <- dbReadTable(mydb, "location")
+ daily_detail <- dbReadTable(mydb, "daily_detail")
 
 mydb_location <- "
 CREATE TABLE location (
@@ -61,15 +62,15 @@ CREATE TABLE daily_detail(
  dbExecute(mydb, mydb_location)
  dbExecute(mydb, mydb_hourly_detail)
 
-# dbExecute(mydb, mydb_daily_detail)
+ dbExecute(mydb, mydb_daily_detail)
 
 #
 
 # delete table
-dbExecute(mydb, "DROP TABLE IF EXISTS location")
+dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
 
 
-location_data <- read_excel("C:/Users/Hp/Desktop/location_veri_birlesik.xlsx")
+location_data <- read_excel("C:/Users/Hp/Desktop/location_veri_ayri.xlsx")
 location_data$Id <- sapply(1:nrow(location_data), function(i) as.character(UUIDgenerate()))
 
 

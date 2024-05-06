@@ -4,7 +4,7 @@
 \alias{hourly_detail_save_to_database}
 \title{Hourly detail save to database}
 \usage{
-hourly_detail_save_to_database(processed_data)
+hourly_detail_save_to_database(processed_data, station_name)
 }
 \arguments{
 \item{processed_data}{processed data.}
