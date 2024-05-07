@@ -4,7 +4,7 @@
 \alias{daily_detail_load_from_database}
 \title{Hourly detail load from database by station name}
 \usage{
-daily_detail_load_from_database(processed_data, station_name)
+daily_detail_load_from_database(station_name)
 }
 \arguments{
 \item{station_name}{The name of the station to filter the data.}

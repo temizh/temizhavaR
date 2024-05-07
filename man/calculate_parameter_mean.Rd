@@ -2,13 +2,19 @@
 % Please edit documentation in R/Calculate_Parameter_Mean_Function.R
 \name{calculate_parameter_mean}
 \alias{calculate_parameter_mean}
-\title{Calculate specified parameter of specified station}
+\title{Calculate mean of specified parameter}
 \usage{
-calculate_parameter_mean(query_result, parameter_name, threshold = 0.9)
+calculate_parameter_mean(
+  data,
+  parameter,
+  threshold,
+  total_days,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{station_name}{The name of the station to filter the data.}
 }
 \description{
-Calculate specified parameter of specified station
+Calculate mean of specified parameter
 }

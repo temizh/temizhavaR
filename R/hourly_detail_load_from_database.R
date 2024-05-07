@@ -17,10 +17,7 @@
 
 
 
-  hourly_detail_load_from_database <- function(processed_data, station_name) {
-    data <- processed_data$data
-    param_names <- processed_data$param_names
-    station_name <- processed_data$station_name
+  hourly_detail_load_from_database <- function(station_name) {
 
 
    mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")

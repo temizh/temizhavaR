@@ -21,19 +21,16 @@ for (file in excel_files) {
   processed_data <- data_preprocessing(istasyon)
 
 
-  hourly_detail_save_to_database(processed_data)
+  #hourly_detail_save_to_database(processed_data)
 
   # SPECIFIED PARAMETER
-  station_names <- list_stations(processed_data, "CO")
-
-
+  station_names <- list_stations(processed_data, "PM10")
   all_station_names <- c(all_station_names, station_names)
 }
-
-
 all_station_names <- unique(all_station_names)
 
-
 for (station_name in all_station_names) {
-  cat("İstasyon: ", station_name, "\n")
+  if (verbose) {
+  print(paste("İstasyon:", station_name))
+  }
 }

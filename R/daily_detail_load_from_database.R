@@ -4,13 +4,10 @@
 #' @export
 
 
-daily_detail_load_from_database <- function(processed_data, station_name) {
-  data <- processed_data$data
-  param_names <- processed_data$param_names
-  station_name <- processed_data$station_name
+daily_detail_load_from_database <- function(station_name) {
 
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+ mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   query <- paste0("SELECT * FROM daily_detail WHERE Istasyon = '", station_name, "'")
   query_result <- dbGetQuery(mydb, query)

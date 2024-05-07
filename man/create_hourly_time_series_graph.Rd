@@ -4,12 +4,12 @@
 \alias{create_hourly_time_series_graph}
 \title{Create Dygraphs}
 \usage{
-create_hourly_time_series_graph(data, parameters)
+create_hourly_time_series_graph(data, station_name, parameters)
 }
 \arguments{
-\item{query_result}{Dataframe containing data from database query.}
-
 \item{station_name}{specified station name.}
+
+\item{query_result}{Dataframe containing data from database query.}
 }
 \description{
 Create Dygraphs
