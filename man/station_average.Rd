@@ -2,13 +2,13 @@
 % Please edit documentation in R/Station_Average_Function.R
 \name{station_average}
 \alias{station_average}
-\title{Station Average}
+\title{Station Average for daily data}
 \usage{
-station_average(data, parameter_name)
+station_average(parameter_name, threshold = 90)
 }
 \arguments{
 \item{data}{station based air parameters data.}
 }
 \description{
-Station Average
+Station Average for daily data
 }
