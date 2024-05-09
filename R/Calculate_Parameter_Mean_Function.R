@@ -5,14 +5,16 @@
 
 calculate_parameter_mean <- function(data, parameter, threshold, total_days, verbose = FALSE) {
 
-  parameter_data <- data[, parameter]
+  parameter <- gsub("'", "", parameter)
+
+  parameter_data <- data[[parameter]]
 
 
   non_na_count <- sum(!is.na(parameter_data))
 
   if (non_na_count >= threshold * total_days) {
-    mean_value <- mean(parameter_data, na.rm = TRUE)
-    percentage <- 100
+    mean_value <- round(mean(parameter_data, na.rm = TRUE), digits = 2)
+    percentage <- (non_na_count / total_days) * 100
     if (verbose) {
       print(paste(parameter, "icin yeterli veri mevcut."))
       print(paste("Ortalama:", mean_value))
@@ -27,9 +29,10 @@ calculate_parameter_mean <- function(data, parameter, threshold, total_days, ver
       }
     }
 
-  daily_percentage <- non_na_count / total_days * 100
+  #daily_percentage <- non_na_count / total_days * 100
 
-  return(list(mean_value = mean_value, percentage = percentage, daily_percentage = daily_percentage))
+  #return(list(mean_value = mean_value, percentage = percentage, daily_percentage = daily_percentage))
+  return(list(mean_value = mean_value, percentage = percentage))
 }
 
 
