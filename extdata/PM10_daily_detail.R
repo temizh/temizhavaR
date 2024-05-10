@@ -10,7 +10,6 @@ library(dygraphs)
 station_name <- "Mersin - Tarsus"
 parameters <- c("PM10")
 total_days <- 365
-#parameter_name <- "'PM2.5'"
 parameter = "PM10"
 parameter_name <- "PM10"
 daily_detail_data <- daily_detail_load_from_database(station_name)

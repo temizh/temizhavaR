@@ -14,7 +14,7 @@ calculate_parameter_mean <- function(data, parameter, threshold, total_days, ver
 
   if (non_na_count >= threshold * total_days) {
     mean_value <- round(mean(parameter_data, na.rm = TRUE), digits = 2)
-    percentage <- (non_na_count / total_days) * 100
+    percentage <- round((non_na_count / total_days) * 100, digits = 2)
     if (verbose) {
       print(paste(parameter, "icin yeterli veri mevcut."))
       print(paste("Ortalama:", mean_value))
@@ -22,7 +22,7 @@ calculate_parameter_mean <- function(data, parameter, threshold, total_days, ver
   } else {
 
       mean_value <- NA
-      percentage <- (non_na_count / total_days) * 100
+      percentage <- round((non_na_count / total_days) * 100, digits = 2)
       if (verbose) {
         print(paste(parameter, "icin yeterli veri mevcut degil."))
         print(paste("Var olan veri yüzdesi:", percentage, "%"))
