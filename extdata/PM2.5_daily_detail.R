@@ -39,4 +39,7 @@ list_stations_above_data_threshold(parameter_name, threshold = 40)
 print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün altındaki istasyonların listesi " ))
 list_stations_below_data_threshold(parameter_name, threshold = 40)
 
+exceedance_days <- calculate_exceedance_days_daily(daily_detail_data, parameter, threshold = 15)
+print(paste("15 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
+
 
