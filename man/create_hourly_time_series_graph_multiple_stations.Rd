@@ -7,15 +7,15 @@
 create_hourly_time_series_graph_multiple_stations(
   data,
   station_names,
-  parameter
+  parameters
 )
 }
 \arguments{
+\item{parameters}{A character vector specifying the name(s) of the parameter(s) to be plotted.}
+
 \item{query_result}{A dataframe containing data from a database query. It should include columns for "Tarih" (date/time) and the specified parameter(s) along with the station names.}
 
 \item{station_name}{A character vector specifying the name of the station(s) for which the time series graph will be created.}
-
-\item{parameters}{A character vector specifying the name(s) of the parameter(s) to be plotted.}
 }
 \value{
 A Dygraph object displaying the hourly time series graph.

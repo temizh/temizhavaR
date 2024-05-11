@@ -1,10 +1,6 @@
-library(tidyverse)
-library(readxl)
 library(dplyr)
 library(temizhavaR)
 library(DBI)
-library(readxl)
-library(uuid)
 library(dygraphs)
 # istasyonu sqlden alamadıgında boslukları birlestir
 station_name <- "Adana-Seyhan"
@@ -12,6 +8,7 @@ parameters <- c("PM2.5")
 total_days <- 365
 parameter = "PM2.5"
 parameter_name <- "\"PM2.5\""
+city_name <- "ADANA"
 daily_detail_data <- daily_detail_load_from_database(station_name)
 
 create_hourly_time_series_graph(daily_detail_data, station_name, parameters)
@@ -42,4 +39,16 @@ list_stations_below_data_threshold(parameter_name, threshold = 40)
 exceedance_days <- calculate_exceedance_days_daily(daily_detail_data, parameter, threshold = 15)
 print(paste("15 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
 
+result_above <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 15, consecutive_threshold = 3)
+print("Istasyonlar 15 esigini kac gun boyunca astilar:")
+print(result_above$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
+print("15 esiğinin uzerinde 3 veya daha fazla gun boyunca asma gerceklesen istasyonlar:")
+print(result_above$HighExceedanceStations)
 
+result_below <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 15, consecutive_threshold = 3)
+print("Istasyonlar 15 esiginin kac gun boyunca altında kaldılar:")
+print(result_below$ExceedanceDays)
+print("15 esiğinin altinda 3 veya daha fazla gun boyunca kalan istasyonlar:")
+print(result_below$HighExceedanceStations)
+
+calculate_overall_average_by_city(city_name, parameter_name)
