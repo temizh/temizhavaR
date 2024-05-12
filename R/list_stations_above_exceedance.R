@@ -8,7 +8,7 @@
 #' @return A data frame containing the number of days exceeding the specified threshold for the parameter for each station.
 #' @export
 
-calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 50, consecutive_threshold = 35) {
+calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 50) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
@@ -20,7 +20,7 @@ calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 
 
   exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
 
-  high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
+  #high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
 
-  return(list(ExceedanceDays = exceedance_days, HighExceedanceStations = high_exceedance_stations))
+  return(list(ExceedanceDays = exceedance_days))
 }

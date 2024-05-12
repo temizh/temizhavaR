@@ -4,12 +4,12 @@
 \alias{calculate_overall_average_by_city}
 \title{Calculate Overall Average for specified parameter from daily_detail for all stations in a city}
 \usage{
-calculate_overall_average_by_city(city_name, parameter)
+calculate_overall_average_by_city(parameter)
 }
 \arguments{
-\item{city_name}{The name of the city.}
-
 \item{parameter}{The parameter for which the overall average is calculated.}
+
+\item{city_name}{The name of the city.}
 }
 \value{
 The overall average value of the parameter for all stations in the city.

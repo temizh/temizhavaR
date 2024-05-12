@@ -30,6 +30,12 @@ daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
+print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
+daily_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
+
+print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
+daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
+
 print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün üstündeki istasyonların listesi " ))
 list_stations_above_data_threshold(parameter_name, threshold = 40)
 
@@ -39,16 +45,14 @@ list_stations_below_data_threshold(parameter_name, threshold = 40)
 exceedance_days <- calculate_exceedance_days_daily(daily_detail_data, parameter, threshold = 15)
 print(paste("15 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
 
-result_above <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 15, consecutive_threshold = 3)
+result_above <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 15)
 print("Istasyonlar 15 esigini kac gun boyunca astilar:")
 print(result_above$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
-print("15 esiğinin uzerinde 3 veya daha fazla gun boyunca asma gerceklesen istasyonlar:")
-print(result_above$HighExceedanceStations)
 
-result_below <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 15, consecutive_threshold = 3)
+result_below <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 15)
 print("Istasyonlar 15 esiginin kac gun boyunca altında kaldılar:")
-print(result_below$ExceedanceDays)
-print("15 esiğinin altinda 3 veya daha fazla gun boyunca kalan istasyonlar:")
-print(result_below$HighExceedanceStations)
+print(result_below$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
 
-calculate_overall_average_by_city(city_name, parameter_name)
+calculate_overall_average_by_city(parameter_name)
+
+new_pm25_from_pm10_yearly_average()

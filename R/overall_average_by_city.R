@@ -8,25 +8,38 @@
 #' @export
 
 
-calculate_overall_average_by_city <- function(city_name, parameter) {
+calculate_overall_average_by_city <- function(parameter) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-  station_query <- dbGetQuery(mydb, paste0("SELECT Sehir_Istasyon FROM location WHERE Sehir='", city_name, "'"))
+  city_query <- dbGetQuery(mydb, "SELECT DISTINCT Sehir FROM location")
 
-  stations <- station_query$Sehir_Istasyon
+  cities <- city_query$Sehir
 
-  stations_string <- paste0("'", stations, "'", collapse = ", ")
+  overall_avgs <- sapply(cities, function(city_name) {
 
-  query <- paste0("SELECT ", parameter, " FROM daily_detail WHERE Istasyon IN (", stations_string, ")")
+    station_query <- dbGetQuery(mydb, paste0("SELECT Sehir_Istasyon FROM location WHERE Sehir='", city_name, "'"))
 
-  daily_data <- dbGetQuery(mydb, query)
+    stations <- station_query$Sehir_Istasyon
 
-  parameter <- gsub('"', '' , parameter)
+    stations_string <- paste0("'", stations, "'", collapse = ", ")
 
-  overall_avg <- mean(daily_data[[parameter]], na.rm = TRUE)
+    query <- paste0("SELECT ", parameter, " FROM daily_detail WHERE Istasyon IN (", stations_string, ")")
+
+    daily_data <- dbGetQuery(mydb, query)
+
+    parameter <- gsub('"', '' , parameter)
+
+    overall_avg <- mean(daily_data[[parameter]], na.rm = TRUE)
+
+    return(overall_avg)
+  })
 
   dbDisconnect(mydb)
 
-  return(overall_avg)
+  result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
+  result <- result[!is.na(result$Ortalama), ]
+  row.names(result) <- NULL
+
+  return(result)
 }
