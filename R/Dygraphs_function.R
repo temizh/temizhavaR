@@ -14,7 +14,7 @@ create_hourly_time_series_graph <- function(data, station_name, parameters) {
 
 
   dygraph(data, main = station_name) %>%
-    dyAxis("y", label = "Value") %>%
+    dyAxis("y", label = parameters) %>%
     dyOptions(colors = c("blue", "red", "green", "orange", "purple", "brown", "black", "gray")) %>%
     dyLegend(labelsSeparateLines = TRUE)
 }
