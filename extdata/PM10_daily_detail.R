@@ -3,7 +3,7 @@ library(temizhavaR)
 library(DBI)
 library(dygraphs)
 
-station_name <- "Mersin - Tarsus"
+station_name <- "Erzincan"
 station_names <- c("Mersin - Tarsus", "Adana-Seyhan")
 parameters <- c("PM10")
 total_days <- 365
@@ -21,7 +21,7 @@ daily_list_stations_with_parameter(parameter_name)
 
 print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
 daily_list_stations_with_parameter_count(parameter_name)
-
+#sırala
 print(paste(parameter_name,": icin istasyon ortalamaları" ))
 daily_station_average(parameter_name, threshold = 90)
 
@@ -30,7 +30,7 @@ daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-
+#sırala
 print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün üstündeki istasyonların listesi " ))
 list_stations_above_data_threshold(parameter_name, threshold = 40)
 

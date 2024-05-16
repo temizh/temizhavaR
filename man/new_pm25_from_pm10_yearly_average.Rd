@@ -4,7 +4,7 @@
 \alias{new_pm25_from_pm10_yearly_average}
 \title{Calculate PM2.5 Values from PM10 Yearly Averages for Stations with Less Than 75\% Data}
 \usage{
-new_pm25_from_pm10_yearly_average(parameter_name)
+new_pm25_from_pm10_yearly_average()
 }
 \arguments{
 \item{parameter_name}{The name of the parameter (e.g., "PM10") for which the PM2.5 values are calculated.}

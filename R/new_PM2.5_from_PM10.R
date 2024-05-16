@@ -20,15 +20,91 @@ new_pm25_from_pm10_yearly_average <- function() {
 
   stations_string <- paste0("'", threshold_stations, "'", collapse = ", ")
 
-  pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon")
+  # PM10 verilerinin yüzde doksanından fazlasını kontrol et
+  pm10_threshold_query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN PM10 IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(*)) AS pm10_percentage FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon) WHERE pm10_percentage >= 90")
 
-  pm10_query_result <- dbGetQuery(mydb, pm10_query)
+  pm10_threshold_stations <- dbGetQuery(mydb, pm10_threshold_query)$Istasyon
 
-  pm25_values <- pm10_query_result$Yillik_Ortalama * 0.6667
+  if(length(pm10_threshold_stations) > 0) {
+    stations_string <- paste0("'", pm10_threshold_stations, "'", collapse = ", ")
 
-  pm25_result <- data.frame(Istasyon = pm10_query_result$Istasyon, PM25 = pm25_values)
+    pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon")
 
-  dbDisconnect(mydb)
+    pm10_query_result <- dbGetQuery(mydb, pm10_query)
 
-  return(pm25_result)
+    pm25_values <- pm10_query_result$Yillik_Ortalama * 0.6667
+
+    pm25_result <- data.frame(Istasyon = pm10_query_result$Istasyon, PM25 = pm25_values)
+
+    dbDisconnect(mydb)
+
+    return(pm25_result)
+  } else {
+    dbDisconnect(mydb)
+    cat("Yüzde doksan ve üzeri PM10 verisi sağlanmadığı için PM25 hesaplanamıyor.")
+    return(NULL)
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+#
+# new_pm25_from_pm10_yearly_average <- function() {
+#
+#    mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+#
+#    threshold <- 75
+#
+#    threshold_query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", threshold)
+#
+#    threshold_stations <- dbGetQuery(mydb, threshold_query)$Istasyon
+#
+#    stations_string <- paste0("'", threshold_stations, "'", collapse = ", ")
+#
+#    pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon")
+#
+#    pm10_query_result <- dbGetQuery(mydb, pm10_query)
+#
+#    pm25_values <- pm10_query_result$Yillik_Ortalama * 0.6667
+#
+#    pm25_result <- data.frame(Istasyon = pm10_query_result$Istasyon, PM25 = pm25_values)
+#
+#    dbDisconnect(mydb)
+#
+#    return(pm25_result)
+#  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

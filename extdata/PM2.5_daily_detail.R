@@ -3,13 +3,14 @@ library(temizhavaR)
 library(DBI)
 library(dygraphs)
 # istasyonu sqlden alamadıgında boslukları birlestir
-station_name <- "Adana-Seyhan"
+station_name <- "Mersin - Akdeniz"
 parameters <- c("PM2.5")
 total_days <- 365
 parameter = "PM2.5"
 parameter_name <- "\"PM2.5\""
 city_name <- "ADANA"
 daily_detail_data <- daily_detail_load_from_database(station_name)
+# eger icinde negatif veri varsa kac tane??
 
 create_hourly_time_series_graph(daily_detail_data, station_name, parameters)
 
