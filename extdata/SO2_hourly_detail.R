@@ -26,6 +26,7 @@ hourly_calculate_above_exceedance_days_all_stations(parameter_name, threshold = 
 
 hourly_calculate_above_exceedance_days_all_stations(parameter_name, threshold = 125, exceed_limit = 3)
 
+print(paste(parameter_name,": 3 ardisik saat " , threshold = 500 , "degerini asan istasyonlar ve kac kere astiklari"))
 consecutive_hourly_list_stations(parameter_name, threshold = 500)
 
 
