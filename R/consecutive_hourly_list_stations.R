@@ -8,7 +8,7 @@
 #' @return List of stations consecutively exceeding the specified parameter for three hours and the total duration of exceedance.
 #' @export
 
-consecutive_hourly_list_stations <- function(parameter_name, threshold = 500) {
+consecutive_hourly_list_stations <- function(parameter_name, threshold) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 

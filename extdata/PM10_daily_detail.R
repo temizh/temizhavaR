@@ -21,22 +21,31 @@ daily_list_stations_with_parameter(parameter_name)
 
 print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
 daily_list_stations_with_parameter_count(parameter_name)
-#sırala
-print(paste(parameter_name,": icin istasyon ortalamaları" ))
-daily_station_average(parameter_name, threshold = 90)
+
+result <- daily_station_average(parameter_name, threshold = 90)
+result_sorted <- result %>%
+  arrange(desc(average))
+print(paste(parameter_name, ": için istasyon ortalamaları"))
+print(result_sorted)
 
 print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
 daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-#sırala
+
+result <- list_stations_above_data_threshold(parameter_name, threshold = 40)
+result_sorted <- result %>%
+  arrange(desc(yearly_average))
 print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün üstündeki istasyonların listesi " ))
-list_stations_above_data_threshold(parameter_name, threshold = 40)
+print(result_sorted)
 
-print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün altındaki istasyonların listesi " ))
-list_stations_below_data_threshold(parameter_name, threshold = 40)
 
+result <- list_stations_below_data_threshold(parameter_name, threshold = 40)
+result_sorted <- result %>%
+  arrange(desc(yearly_average))
+print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün altindaki istasyonların listesi " ))
+print(result_sorted)
 
 exceedance_days <- calculate_exceedance_days_daily(daily_detail_data, parameter, threshold = 50)
 print(paste("50 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
