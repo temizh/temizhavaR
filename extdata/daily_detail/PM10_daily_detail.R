@@ -3,6 +3,9 @@ library(temizhavaR)
 library(DBI)
 library(dygraphs)
 
+source(init.TemizHavaR.R)
+# if there is no result_dir give error that edit couldnt found and run again
+
 station_name <- "Erzincan"
 station_names <- c("Mersin - Tarsus", "Adana-Seyhan")
 parameters <- c("PM10")
@@ -59,7 +62,11 @@ print("Istasyonlar 50 esigini kac gun boyunca astilar:")
 print(result_above$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
 
 result_below <- calculate_below_exceedance_days_all_stations(parameter, threshold = 45)
-print("Istasyonlar 45 esiginin kac gun boyunca altında kaldılar:")
+PM10_6 <- ("Istasyonlar 45 esiginin kac gun boyunca altında kaldılar:")
+print(PM10_6)
 print(result_below$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
 
 calculate_overall_average_by_city(parameter)
+
+#excel file : paste(result_dir, "PM10_daily.xlsx", "/")
+#add to excel PM10_6

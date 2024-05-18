@@ -38,12 +38,10 @@
 
 
     dropdown12_list_items <- remDr$findElements(using = "css", value = ".k-reset li")
-   #
+
     for (item in dropdown12_list_items) {
-   #
+
      item_text <- item$getElementText()
-   #
-   #
       if ("Akdeniz THM" %in% item_text) {
         item$clickElement()
        break
@@ -135,90 +133,6 @@
     # monthss_icon$clickElement()
     # Sys.sleep(2)
 
-
-
-
-
-
-
-
-
-
-
-    # multiselect2_element <- remDr$findElement(using = 'css', '.k-list-optionlabel')
-    # multiselect2_element$clickElement()
-    #
-    # Sys.sleep(2)
-    #
-    # dropdown_element_list2 <- remDr$findElement(using = 'css', value = '.k-reset li')
-    #
-    # for (item in dropdown_element_list2) {
-    #   #
-    #   item_text <- item$getElementText()
-    #
-    #
-    #   if ("Adana - Çatalan" %in% item_text) {
-    #     item$clickElement()
-    #     break
-    #   }
-    #
-    #
-
-
-
-
-
-
-
-
-    # multiselect2_element <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown2-contentDataDowloadNew"]/div/div/span[1]')
-    #
-    # multiselect2_element$clickElement()
-    #
-    # Sys.sleep(2)
-    #
-    #
-    # li_element <- remDr$findElement(using = 'css', value = 'li.k-item')
-    #
-    #
-    # for (item in li_element) {
-    #   #
-    #   item_text <- item$getElementText()
-    #
-    #
-    #   if ("Adana - Çatalan" %in% item_text) {
-    #     item$clickElement()
-    #     break
-    #   }
-    # }
-    #
-
-
-
-
-
-    #multiselect_element <- remDr$findElement(using = "css", value = ".k-multiselect-wrap")
-
-
-   # multiselect_element$clickElement()
-   #
-   # Sys.sleep(2)
-   #
-   # #list_items <- remDr$findElements(using = "css", value = ".k-reset li")
-   #
-   # dropdown12_list_items <- remDr$findElements(using = "css", value = ".k-reset li")
-   #
-   # for (item in dropdown12_list_items) {
-   #
-   #   item_text <- item$getElementText()
-   #
-   #
-   #   if ("Ege THM" %in% item_text) {
-   #     item$clickElement()
-   #     break
-   #   }
-   # }
-
   Sys.sleep(2)
   inputtElement <- remDr$findElement(
     using = 'xpath',
@@ -237,36 +151,30 @@
   aElement$clickElement()
   Sys.sleep(2)
 
+  # new_location <- function(){
+  #
+  #   #yeni lokasyon tablosunu olusturacak
+  #
+  # }
+  # station_scraping <- function() {
+  #   # yeni lokasyon tablosunda tutulanları cekicek
+  #   for(
+  #     (input : bolge, sehir, ,stasyon, startdate, enddate)
+  #
+  #
+  #
+  #
+  #
+  #   ) all stations
+  #
+  # }
+  #
+  # #
 
 
 
 
 
 
-
-
-  #input_element <- remDr$findElement(using = 'class', value = 'k-multiselect-wrap k-floatwrap')
-  #input_element$clickElement()
-
-  #input_element <- remDr$findElement(using = 'css selector', value = 'input.k-input')
-  #input_element$clickElement()
-
-  # Span elementini bulma
-  #span_element <- remDr$findElement("xpath", "//span[text()='Akdeniz THM']")
-
-  # Span elementini tıklama
-  #span_element$clickElement()
-
-
-
-  #input_element <- remDr$findElement(using = 'css selector', value = '#dropdown12-contentDataDowloadNew > div:nth-child(1) > div > div')
-
-  # input elementini bulma
-  #input_element <- remDr$findElement(using = 'css selector', value = 'input.form-control')
-  #input_element$clickElement()
-
-  # input elementinin içindeki option elementini bulma ve tıklama
-  #option_element <- remDr$findElement(using = "xpath", value = "//option[@value='5']")
-  #option_element$clickElement()
 
 
