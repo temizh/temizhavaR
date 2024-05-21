@@ -159,7 +159,7 @@
   # station_scraping <- function() {
   #   # yeni lokasyon tablosunda tutulanları cekicek
   #   for(
-  #     (input : bolge, sehir, ,stasyon, startdate, enddate)
+  #     (input : bolge, sehir, ,stasyon, startdate, enddate, result_dir)
   #
   #
   #
@@ -174,7 +174,7 @@
 
 
 
+  #dropdown1-contentDataDowloadNew > div > div > div > div > span:nth-child(4)
 
-
-
+  //*[@id="dropdown1-contentDataDowloadNew"]/div/div/div/div/span[2]
 

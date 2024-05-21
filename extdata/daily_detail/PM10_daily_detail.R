@@ -3,7 +3,7 @@ library(temizhavaR)
 library(DBI)
 library(dygraphs)
 
-source(init.TemizHavaR.R)
+source(init.TemizHavaR_2023.R)
 # if there is no result_dir give error that edit couldnt found and run again
 
 station_name <- "Erzincan"
