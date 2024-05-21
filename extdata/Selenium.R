@@ -117,18 +117,21 @@ Sys.sleep(3)
 dropdown12_list_items <- remDr$findElements(using = "css", value = ".k-reset li")
 
 bolge_list <- sapply(dropdown12_list_items, function(item) item$getElementText()[[1]])
-bolge_list_dolu <- bolge_list[bolge_list != ""]
+bolge_list_dolu <- bolge_list[bolge_list != "" & bolge_list != "None"]
 
 ###CLICK ANOTHER ELEMENT
 element <- remDr$findElement(using = 'xpath', value = '//*[@id="page-wrapper"]/div[1]')
 element$clickElement()
 
-bolge_limit <- 1    # Toplanacak bölge sayısı
-sehir_limit <- 2    # Her bölgeden toplanacak şehir sayısı
-counter <- 0
-
 # Her bölge için şehir ve istasyon isimlerini al
-for (bolge in head(bolge_list_dolu, bolge_limit)) {
+for (bolge in bolge_list_dolu) {
+
+  clean_dropdown_element <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown1-contentDataDowloadNew"]/div/div/div/div/span[2]')
+  clean_dropdown_element$clickElement()
+
+  clean_dropdown_element <- remDr$findElement(using = 'xpath', value = ' //*[@id="dropdown12-contentDataDowloadNew"]/div[1]/div/div/div/span[2]')
+  clean_dropdown_element$clickElement()
+
   dropdown12_element <- remDr$findElement(using = 'id', value = 'dropdown12-contentDataDowloadNew')
   dropdown12_element$clickElement()
   Sys.sleep(3)
@@ -152,7 +155,7 @@ for (bolge in head(bolge_list_dolu, bolge_limit)) {
 
   sehir_list_dolu <- sehir_list_dolu[-1]
 
-  for (sehir in head(sehir_list_dolu, sehir_limit)) {
+  for (sehir in sehir_list_dolu) {
 
     clean_dropdown_element <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown1-contentDataDowloadNew"]/div/div/div/div/span[2]')
     clean_dropdown_element$clickElement()
@@ -191,7 +194,7 @@ for (bolge in head(bolge_list_dolu, bolge_limit)) {
                 params = list(bolge, sehir, plaka, istasyon, id))
 
 
-      counter <- counter + 1
+
     }
 
     # Bir sonraki şehir için sayfayı sıfırlamak gerekirse bu noktada işlem yapabilirsiniz
@@ -207,7 +210,8 @@ for (bolge in head(bolge_list_dolu, bolge_limit)) {
 }
 
 
-
+remDr$close()
+rD$server$stop()
 
 
 

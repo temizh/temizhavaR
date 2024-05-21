@@ -11,10 +11,10 @@ mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
  dbDisconnect(mydb)
 
  hourly_detail <- dbReadTable(mydb, "hourly_detail")
- location2023 <- dbReadTable(mydb, "location_2023")
+ location_manuel <- dbReadTable(mydb, "location_manuel")
  daily_detail <- dbReadTable(mydb, "daily_detail")
- location_deneme <- dbReadTable(mydb, "location_deneme")
- #dbExecute(mydb, "ALTER TABLE location RENAME TO location_2023;")
+ location_2023 <- dbReadTable(mydb, "location_2023")
+ dbExecute(mydb, "ALTER TABLE location_deneme RENAME TO location_2023;")
 
  location_deneme_first_20 <- dbGetQuery(mydb, "SELECT * FROM location_deneme LIMIT 20")
 # İlk 20 satırı görmek için yazdır

@@ -174,7 +174,4 @@
 
 
 
-  #dropdown1-contentDataDowloadNew > div > div > div > div > span:nth-child(4)
-
-  //*[@id="dropdown1-contentDataDowloadNew"]/div/div/div/div/span[2]
 
