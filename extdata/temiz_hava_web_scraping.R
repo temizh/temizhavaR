@@ -159,7 +159,7 @@
   # station_scraping <- function() {
   #   # yeni lokasyon tablosunda tutulanları cekicek
   #   for(
-  #     (input : bolge, sehir, ,stasyon, startdate, enddate, result_dir)
+  #     (input : bolge, sehir, ,istasyon, startdate, enddate, result_dir)
   #
   #
   #

@@ -4,7 +4,7 @@
 \alias{consecutive_hourly_list_stations}
 \title{List of stations consecutively exceeding a specified parameter from hourly_detail}
 \usage{
-consecutive_hourly_list_stations(parameter_name, threshold = 350)
+consecutive_hourly_list_stations(parameter_name, threshold)
 }
 \arguments{
 \item{parameter_name}{The name of the desired parameter. For example, "PM10".}
