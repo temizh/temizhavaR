@@ -13,13 +13,18 @@
 
 download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate, result_dir) {
 
+  city_dir <- file.path(result_dir, sehir)
+  if (!dir.exists(city_dir)) {
+    dir.create(city_dir, recursive = TRUE)
+  }
+
   # set location
   dropdown12_element <- remDr$findElement(using = 'id', value = 'dropdown12-contentDataDowloadNew')
   dropdown12_element$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
   bolge_item <- remDr$findElement(using = 'xpath', value = paste0("//li[contains(text(), '", bolge, "')]"))
   bolge_item$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
 
   element <- remDr$findElement(using = 'xpath', value = '//*[@id="page-wrapper"]/div[1]')
   element$clickElement()
@@ -28,10 +33,10 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   # set city
   dropdown1_element <- remDr$findElement(using = 'id', value = 'dropdown1-contentDataDowloadNew')
   dropdown1_element$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
   sehir_item <- remDr$findElement(using = 'xpath', value = paste0("//li[contains(text(), '", sehir, "')]"))
   sehir_item$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
 
   element <- remDr$findElement(using = 'xpath', value = '//*[@id="page-wrapper"]/div[1]')
   element$clickElement()
@@ -40,21 +45,21 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   # set station
   dropdown2_element <- remDr$findElement(using = 'id', value = 'dropdown2-contentDataDowloadNew')
   dropdown2_element$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
   istasyon_item <- remDr$findElement(using = 'xpath', value = paste0("//li[contains(text(), '", istasyon, "')]"))
   istasyon_item$clickElement()
-  Sys.sleep(3)
+  Sys.sleep(1)
 
   # set all parameter
   dropdown_element3 <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown3-contentDataDowloadNew"]/div/div/div/div/span[3]')
   dropdown_element3$clickElement()
-  Sys.sleep(2)
+  Sys.sleep(1)
 
   # choose hourly or daily
   if (data_type == "hourly") {
     hourly_element <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown4-contentDataDowloadNew"]/div/div/label[1]')
     hourly_element$clickElement()
-    Sys.sleep(2)
+    Sys.sleep(1)
 
     #startdate <- "01.01.2023"
 
@@ -72,7 +77,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
     daily_element <- remDr$findElement(using = 'xpath', value = '//*[@id="dropdown4-contentDataDowloadNew"]/div/div/label[2]')
     daily_element$clickElement()
-    Sys.sleep(2)
+    Sys.sleep(1)
 
     start_date_element <- remDr$findElement(using = 'id', value = 'StationDataDownload_StartDateTime')
     start_date_element$clearElement()
@@ -87,21 +92,39 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   download_button_element$clickElement()
   Sys.sleep(5)
 
-  excel_button <- remDr$findElement(using = 'css selector', value = "a.k-button.k-button-icontext.k-grid-excel")
-  excel_button$clickElement()
-  Sys.sleep(60)
+  #download detail data
+  excel_button_detail <- remDr$findElement(using = 'css selector', value = "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel")
+  excel_button_detail$clickElement()
+  Sys.sleep(5)
 
-
-  downloaded_files <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
-  current_file_count <- length(downloaded_files)
-
-  if (current_file_count > previous_file_count) {
-    message(paste("Istasyon:", istasyon, " icin indirme islemi basariyla tamamlandi."))
-    previous_file_count <- current_file_count
+  indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
+  mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
+  if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
+    yeni_dosya_adi <- paste0(istasyon, "_saatlik_detaylı_2023.xlsx")
+    yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
+    file.rename(mevcut_dosya, yeni_dosya_yolu)
+    message(paste("İstasyon:", istasyon, " için indirme işlemi başarıyla tamamlandı."))
   } else {
-    message(paste("Istasyon:", istasyon, " icin indirme islemi tamamlanamadi veya dosya bulunamadi."))
+    message(paste("İstasyon:", istasyon, " için indirme işlemi tamamlanamadı veya dosya bulunamadı."))
   }
 
+
+  #download summary data
+
+  excel_button_summary <- remDr$findElement(using = 'css selector', value = "fieldset[data-element='SummaryGrid'] a.k-button.k-button-icontext.k-grid-excel")
+  excel_button_summary$clickElement()
+  Sys.sleep(5)
+
+  indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
+  mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
+  if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
+    yeni_dosya_adi <- paste0(istasyon, "_saatlik_özet_2023.xlsx")
+    yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
+    file.rename(mevcut_dosya, yeni_dosya_yolu)
+    message(paste("İstasyon:", istasyon, " için özet veri indirme işlemi başarıyla tamamlandı."))
+  } else {
+    message(paste("İstasyon:", istasyon, " için indirme işlemi tamamlanamadı veya dosya bulunamadı."))
+  }
 
   clear_button_element <- remDr$findElement(using = 'xpath', value = '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[2]/div/div/div/button ')
   clear_button_element$clickElement()
