@@ -101,9 +101,9 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
   if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
     yeni_dosya_adi <- if (data_type == "hourly") {
-      paste0(istasyon, "_saatlik_detay_", startdate, "_", enddate, ".xlsx")
+      paste0(istasyon, "_saatlik_detay_2023.xlsx")
     } else {
-      paste0(istasyon, "_gunluk_detay_", startdate, "_", enddate, ".xlsx")
+      paste0(istasyon, "_gunluk_detay_2023.xlsx")
     }
     yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
     file.rename(mevcut_dosya, yeni_dosya_yolu)
@@ -122,9 +122,9 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
   if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
     yeni_dosya_adi <- if (data_type == "hourly") {
-      paste0(istasyon, "_saatlik_ozet_", startdate, "_", enddate, ".xlsx")
+      paste0(istasyon, "_saatlik_ozet_2023.xlsx")
     } else {
-      paste0(istasyon, "_gunluk_ozet_", startdate, "_", enddate, ".xlsx")
+      paste0(istasyon, "_gunluk_ozet_2023.xlsx")
     }
     yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
     file.rename(mevcut_dosya, yeni_dosya_yolu)
@@ -138,5 +138,4 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   Sys.sleep(5)
 
 }
-
 

@@ -33,29 +33,36 @@ remDr$navigate("https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew")
 
 
 for (i in 1:nrow(location_2023)) {
-  # Download hourly data
-  download_data(
-    bolge = location_2023$Bolge[i],
-    sehir = location_2023$Sehir[i],
-    istasyon = location_2023$Istasyonlar[i],
-    data_type = "hourly",
-    startdate = "01.01.2023",
-    enddate = "01.01.2024",
-    result_dir = result_dir
-  )
-  Sys.sleep(5)
+  city_dir <- file.path(result_dir, location_2023$Sehir[i])
+  istasyon <- location_2023$Istasyonlar[i]
 
-  # Download daily data
-  download_data(
-    bolge = location_2023$Bolge[i],
-    sehir = location_2023$Sehir[i],
-    istasyon = location_2023$Istasyonlar[i],
-    data_type = "daily",
-    startdate = "01.01.2023",
-    enddate = "01.01.2024",
-    result_dir = result_dir
-  )
-  Sys.sleep(8)
+  # Saatlik veriler için kontrol ve indirme işlemi
+  if (download_check(city_dir, istasyon, "hourly")) {
+    download_data(
+      bolge = location_2023$Bolge[i],
+      sehir = location_2023$Sehir[i],
+      istasyon = istasyon,
+      data_type = "hourly",
+      startdate = "01.01.2023",
+      enddate = "01.01.2024",
+      result_dir = result_dir
+    )
+    Sys.sleep(5)  # Gerekirse bekleme süresi ekleyin
+  }
+
+  # Günlük veriler için kontrol ve indirme işlemi
+  if (download_check(city_dir, istasyon, "daily")) {
+    download_data(
+      bolge = location_2023$Bolge[i],
+      sehir = location_2023$Sehir[i],
+      istasyon = istasyon,
+      data_type = "daily",
+      startdate = "01.01.2023",
+      enddate = "01.01.2024",
+      result_dir = result_dir
+    )
+    Sys.sleep(8)  # Gerekirse bekleme süresi ekleyin
+  }
 }
 
 
