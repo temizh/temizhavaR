@@ -100,14 +100,17 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
   if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
-    yeni_dosya_adi <- paste0(istasyon, "_saatlik_detaylı_2023.xlsx")
+    yeni_dosya_adi <- if (data_type == "hourly") {
+      paste0(istasyon, "_saatlik_detay_", startdate, "_", enddate, ".xlsx")
+    } else {
+      paste0(istasyon, "_gunluk_detay_", startdate, "_", enddate, ".xlsx")
+    }
     yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
     file.rename(mevcut_dosya, yeni_dosya_yolu)
-    message(paste("İstasyon:", istasyon, " için indirme işlemi başarıyla tamamlandı."))
+    message(paste("İstasyon:", istasyon, " için detay veri indirme işlemi başarıyla tamamlandı."))
   } else {
-    message(paste("İstasyon:", istasyon, " için indirme işlemi tamamlanamadı veya dosya bulunamadı."))
+    message(paste("İstasyon:", istasyon, " için detay veri indirme işlemi tamamlanamadı veya dosya bulunamadı."))
   }
-
 
   #download summary data
 
@@ -118,12 +121,16 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
   if (!is.null(mevcut_dosya) && file.exists(mevcut_dosya)) {
-    yeni_dosya_adi <- paste0(istasyon, "_saatlik_özet_2023.xlsx")
+    yeni_dosya_adi <- if (data_type == "hourly") {
+      paste0(istasyon, "_saatlik_ozet_", startdate, "_", enddate, ".xlsx")
+    } else {
+      paste0(istasyon, "_gunluk_ozet_", startdate, "_", enddate, ".xlsx")
+    }
     yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
     file.rename(mevcut_dosya, yeni_dosya_yolu)
     message(paste("İstasyon:", istasyon, " için özet veri indirme işlemi başarıyla tamamlandı."))
   } else {
-    message(paste("İstasyon:", istasyon, " için indirme işlemi tamamlanamadı veya dosya bulunamadı."))
+    message(paste("İstasyon:", istasyon, " için özet veri indirme işlemi tamamlanamadı veya dosya bulunamadı."))
   }
 
   clear_button_element <- remDr$findElement(using = 'xpath', value = '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[2]/div/div/div/button ')
@@ -131,3 +138,5 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   Sys.sleep(5)
 
 }
+
+

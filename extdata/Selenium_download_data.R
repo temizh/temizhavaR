@@ -33,18 +33,31 @@ remDr$navigate("https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew")
 
 
 for (i in 1:nrow(location_2023)) {
+  # Download hourly data
   download_data(
     bolge = location_2023$Bolge[i],
     sehir = location_2023$Sehir[i],
     istasyon = location_2023$Istasyonlar[i],
-    data_type = "hourly",  # or "daily" depending on your requirement
+    data_type = "hourly",
     startdate = "01.01.2023",
     enddate = "01.01.2024",
     result_dir = result_dir
   )
+  Sys.sleep(5)
 
-  Sys.sleep(10)
+  # Download daily data
+  download_data(
+    bolge = location_2023$Bolge[i],
+    sehir = location_2023$Sehir[i],
+    istasyon = location_2023$Istasyonlar[i],
+    data_type = "daily",
+    startdate = "01.01.2023",
+    enddate = "01.01.2024",
+    result_dir = result_dir
+  )
+  Sys.sleep(8)
 }
+
 
 remDr$close()
 remote_driver$server$stop()
@@ -143,7 +156,7 @@ dbDisconnect(mydb)
 #
 # dbDisconnect(mydb)
 #
-# file.remove(progress_file)
+ #file.remove(progress_file)
 #
 #
 #
