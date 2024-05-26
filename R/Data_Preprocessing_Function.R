@@ -20,6 +20,7 @@ data_preprocessing <- function(data) {
 
   colnames(data)[1] <- "Tarih"
   data$Tarih <- as.POSIXct(data$Tarih)
+  #data$Tarih <- dmy_hms(data$Tarih, tz = "UTC")
 
   data <- data %>%
     mutate(across(-1, ~as.numeric(gsub(",", ".", .))))

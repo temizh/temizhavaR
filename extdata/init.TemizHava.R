@@ -1,2 +1,2 @@
-result_dir <- "C:/TemizHava_result_2023/"
+raw_dir <- "C:/TemizHava_raw_data2023/"
 # create daily ve hourly folder

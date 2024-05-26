@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS location_deneme (
 #
 
 # delete table
-dbExecute(mydb, "DROP TABLE IF EXISTS location_deneme")
+dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
 
 
 location_data <- read_excel("C:/Users/Hp/Desktop/location_veri_ayri.xlsx")

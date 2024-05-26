@@ -13,7 +13,7 @@ selenium_object <- selenium(retcommand = T, check= F)
 #google chrome
 #binman::list_versions("chromedriver")
 
-remote_driver <- rsDriver(browser = "chrome", chromever = "123.0.6312.86", verbose = F, port = free_port())
+remote_driver <- rsDriver(browser = "chrome", chromever = "125.0.6422.78", verbose = F, port = free_port())
 
 #close server
 #remote_driver$server$stop()

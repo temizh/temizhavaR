@@ -3,7 +3,7 @@
 #' @param processed_data processed data.
 #' @export
 
-daily_detail_save_to_database <- function(processed_data, station_name) {
+daily_detail_save_to_database <- function(processed_data) {
   data <- processed_data$data
   param_names <- processed_data$param_names
   station_name <- processed_data$station_name
@@ -20,7 +20,7 @@ daily_detail_save_to_database <- function(processed_data, station_name) {
     dbExecute(mydb, paste0("DELETE FROM daily_detail WHERE Istasyon = '", station_name, "'"))
   }
 
-  qry <- paste0("SELECT Id FROM location WHERE Sehir_Istasyon = '", station_name, "'")
+  qry <- paste0("SELECT Id FROM location_2023 WHERE Istasyonlar = '", station_name, "'")
   location_ids <- dbGetQuery(mydb, qry)
   if (nrow(location_ids) > 0) {
     data$location_id <- rep(location_ids$Id, nrow(data))

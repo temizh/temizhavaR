@@ -90,12 +90,12 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
   download_button_element <- remDr$findElement(using = 'xpath', value = '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[1]/div/div/div/button')
   download_button_element$clickElement()
-  Sys.sleep(5)
+  Sys.sleep(6)
 
   #download detail data
   excel_button_detail <- remDr$findElement(using = 'css selector', value = "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel")
   excel_button_detail$clickElement()
-  Sys.sleep(5)
+  Sys.sleep(6)
 
   indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
@@ -116,7 +116,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
   excel_button_summary <- remDr$findElement(using = 'css selector', value = "fieldset[data-element='SummaryGrid'] a.k-button.k-button-icontext.k-grid-excel")
   excel_button_summary$clickElement()
-  Sys.sleep(5)
+  Sys.sleep(6)
 
   indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
   mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]

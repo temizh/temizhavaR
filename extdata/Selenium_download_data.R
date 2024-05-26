@@ -7,14 +7,12 @@ library(RSQLite)
 library(temizhavaR)
 
 #dir.create(result_dir, recursive = TRUE)
-
-result_dir = "C:/TemizHava_result_2023"
+result_dir = "C:/TemizHava_raw_data2023"
 
 mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
 location_2023 <- dbReadTable(mydb, "location_2023")
 
-# Setup Selenium with Chrome options to specify download directory
 eCaps <- list(chromeOptions = list(prefs = list(
   "download.default_directory" = normalizePath(result_dir),
   "download.prompt_for_download" = FALSE,
@@ -25,7 +23,7 @@ eCaps <- list(chromeOptions = list(prefs = list(
 selenium()
 selenium_object <- selenium(retcommand = T, check= F)
 
-remote_driver <- rsDriver(browser = "chrome", chromever = "123.0.6312.86",  extraCapabilities = eCaps, verbose = F, port = free_port())
+remote_driver <- rsDriver(browser = "chrome", chromever = "125.0.6422.78",  extraCapabilities = eCaps, verbose = F, port = free_port())
 remDr <- remote_driver$client
 
 remDr$open()
@@ -36,7 +34,7 @@ for (i in 1:nrow(location_2023)) {
   city_dir <- file.path(result_dir, location_2023$Sehir[i])
   istasyon <- location_2023$Istasyonlar[i]
 
-  # Saatlik veriler için kontrol ve indirme işlemi
+  # for hourly data
   if (download_check(city_dir, istasyon, "hourly")) {
     download_data(
       bolge = location_2023$Bolge[i],
@@ -47,10 +45,10 @@ for (i in 1:nrow(location_2023)) {
       enddate = "01.01.2024",
       result_dir = result_dir
     )
-    Sys.sleep(5)  # Gerekirse bekleme süresi ekleyin
+    Sys.sleep(5)
   }
 
-  # Günlük veriler için kontrol ve indirme işlemi
+  # for daily data
   if (download_check(city_dir, istasyon, "daily")) {
     download_data(
       bolge = location_2023$Bolge[i],
@@ -61,7 +59,7 @@ for (i in 1:nrow(location_2023)) {
       enddate = "01.01.2024",
       result_dir = result_dir
     )
-    Sys.sleep(8)  # Gerekirse bekleme süresi ekleyin
+    Sys.sleep(8)
   }
 }
 

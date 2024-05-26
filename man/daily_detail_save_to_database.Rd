@@ -4,7 +4,7 @@
 \alias{daily_detail_save_to_database}
 \title{Sum detail save to database}
 \usage{
-daily_detail_save_to_database(processed_data, station_name)
+daily_detail_save_to_database(processed_data)
 }
 \arguments{
 \item{processed_data}{processed data.}

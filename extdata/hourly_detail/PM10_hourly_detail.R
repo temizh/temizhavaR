@@ -1,9 +1,3 @@
-
-#SONUCLAR EXCEL'e
-
-
-
-
 library(tidyverse)
 library(readxl)
 library(dplyr)
