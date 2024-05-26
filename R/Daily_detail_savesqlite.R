@@ -10,7 +10,8 @@ daily_detail_save_to_database <- function(processed_data) {
 
   mydb <- dbConnect(RSQLite::SQLite(), dbname = "temiz-hava.sqlite", encoding = "UTF-8")
 
-  data$Tarih <- format(data$Tarih, "%Y-%m-%d")
+  # data$Tarih <- format(data$Tarih, "%Y-%m-%d")
+  data$Tarih <- format(data$Tarih, "%Y-%m-%d %H:%M:%S")
   col_mapping <- c("Istasyon" = "Istasyon" ,"location_id"= "location_id","Tarih" = "Tarih", "PM10" = "PM10", "PM2.5" = "\"PM2.5\"", "SO2" = "SO2","CO" = "CO", "NO2" = "NO2", "NOX" = "NOX", "NO" = "NO", "O3" = "O3")
   data$Istasyon <- station_name
 
@@ -28,12 +29,6 @@ daily_detail_save_to_database <- function(processed_data) {
   head(data$location_id)
   print(paste("location_ids : ", location_ids))
 
-
-
-  # location_ids <- dbGetQuery(mydb, "SELECT Id FROM location WHERE Sehir_Istasyon = 'Adana - Seyhan'")
-  # if (nrow(location_ids) > 0) {
-  #   data$location_id <- rep(location_ids$Id, nrow(data))
-  # }
 
   dbWriteTable(mydb, "daily_detail", data, col.names = col_mapping, append = TRUE, fileEncoding = "UTF-8")
 

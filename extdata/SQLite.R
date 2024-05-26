@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS location_deneme (
 #
 
 # delete table
-dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
+dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
 
 
 location_data <- read_excel("C:/Users/Hp/Desktop/location_veri_ayri.xlsx")
@@ -121,8 +121,11 @@ FROM hourly_detail
 JOIN location ON hourly_detail.location_id = location.Id;"
 dbGetQuery(mydb, query_step3)
 
+station_name <- "Karabük - Safranbolu"
+query <- paste0("DELETE FROM daily_detail WHERE Istasyon = '", station_name, "'")
 
-
+# DELETE komutunu çalıştır
+dbExecute(mydb, query)
 
 
 

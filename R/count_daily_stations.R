@@ -15,5 +15,5 @@ daily_list_stations_with_parameter_count <- function(parameter_name) {
 
   dbDisconnect(mydb)
 
-  return(nrow(query_result))
+  return(data.frame(nrow(query_result)))
 }

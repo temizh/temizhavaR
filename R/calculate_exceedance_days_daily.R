@@ -15,9 +15,18 @@ calculate_exceedance_days_daily <- function(data, parameter, threshold) {
     stop("Belirtilen parametre veri setinde bulunamadı.")
   }
 
-  exceedance_days <- 0
+  data$Gun <- as.Date(data$Tarih)
 
-  exceedance_days <- length(which(data[parameter] > threshold))
+  exceedance_list <- data %>%
+    group_by(Istasyon, Gun) %>%
+    summarise(daily_mean = mean(get(parameter), na.rm = TRUE)) %>%
+    filter(daily_mean > threshold) %>%
+    ungroup() %>%
+    distinct(Istasyon)
 
-  return(exceedance_days)
+  result_df <- exceedance_list %>% select(Istasyon)
+
+  return(result_df)
 }
+
+

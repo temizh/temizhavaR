@@ -13,5 +13,5 @@ hourly_count_stations_with_parameter_threshold <- function(parameter_name, thres
 
   dbDisconnect(mydb)
 
-  return(nrow(query_result))
+  return(data.frame(nrow(query_result)))
 }
