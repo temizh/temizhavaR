@@ -29,7 +29,7 @@ print(result_message)
 pm10_1 <- hourly_list_stations_with_parameter(parameter_name)
 pm10_1 <- rbind(result_message, pm10_1)
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
 print(result_message)
 pm10_2 <- hourly_list_stations_with_parameter_count(parameter_name)
 pm10_2 <- rbind(result_message, pm10_2)

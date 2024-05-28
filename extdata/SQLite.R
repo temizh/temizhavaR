@@ -66,7 +66,7 @@ CREATE TABLE daily_detail(
 "
 
 dbExecute(mydb, "
-CREATE TABLE IF NOT EXISTS location_deneme (
+CREATE TABLE IF NOT EXISTS location_2023 (
     Bolge TEXT,
     Sehir TEXT,
     Plaka TEXT,

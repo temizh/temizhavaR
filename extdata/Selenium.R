@@ -23,6 +23,8 @@ remDr <- remote_driver$client
 remDr$open()
 remDr$navigate("https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew")
 
+mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+
 
 plaka_list <- list(
   "Adana" = "01",
@@ -190,7 +192,7 @@ for (bolge in bolge_list_dolu) {
 
 
       # Veriyi veri tabanına yaz
-      dbExecute(mydb, "INSERT INTO location_deneme (Bolge, Sehir, Plaka, Istasyonlar, Id) VALUES (?, ?, ?, ?, ?)",
+      dbExecute(mydb, "INSERT INTO location_2023 (Bolge, Sehir, Plaka, Istasyonlar, Id) VALUES (?, ?, ?, ?, ?)",
                 params = list(bolge, sehir, plaka, istasyon, id))
 
 

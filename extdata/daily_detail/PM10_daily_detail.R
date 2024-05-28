@@ -103,16 +103,42 @@ pm10_12 <- rbind(result_message, result_sorted)
 
 
 
+#
+# exceedance_days <- calculate_exceedance_days_daily(all_daily_detail_data, parameter, threshold = 45)
+# print(paste("45 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
 
-exceedance_days <- calculate_exceedance_days_daily(daily_detail_data, parameter, threshold = 45)
-print(paste("45 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
+#pm_13
+result_message <- print(paste(parameter_name," : Her bir istasyonun 45 esigini astigi gun sayisi" ))
+print(result_message)
+pm10_13 <- calculate_above_exceedance_days_all_stations(parameter, threshold = 45)
+result_sorted <- pm10_13$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm10_13 <- rbind(result_message, result_sorted)
 
 
-result_below <- calculate_below_exceedance_days_all_stations(parameter, threshold = 45)
-PM10_6 <- ("Istasyonlar 45 esiginin kac gun boyunca altında kaldılar:")
-print(PM10_6)
-print(result_below$ExceedanceDays %>% arrange(desc(ExceedsThreshold)))
-
-calculate_overall_average_by_city_threshold(parameter)
+result_message <- print(paste(parameter_name,": İl PM10 yıllık ortalaması" ))
+print(result_message)
+pm10_14 <- calculate_overall_average_by_city_threshold(parameter)
+pm10_14 <- rbind(result_message, pm10_14)
 
 
+output <- list(PM10_1 = pm10_1,
+               PM10_2 = pm10_2,
+               PM10_3 = pm10_3,
+               PM10_4 = pm10_4,
+               PM10_5 = pm10_5,
+               PM10_6 = pm10_6,
+               PM10_7 = pm10_7,
+               PM10_8 = pm10_8,
+               PM10_9 = pm10_9,
+               PM10_10 = pm10_10,
+               PM10_11 = pm10_11,
+               PM10_12 = pm10_12,
+               PM10_13 = pm10_13,
+               PM10_14 = pm10_14 )
+write_xlsx(
+  output,
+  path = result_pm10_daily_excel_file,
+  col_names = FALSE,
+  format_headers = FALSE,
+  use_zip64 = FALSE
+)
