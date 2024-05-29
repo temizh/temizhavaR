@@ -75,7 +75,7 @@ pm10_8 <- rbind(result_message, result_sorted)
 pm10_9 <- list_stations_below_data_threshold(parameter_name, threshold = 15)
 result_sorted <- pm10_9 %>%
   arrange(desc(yearly_average))
-result_message <- print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün altindaki istasyonların listesi " ))
+result_message <- print(paste(parameter_name," : Yıllık ortalaması 15 µg/m3'ün altindaki istasyonların listesi " ))
 print(result_message)
 pm10_9 <- rbind(result_message, result_sorted)
 
