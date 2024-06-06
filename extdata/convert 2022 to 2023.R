@@ -64,9 +64,14 @@ read_and_convert_2022_city_file <- function(my_city, infile) {
 
 for (my_city in cities) {
   #my_city <- cities[38]
-  myfile <- list.files(path = my_city, pattern = "günlük_detaylı")
-  read_and_convert_2022_city_file(my_city, myfile)
+  pattern_gunluk <- "günlük_detaylı"
+  pattern_saatlik <- "saatlik_detaylı"
 
-  myfile <- list.files(path = my_city, pattern = "saatlik_detaylı")
-  read_and_convert_2022_city_file(my_city, myfile)
+  myfiles <- list.files(path = my_city, pattern = pattern_gunluk)
+  for (infile in myfiles)
+    read_and_convert_2022_city_file(my_city, infile)
+
+  myfiles <- list.files(path = my_city, pattern = pattern_saatlik)
+  for (infile in myfiles)
+    read_and_convert_2022_city_file(my_city, infile)
 }
