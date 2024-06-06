@@ -32,7 +32,8 @@ pm25_2 <- rbind(result_message, pm25_2)
 result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
 print(result_message)
 pm25_3 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-pm25_3 <- rbind(result_message, pm25_3)
+result_sorted <- pm25_3 %>% arrange(desc(data_percentage))
+pm25_3 <- rbind(result_message, result_sorted)
 
 
 result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
@@ -43,7 +44,8 @@ pm25_4 <- rbind(result_message, pm25_4)
 result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
 print(result_message)
 pm25_5 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
-pm25_5 <- rbind(result_message, pm25_5)
+result_sorted <- pm25_5 %>% arrange(desc(data_percentage))
+pm25_5 <- rbind(result_message, result_sorted)
 
 
 result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
@@ -62,7 +64,7 @@ write_xlsx(
   output,
   path = result_pm25_hourly_excel_file,
   col_names = FALSE,
-  format_headers = FALSE,
+  format_headers = TRUE,
   use_zip64 = FALSE
 )
 

@@ -4,7 +4,7 @@
 \alias{calculate_above_exceedance_days_all_stations}
 \title{Calculate Exceedance Days for specified parameter from daily_detail for all stations}
 \usage{
-calculate_above_exceedance_days_all_stations(parameter, threshold = 50)
+calculate_above_exceedance_days_all_stations(parameter, threshold)
 }
 \arguments{
 \item{parameter}{The parameter for which the exceedance days are calculated.}

@@ -7,7 +7,11 @@ hourly_list_stations_with_parameter_threshold <- function(parameter_name, thresh
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-  query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) AS data_percentage FROM hourly_detail GROUP BY Istasyon) WHERE data_percentage >= ", threshold)
+  #query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) AS data_percentage FROM hourly_detail GROUP BY Istasyon) WHERE data_percentage >= ", threshold)
+  query <- paste0("SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) AS data_percentage
+                   FROM hourly_detail
+                   GROUP BY Istasyon
+                   HAVING data_percentage >= ", threshold)
 
   query_result <- dbGetQuery(mydb, query)
 

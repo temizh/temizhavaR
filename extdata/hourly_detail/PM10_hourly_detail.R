@@ -43,7 +43,8 @@ pm10_5 <- rbind(result_message, pm10_5)
 result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
 print(result_message)
 pm10_3 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-pm10_3 <- rbind(result_message, pm10_3)
+result_sorted <- pm10_3 %>% arrange(desc(data_percentage))
+pm10_3 <- rbind(result_message, result_sorted)
 
 result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 print(result_message)
@@ -59,7 +60,7 @@ write_xlsx(
   output,
   path = result_pm10_hourly_excel_file,
   col_names = FALSE,
-  format_headers = FALSE,
+  format_headers = TRUE,
   use_zip64 = FALSE
 )
 

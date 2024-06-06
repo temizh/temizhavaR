@@ -14,7 +14,7 @@ error_log <- list()
 
 for (istasyon_file in gunluk_istasyonlar) {
   tryCatch({
-
+    #istasyon_file <- "Manisa/Manisa - Turgutlu_gunluk_detay_2023.xlsx"
     istasyon <- read_excel(istasyon_file)
 
     processed_data <- data_preprocessing(istasyon)
@@ -43,6 +43,7 @@ error_log <- list()
 for (istasyon_file in saatlik_istasyonlar) {
   tryCatch({
 
+    #istasyon_file <- "Manisa/Manisa - Turgutlu_saatlik_detay_2023.xlsx"
     istasyon <- read_excel(istasyon_file)
 
     processed_data <- data_preprocessing(istasyon)

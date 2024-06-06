@@ -8,7 +8,7 @@
 #' @return A data frame containing the number of days exceeding the specified threshold for the parameter for each station.
 #' @export
 
-calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
+daily_above_exceedance_days_double_threshold <- function(parameter, threshold, exceedance_limit) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
@@ -19,13 +19,10 @@ calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
   stations <- dbGetQuery(mydb, stations_query)
 
-  query <- paste0("SELECT Istasyon, ", parameter, " < ", threshold, " AS ExceedsThreshold
+  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold
                    FROM daily_detail
                    WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
 
-
-
-  # query <- paste0("SELECT Istasyon, ", parameter, " < ", threshold, " AS ExceedsThreshold FROM daily_detail")
 
   query_result <- dbGetQuery(mydb, query)
 
@@ -33,7 +30,8 @@ calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
   exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
 
-  #high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
+  exceedance_days_filtered <- exceedance_days[exceedance_days$ExceedsThreshold > exceedance_limit, ]
 
-  return(list(ExceedanceDays = exceedance_days))
+  return(list(ExceedanceDays = exceedance_days_filtered))
+
 }

@@ -37,18 +37,18 @@ calculate_overall_average_by_city_threshold <- function(parameter) {
 
     if (length(station_avgs) > 0) {
       overall_avg <- mean(station_avgs, na.rm = TRUE)
-      return(overall_avg)
     } else {
-      return(NA)
+      overall_avg <- NA
     }
+
+    return(overall_avg)
   })
 
   dbDisconnect(mydb)
 
   result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
-  result <- result[!is.na(result$Ortalama), ]
+
   row.names(result) <- NULL
 
   return(result)
 }
-

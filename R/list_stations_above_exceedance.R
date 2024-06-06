@@ -8,11 +8,24 @@
 #' @return A data frame containing the number of days exceeding the specified threshold for the parameter for each station.
 #' @export
 
-calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 50) {
+calculate_above_exceedance_days_all_stations <- function(parameter, threshold) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold FROM daily_detail")
+  stations_query <- paste0("SELECT Istasyon
+                            FROM daily_detail
+                            GROUP BY Istasyon
+                            HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) >= 90")
+
+  stations <- dbGetQuery(mydb, stations_query)
+
+  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold
+                   FROM daily_detail
+                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
+
+
+
+  # query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold FROM daily_detail")
 
   query_result <- dbGetQuery(mydb, query)
 

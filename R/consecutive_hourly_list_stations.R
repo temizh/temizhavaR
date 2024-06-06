@@ -12,8 +12,8 @@ consecutive_hourly_list_stations <- function(parameter_name, threshold) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-  #query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
-  query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE Istasyon = 'Adana - Çatalan' AND ", parameter_name, " IS NOT NULL LIMIT 20")
+  query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
+  #query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE Istasyon = 'Adana - Çatalan' AND ", parameter_name, " IS NOT NULL LIMIT 20")
 
   hourly_stations <- dbGetQuery(mydb, query)
 

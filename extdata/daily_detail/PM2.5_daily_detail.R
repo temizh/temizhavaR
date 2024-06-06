@@ -30,7 +30,8 @@ pm25_2 <- rbind(result_message, pm25_2)
 result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
 print(result_message)
 pm25_3 <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-pm25_3 <- rbind(result_message, pm25_3)
+result_sorted <- pm25_3 %>% arrange(desc(data_percentage))
+pm25_3 <- rbind(result_message, result_sorted)
 
 
 result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
@@ -41,7 +42,8 @@ pm25_4 <- rbind(result_message, pm25_4)
 result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
 print(result_message)
 pm25_5 <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
-pm25_5 <- rbind(result_message, pm25_5)
+result_sorted <- pm25_5 %>% arrange(desc(data_percentage))
+pm25_5 <- rbind(result_message, result_sorted)
 
 
 result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
@@ -57,16 +59,32 @@ print(result_message)
 pm25_7 <- rbind(result_message, result_sorted)
 
 
-result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3'ün üstündeki istasyonların listesi" ))
+result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3 üstü istasyonların listesi ve kaç gün boyunca " ))
 print(result_message)
-pm25_8 <- list_stations_above_data_threshold(parameter_name, threshold = 5)
-pm25_8 <- rbind(result_message, pm25_8)
+pm25_8 <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 5)
+result_sorted <- pm25_8$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm25_8 <- rbind(result_message, result_sorted)
 
 
-result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3'ün altındaki istasyonların listesi" ))
+result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3'ün altı istasyonların listesi ve kaç gün boyunca " ))
 print(result_message)
-pm25_9 <- list_stations_below_data_threshold(parameter_name, threshold = 5)
-pm25_9 <- rbind(result_message, pm25_8)
+pm25_9 <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 5)
+result_sorted <- pm25_9$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm25_9 <- rbind(result_message, result_sorted)
+
+
+# result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3 üstü istasyonların listesi" ))
+# print(result_message)
+# pm25_8 <- list_stations_above_data_threshold(parameter_name, threshold = 5)
+# result_sorted <- pm25_8 %>% arrange(desc(yearly_average))
+# pm25_8 <- rbind(result_message, result_sorted)
+#
+#
+# result_message <- print(paste(parameter_name," : Yıllık ortalaması 5 µg/m3 altı istasyonların listesi" ))
+# print(result_message)
+# pm25_9 <- list_stations_below_data_threshold(parameter_name, threshold = 5)
+# result_sorted <- pm25_9 %>% arrange(desc(yearly_average))
+# pm25_9 <- rbind(result_message, result_sorted)
 
 
 result_message <- print(paste(parameter_name," : Günlük ortalaması 15 µg/m3'ün üstündeki istasyonların listesi ve astigi gun sayisi" ))
@@ -91,7 +109,8 @@ pm25_13 <- rbind(result_message, pm25_13)
 result_message <- print(paste(parameter_name," :İl PM25 yıllık ortalaması" ))
 print(result_message)
 pm25_14 <- calculate_overall_average_by_city(parameter_name)
-pm25_14 <- rbind(result_message, pm25_14)
+result_sorted <- pm25_14 %>% arrange(desc(Ortalama))
+pm25_14 <- rbind(result_message, result_sorted)
 
 output <- list(PM25_1 = pm25_1,
                PM25_2 = pm25_2,
@@ -110,7 +129,7 @@ write_xlsx(
   output,
   path = result_pm25_daily_excel_file,
   col_names = FALSE,
-  format_headers = FALSE,
+  format_headers = TRUE,
   use_zip64 = FALSE
 )
 
