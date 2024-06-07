@@ -8,20 +8,20 @@ mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
 
 
- dbDisconnect(mydb)
+dbDisconnect(mydb)
 
  hourly_detail <- dbReadTable(mydb, "hourly_detail")
- location_manuel <- dbReadTable(mydb, "location_manuel")
+ #location_manuel <- dbReadTable(mydb, "location_manuel")
  daily_detail <- dbReadTable(mydb, "daily_detail")
- location_2023 <- dbReadTable(mydb, "location_2023")
- dbExecute(mydb, "ALTER TABLE location_deneme RENAME TO location_2023;")
+ location_2022 <- dbReadTable(mydb, "location_2022")
+ #dbExecute(mydb, "ALTER TABLE location_deneme RENAME TO location_2022;")
 
  location_deneme_first_20 <- dbGetQuery(mydb, "SELECT * FROM location_deneme LIMIT 20")
 # İlk 20 satırı görmek için yazdır
  print(location_deneme_first_20)
 
 
- #LOCATION 2023
+#LOCATION 2022
 mydb_location <- "
 CREATE TABLE location (
     Bolge TEXT,
@@ -66,7 +66,7 @@ CREATE TABLE daily_detail(
 "
 
 dbExecute(mydb, "
-CREATE TABLE IF NOT EXISTS location_2023 (
+CREATE TABLE IF NOT EXISTS location_2022 (
     Bolge TEXT,
     Sehir TEXT,
     Plaka TEXT,
