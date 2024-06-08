@@ -4,28 +4,45 @@ library(lubridate)
 library(RSQLite)
 library(temizhavaR)
 
-source("init.TemizHava.R")
-setwd(raw_dir)
+init.temizhavaR()
+
+YEAR <- options()$temizhavaR.YEAR
 
 #SAVE EXCEL TO DATABASE FOR DAILY DETAIL
-istasyonlar <- list.files(pattern = "xlsx", recursive = TRUE)
-gunluk_istasyonlar <- istasyonlar[grep("gunluk_detay", istasyonlar)]
+if (YEAR == "2022") {
+  # create a connection to database
+  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir,"temiz-hava.sqlite"))
+  location2022 <- dbReadTable(mydb, paste0("location_", YEAR))
+} else {
+  #2023
+  #istasyonlar <- list.files(pattern = "xlsx", recursive = TRUE)
+  #gunluk_istasyonlar <- istasyonlar[grep("gunluk_detay", istasyonlar)]
+}
+
 error_log <- list()
 
-for (istasyon_file in gunluk_istasyonlar) {
+istasyonlarS <- location2022
+
+#istasyonlarS <- istasyonlarS[1:2,]
+
+for (I in 1:nrow(istasyonlarS)) {
+  #istasyon_file <- "Manisa/Manisa - Turgutlu_gunluk_detay_2023.xlsx"
+  istasyon_file <- istasyonlarS$gunluk_files2022[I]
+  istasyon_name <- istasyonlarS$Istasyonlar[I]
+  print(paste(istasyon_name, " : GUNLUK"))
+  a=1
   tryCatch({
-    #istasyon_file <- "Manisa/Manisa - Turgutlu_gunluk_detay_2023.xlsx"
-    istasyon <- read_excel(istasyon_file)
+    istasyon <- read_excel(istasyon_file, .name_repair = "unique_quiet")
 
-    processed_data <- data_preprocessing(istasyon)
+    processed_data <- data_preprocessing(istasyon, istasyon_name)
 
-    daily_detail_save_to_database(processed_data)
+    detail_save_to_database(processed_data, "daily_detail", verbose = FALSE)
 
     cat(paste("Processed and saved:", istasyon_file, "\n"))
   }, error = function(e) {
     # Log the error with file name
-    error_log[[istasyon_file]] <- e
-    cat(paste("Error processing:", istasyon_file, "\n"))
+    error_log[[istasyon_name]] <- e
+    cat(paste("Error processing:", istasyon_name, "\n"))
   })
 }
 
@@ -36,25 +53,27 @@ if (length(error_log) > 0) {
 }
 
 # SAVE EXCEL TO DATABASE FOR HOURLY DETAIL
-istasyonlar <- list.files(pattern = "xlsx", recursive = TRUE)
-saatlik_istasyonlar <- istasyonlar[grep("saatlik_detay", istasyonlar)]
-error_log <- list()
+# istasyonlar <- list.files(pattern = "xlsx", recursive = TRUE)
+# saatlik_istasyonlar <- istasyonlar[grep("saatlik_detay", istasyonlar)]
+# error_log <- list()
 
-for (istasyon_file in saatlik_istasyonlar) {
+for (I in 1:nrow(istasyonlarS)) {
+  istasyon_file <- istasyonlarS$saatlik_files2022[I]
+  istasyon_name <- istasyonlarS$Istasyonlar[I]
+
+  print(paste(istasyon_name, " : SAATLIK"))
   tryCatch({
+    istasyon <- read_excel(istasyon_file, .name_repair = "unique_quiet")
 
-    #istasyon_file <- "Manisa/Manisa - Turgutlu_saatlik_detay_2023.xlsx"
-    istasyon <- read_excel(istasyon_file)
+    processed_data <- data_preprocessing(istasyon, istasyon_name)
 
-    processed_data <- data_preprocessing(istasyon)
+    detail_save_to_database(processed_data, "hourly_detail", verbose = FALSE)
 
-    hourly_detail_save_to_database(processed_data)
-
-    cat(paste("Processed and saved:", istasyon_file, "\n"))
+    cat(paste("Processed and saved:", istasyon_name, "\n"))
   }, error = function(e) {
 
-    error_log[[istasyon_file]] <- e
-    cat(paste("Error processing:", istasyon_file, "\n"))
+    error_log[[istasyon_name]] <- e
+    cat(paste("Error processing:", e, "\n"))
   })
 }
 

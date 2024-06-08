@@ -1,7 +1,13 @@
-raw_dir <- "C:/TemizHava_raw_data2023/"
+raw_dir <- options()$temizhavaR.raw_dir
+
+options(temizhavaR.YEAR = "2022")
+
+setwd(raw_dir)
+
 output_dir <- paste0(raw_dir, "__results/")
-if (!exists(output_dir))
+if (!dir.exists(output_dir))
   dir.create(output_dir)
+
 result_pm10_hourly_excel_file <- paste0(output_dir, "results_PM10_hourly.xlsx")
 result_pm10_daily_excel_file <- paste0(output_dir, "results_PM10_daily.xlsx")
 result_pm25_hourly_excel_file <- paste0(output_dir, "results_PM25_hourly.xlsx")
@@ -16,4 +22,3 @@ result_no2_hourly_excel_file <- paste0(output_dir, "results_NO2_hourly.xlsx")
 result_no2_daily_excel_file <- paste0(output_dir, "results_NO2_daily.xlsx")
 result_co_hourly_excel_file <- paste0(output_dir, "results_CO_hourly.xlsx")
 result_co_daily_excel_file <- paste0(output_dir, "results_CO_daily.xlsx")
-

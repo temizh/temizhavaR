@@ -1,16 +1,39 @@
-mydir <- "/home/acizmeli/Documents/KaraRaporu/HamVeriler_2023"
+library(writexl)
 
-setwd(mydir)
 
-mydb <- dbConnect(RSQLite::SQLite(), file.path(mydir,"temiz-hava.sqlite"))
+#Get 2022 station saatlik/gunluk list
+stopifnot(grepl("2022", raw_dir))
+saatlikler_2022 <- list.files(pattern = "_saatlik_detay_", recursive = TRUE)
+saatlikler_2022 <- sapply(strsplit(saatlikler_2022, "/"), function(x) x[[2]])
+saatlikler_2022 <- sapply(strsplit(saatlikler_2022, "_saatlik"), function(x) x[[1]])
+gunlukler_2022 <- list.files(pattern = "_gunluk_detay_", recursive = TRUE)
+gunlukler_2022 <- sapply(strsplit(gunlukler_2022, "/"), function(x) x[[2]])
+gunlukler_2022 <- sapply(strsplit(gunlukler_2022, "_gunluk"), function(x) x[[1]])
+gunlukler_2022 <- data.frame(Istasyon = gunlukler_2022, gunlukler_2022 = TRUE)
+saatlikler_2022 <- data.frame(Istasyon = saatlikler_2022, saatlikler_2022 = TRUE)
+veriler_2022 <- left_join(gunlukler_2022, saatlikler_2022, by = join_by(Istasyon))
 
-full_stations <- dbGetQuery(mydb, "SELECT * FROM location_2023")
-all_daily <- dbGetQuery(mydb, "SELECT * FROM daily_detail")
-all_hourly <- dbGetQuery(mydb, "SELECT * FROM hourly_detail")
+write_xlsx(
+  veriler_2022,
+  path = "../veriler_2022.xlsx",
+  col_names = TRUE,
+  format_headers = TRUE
+)
 
-dbDisconnect(mydb)
+#Get 2023 location data
+raw_dir_2023 <- gsub("2022", "2023", raw_dir)
+stopifnot(grepl("2023", raw_dir_2023))
+#Get 2023 location list
+mydb2023 <- dbConnect(RSQLite::SQLite(), file.path(raw_dir_2023,"temiz-hava.sqlite"))
+location2023 <- dbReadTable(mydb2023, paste0("location_2023"))
 
-all_stations <- sort(unique(full_stations$Istasyonlar))
+full_stations_2023 <- dbGetQuery(mydb2023, "SELECT * FROM location_2023")
+all_daily <- dbGetQuery(mydb2023, "SELECT * FROM daily_detail")
+all_hourly <- dbGetQuery(mydb2023, "SELECT * FROM hourly_detail")
+
+dbDisconnect(mydb2023)
+
+all_stations <- sort(unique(full_stations_2023$Istasyonlar))
 all_stations <- tibble(Istasyon=all_stations)
 
 u_stations_daily <- sort(unique(all_daily$Istasyon))
@@ -49,3 +72,33 @@ write_xlsx(
   col_names = TRUE,
   format_headers = TRUE
 )
+
+allstations_2023 <- sort(unique(location2023$Istasyonlar))
+allstations_2023 <- gsub("\\/", " ", allstations_2023)
+allstations_2023 <- tibble(Istasyon=allstations_2023)
+#Get 2023 station saatlik/gunluk list
+setwd(raw_dir)
+gunlukler_2023 <- list.files(pattern = "_gunluk_detay_", recursive = TRUE)
+gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "/"), function(x) x[[2]])
+gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "_gunluk"), function(x) x[[1]])
+gunlukler_2023 <- data.frame(Istasyon = gunlukler_2023, gunlukler_2023 = TRUE)
+saatlikler_2023 <- list.files(pattern = "_saatlik_detay_", recursive = TRUE, full.names = FALSE, include.dirs	= FALSE)
+saatlikler_2023 <- sapply(strsplit(saatlikler_2023, "/"), function(x) x[[2]])
+saatlikler_2023 <- sapply(strsplit(saatlikler_2023, "_saatlik"), function(x) x[[1]])
+saatlikler_2023 <- data.frame(Istasyon = saatlikler_2023, saatlikler_2023 = TRUE)
+veriler_2023 <- left_join(allstations_2023, gunlukler_2022, by = join_by(Istasyon))
+veriler_2023 <- left_join(veriler_2023, saatlikler_2022, by = join_by(Istasyon))
+init.temizhavaR()
+
+write_xlsx(
+  veriler_2023,
+  path = "../veriler_2023.xlsx",
+  col_names = TRUE,
+  format_headers = TRUE
+)
+
+allstations_2023$Istasyon[239]==gunlukler_2023$Istasyon[237]
+allstations_2023$Istasyon[239]==saatlikler_2023$Istasyon[237]
+gunlukler_2023$Istasyon[237]==saatlikler_2023$Istasyon[237]
+
+

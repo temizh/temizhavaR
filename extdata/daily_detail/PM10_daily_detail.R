@@ -4,19 +4,20 @@ library(DBI)
 library(dygraphs)
 library(writexl)
 
-#source(init.TemizHavaR_2023.R)
+init.temizhavaR()
+
+source("~/Documents/aaworks/GIT.repos/temizhavaR/extdata/init.TemizHava.R")
 # if there is no result_dir give error that edit couldnt found and run again
 
 station_name <- "Karabük - Safranbolu"
 station_names <- c("Mersin - Tarsus", "Adana-Seyhan")
-parameters <- c("PM10")
 total_days <- 365
-parameter = "PM10"
 parameter_name <- "PM10"
 city_name <- "ADANA"
+
 daily_detail_data <- daily_detail_load_from_database(station_name)
 all_daily_detail_data <- all_daily_detail_load_from_database()
-create_hourly_time_series_graph(daily_detail_data, station_name, parameters)
+create_hourly_time_series_graph(daily_detail_data, station_name, parameter)
 
 calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
 
@@ -86,14 +87,20 @@ pm10_10 <- rbind(result_message, result_sorted)
 
 result_message <- print(paste(parameter_name," : Yıllık ortalaması 45 µg/m3'ün altı istasyonların listesi ve kaç gün boyunca " ))
 print(result_message)
+<<<<<<< Updated upstream
 pm10_12 <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 45)
 result_sorted <- pm10_12$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
 pm10_12 <- rbind(result_message, result_sorted)
+=======
+pm10_10 <- calculate_exceedance_days_daily(all_daily_detail_data, parameter_name, threshold = 50)
+pm10_10 <- rbind(result_message, pm10_10)
+>>>>>>> Stashed changes
 
 
 
 result_message <- print(paste(parameter_name," : Her bir istasyonun 45 esigini astigi gun sayisi" ))
 print(result_message)
+<<<<<<< Updated upstream
 pm10_13 <- calculate_above_exceedance_days_all_stations(parameter, threshold = 45)
 result_sorted <- pm10_13$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
 pm10_13 <- rbind(result_message, result_sorted)
@@ -113,6 +120,19 @@ pm10_13 <- rbind(result_message, result_sorted)
 # result_message <- print(paste(parameter_name," : Yıllık ortalaması 40 µg/m3'ün altindaki istasyonların listesi " ))
 # print(result_message)
 # pm10_7 <- rbind(result_message, result_sorted)
+=======
+pm10_11 <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 50)
+result_sorted <- pm10_11$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm10_11 <- rbind(result_message, result_sorted)
+
+
+
+result_message <- print(paste(parameter_name," : Istasyonlar 45 esiginin kac gun boyunca altında kaldılar" ))
+print(result_message)
+pm10_12 <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 45)
+result_sorted <- pm10_12$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm10_12 <- rbind(result_message, result_sorted)
+>>>>>>> Stashed changes
 
 
 
@@ -179,15 +199,23 @@ pm10_13 <- rbind(result_message, result_sorted)
 # pm10_12 <- rbind(result_message, result_sorted)
 
 #
-# exceedance_days <- calculate_exceedance_days_daily(all_daily_detail_data, parameter, threshold = 45)
+# exceedance_days <- calculate_exceedance_days_daily(all_daily_detail_data, parameter_name, threshold = 45)
 # print(paste("45 esiginin uzerinde asilma", exceedance_days, "gun boyunca gerceklesti."))
 
 #pm_13
+<<<<<<< Updated upstream
 # result_message <- print(paste(parameter_name," : Her bir istasyonun 45 esigini astigi gun sayisi" ))
 # print(result_message)
 # pm10_13 <- calculate_above_exceedance_days_all_stations(parameter, threshold = 45)
 # result_sorted <- pm10_13$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
 # pm10_13 <- rbind(result_message, result_sorted)
+=======
+result_message <- print(paste(parameter_name," : Her bir istasyonun 45 esigini astigi gun sayisi" ))
+print(result_message)
+pm10_13 <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 45)
+result_sorted <- pm10_13$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
+pm10_13 <- rbind(result_message, result_sorted)
+>>>>>>> Stashed changes
 
 
 result_message <- print(paste(parameter_name,": İl PM10 yıllık ortalaması" ))
