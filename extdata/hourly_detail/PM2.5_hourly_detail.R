@@ -1,11 +1,8 @@
-library(tidyverse)
-library(readxl)
 library(dplyr)
 library(temizhavaR)
-library(DBI)
-library(readxl)
 library(uuid)
 library(dygraphs)
+
 # istasyonu sqlden alamadıgında boslukları birlestir
 station_name <- "Adana-Seyhan"
 parameters <- c("PM2.5")

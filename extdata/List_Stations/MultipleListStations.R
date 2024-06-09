@@ -1,11 +1,10 @@
+library(readxl)
+library(temizhavaR)
+library(uuid)
+
 
 #LIST STATIONS FOR THE SPECIFIED PARAMETER
 
-library(tidyverse)
-library(readxl)
-library(temizhavaR)
-library(DBI)
-library(uuid)
 
 data_dir <- "C:/Hourly_detail/"
 

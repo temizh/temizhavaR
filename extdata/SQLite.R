@@ -1,4 +1,3 @@
-library(DBI)
 library(uuid)
 library(dplyr)
 library(readxl)

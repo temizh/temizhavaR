@@ -1,7 +1,7 @@
 library(dplyr)
 library(temizhavaR)
-library(DBI)
 library(dygraphs)
+
 # istasyonu sqlden alamadıgında boslukları birlestir
 station_name <- "Mersin - Akdeniz"
 parameters <- c("PM2.5")

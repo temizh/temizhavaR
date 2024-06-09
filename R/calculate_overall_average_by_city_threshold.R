@@ -10,13 +10,16 @@
 
 calculate_overall_average_by_city_threshold <- function(parameter) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  init.temizhavaR()
+  YEAR <- options()$temizhavaR.YEAR
 
-  city_query <- dbGetQuery(mydb, "SELECT DISTINCT Sehir FROM location_2023")
+  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir, "temiz-hava.sqlite"))
+
+  city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
 
   overall_avgs <- sapply(cities, function(city_name) {
-    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_2023 WHERE Sehir='", city_name, "'"))
+    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- unlist(strsplit(station_query$Istasyonlar, ","))
 
     station_avgs <- sapply(stations, function(station) {

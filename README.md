@@ -10,6 +10,7 @@ Bu dizinin içine `init.temizhavaR_data.R` adlı dosya yaratın. Örnek dosya :
 
 Database tablo şemalarını yaratın. Script ? `SQLite.R`
 
+
 ```
 library(temizhavaR)
 create_SQL_schema()

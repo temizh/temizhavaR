@@ -1,7 +1,5 @@
 library(dplyr)
 library(temizhavaR)
-library(DBI)
-library(dygraphs)
 
 station_name <- "Adana-Seyhan"
 parameters <- c("NO2")

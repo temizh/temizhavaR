@@ -1,7 +1,5 @@
-library(tidyverse)
 library(readxl)
 library(temizhavaR)
-library(DBI)
 library(uuid)
 
 ##BUNLARI GUNLUK DETAY VERiLERiNE UYGULA
