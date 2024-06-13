@@ -7,6 +7,6 @@ Authors@R:
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
-Depends: DBI, openxlsx
+Depends: DBI, openxlsx, dygraphs, dplyr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
