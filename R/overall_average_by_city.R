@@ -9,22 +9,24 @@
 
 calculate_overall_average_by_city <- function(parameter) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  init.temizhavaR()
 
-  city_query <- dbGetQuery(mydb, "SELECT DISTINCT Sehir FROM location_2023")
+  YEAR <- options()$temizhavaR.YEAR
+
+  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir, "temiz-hava.sqlite"))
+
+  city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
-
 
   overall_avgs <- sapply(cities, function(city_name) {
 
-    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_2023 WHERE Sehir='", city_name, "'"))
+    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
     station_avgs <- sapply(stations, function(station) {
 
       pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
       pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
-
 
       if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
         pm25_query <- paste0("SELECT \"PM2.5\" FROM daily_detail WHERE Istasyon='", station, "'")
@@ -41,7 +43,6 @@ calculate_overall_average_by_city <- function(parameter) {
         }
       }
     }, USE.NAMES = FALSE)
-
 
     station_avgs <- unlist(station_avgs)
     station_avgs <- station_avgs[!is.na(station_avgs)]
