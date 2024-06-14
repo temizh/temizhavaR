@@ -32,6 +32,15 @@ result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayı
 o3_4 <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 o3_4 <- rbind(result_message, o3_4)
 
+result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
+o3_5 <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+result_sorted <- o3_5 %>% arrange(desc(data_percentage))
+o3_5 <- rbind(result_message, result_sorted)
+
+result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
+o3_6 <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+o3_6 <- rbind(result_message, o3_6)
+
 output <- list(O3_1 = o3_1,
                O3_2 = o3_2,
                O3_3 = o3_3,

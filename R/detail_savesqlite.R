@@ -4,7 +4,7 @@
 #' @export
 
 detail_save_to_database <- function(processed_data, table_name, verbose = FALSE) {
-
+#browser()
   YEAR <- options()$temizhavaR.YEAR
 
   data <- processed_data$data

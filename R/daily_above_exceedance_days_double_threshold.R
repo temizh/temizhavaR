@@ -32,6 +32,5 @@ daily_above_exceedance_days_double_threshold <- function(parameter, threshold, e
 
   exceedance_days_filtered <- exceedance_days[exceedance_days$ExceedsThreshold > exceedance_limit, ]
 
-  return(list(ExceedanceDays = exceedance_days_filtered))
-
+  exceedance_days_filtered %>% arrange(desc(ExceedsThreshold))
 }

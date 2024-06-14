@@ -4,7 +4,11 @@
 \alias{daily_list_stations_with_parameter_threshold}
 \title{List Stations for specified parameter from daily_detail}
 \usage{
-daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+daily_list_stations_with_parameter_threshold(
+  parameter_name,
+  threshold = 90,
+  season
+)
 }
 \arguments{
 \item{parameter_name}{The name of the parameter.}

@@ -53,5 +53,6 @@ calculate_overall_average_by_city_threshold <- function(parameter) {
 
   row.names(result) <- NULL
 
-  return(result)
+  result %>%
+    arrange(desc(Ortalama)) %>% mutate(Ortalama = round(Ortalama, 2))
 }

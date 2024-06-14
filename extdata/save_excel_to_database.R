@@ -24,14 +24,16 @@ error_log <- list()
 istasyonlarS <- location2022
 
 #istasyonlarS <- istasyonlarS[1:2,]
+#istasyonlarS <- istasyonlarS[grep("Sarayönü", istasyonlarS$Istasyonlar),]
+#istasyonlarS <- istasyonlarS[grep("Kocaeli", istasyonlarS$Istasyonlar),]
+istasyonlarS <- istasyonlarS[grep("Yalova", istasyonlarS$Istasyonlar),]
 
 for (I in 1:nrow(istasyonlarS)) {
-  #istasyon_file <- "Manisa/Manisa - Turgutlu_gunluk_detay_2023.xlsx"
   istasyon_file <- istasyonlarS$gunluk_files2022[I]
   istasyon_name <- istasyonlarS$Istasyonlar[I]
   print(paste(istasyon_name, " : GUNLUK"))
-  a=1
-  tryCatch({
+
+  #tryCatch({
     istasyon <- read_excel(istasyon_file, .name_repair = "unique_quiet")
 
     processed_data <- data_preprocessing(istasyon, istasyon_name)
@@ -39,11 +41,11 @@ for (I in 1:nrow(istasyonlarS)) {
     detail_save_to_database(processed_data, "daily_detail", verbose = FALSE)
 
     cat(paste("Processed and saved:", istasyon_file, "\n"))
-  }, error = function(e) {
+  #}, error = function(e) {
     # Log the error with file name
-    error_log[[istasyon_name]] <- e
-    cat(paste("Error processing:", istasyon_name, "\n"))
-  })
+  #  error_log[[istasyon_name]] <- e
+  #  cat(paste("Error processing:", istasyon_name, "\n"))
+  #})
 }
 
 # Print error log

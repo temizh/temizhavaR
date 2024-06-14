@@ -1,8 +1,10 @@
 #' Init the settings for the temizhavaR package
 #'
+#' @param verbose Print output if TRUE. Default is FALSE
+#'
 #' @export
 
-init.temizhavaR <- function() {
+init.temizhavaR <- function(verbose = FALSE) {
   raw_dir <- options()$temizhavaR.raw_dir
 
   if (is.null(raw_dir))
@@ -11,11 +13,13 @@ init.temizhavaR <- function() {
   if (!dir.exists(raw_dir))
     error(paste("The directory", raw_dir, "does not exist. Please create it and put your raw data files in it."))
 
-  print(paste("raw_dir =", raw_dir))
 
   setwd(raw_dir)
 
   source("./init.temizhavaR_data.R")
-  print('source("./init.temizhavaR_data.R")')
 
+  if (verbose) {
+    print(paste("raw_dir =", raw_dir))
+    print('source("./init.temizhavaR_data.R")')
+  }
 }

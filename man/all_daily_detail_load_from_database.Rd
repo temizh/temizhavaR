@@ -4,10 +4,10 @@
 \alias{all_daily_detail_load_from_database}
 \title{Hourly detail load from database}
 \usage{
-all_daily_detail_load_from_database()
+all_daily_detail_load_from_database(parm)
 }
 \arguments{
-\item{station_name}{The name of the station to filter the data.}
+\item{parameter}{The name of the parameter to return. All parameters are returned if not provided.}
 }
 \description{
 Hourly detail load from database

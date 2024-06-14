@@ -4,7 +4,10 @@
 \alias{init.temizhavaR}
 \title{Init the settings for the temizhavaR package}
 \usage{
-init.temizhavaR()
+init.temizhavaR(verbose = FALSE)
+}
+\arguments{
+\item{verbose}{Print output if TRUE. Default is FALSE}
 }
 \description{
 Init the settings for the temizhavaR package

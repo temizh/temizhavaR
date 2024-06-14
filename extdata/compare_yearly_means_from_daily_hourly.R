@@ -5,7 +5,7 @@ options(temizhavaR.basedir = "/home/acizmeli/Documents/KaraRaporu/HamVeriler_")
 #YEAR <- options()$temizhavaR.YEAR
 
 compare_yearly_means_from_daily_hourly <- function(YEAR) {
-  #init.temizhavaR()
+  init.temizhavaR()
 
   #Get location data
   #stopifnot(grepl(YEAR, raw_dir))
