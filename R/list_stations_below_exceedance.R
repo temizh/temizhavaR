@@ -35,5 +35,6 @@ calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
   #high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
 
-  return(list(ExceedanceDays = exceedance_days))
+  exceedance_days %>%
+    arrange(desc(ExceedsThreshold))
 }

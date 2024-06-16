@@ -20,6 +20,7 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     dbDisconnect(mydb)
   }
   else {
+    parameter_name <- gsub('\\"', "", parameter_name)
     query_result <- all_daily_detail_load_from_database(parameter_name) %>%
       select(Istasyon, Tarih, rlang::sym(parameter_name)) %>%
       group_by(Istasyon) %>%
@@ -30,7 +31,3 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
 
   return(query_result)
 }
-
-
-
-

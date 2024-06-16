@@ -5,6 +5,8 @@ library(dygraphs)
 total_days <- 365
 parameter_name <- "O3"
 
+init.temizhavaR()
+
 if (0) {
   station_name <- "Adana-Seyhan"
   parameters <- c("O3")
@@ -15,35 +17,27 @@ if (0) {
   calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
 }
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-o3_1 <- daily_list_stations_with_parameter(parameter_name)
-o3_1 <- rbind(result_message, o3_1)
+output <- list(O3_1 = list(),
+               O3_2 = list(),
+               O3_3 = list(),
+               O3_4 = list())
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
-o3_2 <- daily_list_stations_with_parameter_count(parameter_name)
-o3_2 <- rbind(result_message, o3_2)
+output$O3_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+output$O3_1$data <- daily_list_stations_with_parameter(parameter_name)
 
-result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-o3_3 <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-result_sorted <- o3_3 %>% arrange(desc(data_percentage))
-o3_3 <- rbind(result_message, result_sorted)
+output$O3_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
+output$O3_2$data <- daily_list_stations_with_parameter_count(parameter_name)
 
-result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
-o3_4 <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-o3_4 <- rbind(result_message, o3_4)
+output$O3_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
+output$O3_3$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
-o3_5 <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-result_sorted <- o3_5 %>% arrange(desc(data_percentage))
-o3_5 <- rbind(result_message, result_sorted)
+output$O3_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
+output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
-o3_6 <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-o3_6 <- rbind(result_message, o3_6)
-
-output <- list(O3_1 = o3_1,
-               O3_2 = o3_2,
-               O3_3 = o3_3,
-               O3_4 = o3_4)
+# output$O3_5$result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
+# output$O3_5$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+#
+# output$O3_6$result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
+# output$O3_6$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 write_output_to_excel(output, result_o3_daily_excel_file)

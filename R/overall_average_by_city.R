@@ -62,7 +62,9 @@ calculate_overall_average_by_city <- function(parameter) {
 
   row.names(result) <- NULL
 
-  return(result)
+  result %>%
+    arrange(desc(Ortalama)) %>%
+    mutate(Ortalama = round(Ortalama, 2))
 }
 
 
