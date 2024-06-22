@@ -11,10 +11,15 @@ init.temizhavaR()
 
 if (0) {
   station_name <- "Karabük-Safranbolu"
+  station_name <- "İstanbul-Arnavutköy"
+
   daily_detail_data <- daily_detail_load_from_database(station_name)
   all_daily_detail_data <- all_daily_detail_load_from_database()
-  create_hourly_time_series_graph(daily_detail_data, station_name, c("PM10", "PM2.5"))
+  create_hourly_time_series_graph(daily_detail_data, station_name, c("PM10"))
   calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
+
+  hourly_detail_data <- hourly_detail_load_from_database(station_name)
+  create_hourly_time_series_graph(hourly_detail_data, station_name, c("PM10"))
 }
 
 output <- list(PM10_1 = list(),
