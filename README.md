@@ -26,9 +26,16 @@ extdata/eksik_dosyalar_analizi.R
 
 ### 2022
 `make_location_table_2022.R` dosyasinda bulunan `create_location_table_2022()` fonksiyonu
-2023 verilerini baz alip location_2022 tablosuna kaydedin.
+2023 verilerini baz alip location_2022 tablosuna kaydedilmiştir..
 
 ## Gunluk verileri iceren Excel dosyalarını SQLite veritabanına kaydedilmesi :
 
-`save_excel_to_database.R` dosyasinda bulunan `detail_save_to_database()` fonksiyonu ile 2022 
-günlük ve saatlik verileri SQLite veritabanına yazın.
+`extdata/convert 2022 to 2023.R` dosyasındaki script ile 2022 formatı (bir şehre ait bütün istasyonlar tek Excel dosyasında) 2023 formatına (her istasyon için ayrı Excel dosyası) çevrilmiştir.
+
+`save_excel_to_database.R` dosyasinda bulunan `detail_save_to_database()` fonksiyonu ile 2022 günlük ve saatlik verileri SQLite veritabanına yazılmıştır.
+
+## Analizler
+
+Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır : 
+- extdata/daily_detail
+- extdata/hourly_detail

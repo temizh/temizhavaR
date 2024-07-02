@@ -7,8 +7,6 @@ init.temizhavaR()
 total_days <- 365
 parameter_name <- "PM10"
 
-init.temizhavaR()
-
 if (0) {
   station_name <- "Karabük-Safranbolu"
   station_name <- "İstanbul-Arnavutköy"
