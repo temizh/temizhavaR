@@ -2,7 +2,10 @@ library(readxl)
 library(writexl)
 library(dplyr)
 
-setwd("/home/acizmeli/Documents/KaraRaporu/HamVeriler_2022/")
+init.temizhavaR()
+
+stopifnot(grepl("2022", raw_dir))
+setwd(raw_dir)
 
 cities <- list.dirs()
 cities <- gsub("\\.\\/", "", cities)
@@ -10,14 +13,21 @@ cities <- cities[-1]
 
 #mycolnames <- c("PM10", "PM25", "SO2", "NO2", "NOX", "NO", "O3")
 
+#cities <- cities[grep("Yalova", cities)]
+cities <- cities[grep("Kocaeli", cities)]
+
 read_and_convert_2022_city_file <- function(my_city, infile) {
 
   fileheader <- read_xlsx(file.path(my_city, infile), n_max = 1, .name_repair = "unique_quiet")
   fileheader <- as.data.frame(fileheader)
   fileheader[1,] <- colnames(fileheader)
+  colnames(fileheader) <- NULL
 
-  station_idx <- grep(my_city, colnames(fileheader))
-  all_stations <- colnames(fileheader)[station_idx]
+  #station names are stored in columns that do NOT contain ...
+  station_idx <- grep("^[^\\.\\.\\.]*$", fileheader)
+  station_idx <- station_idx[-(station_idx==1)]
+
+  all_stations <- fileheader[station_idx]
   all_stations <- gsub("/", " ", all_stations)
 
   fullDF <- read_xlsx(file.path(my_city, infile), .name_repair = "unique_quiet")
@@ -63,7 +73,6 @@ read_and_convert_2022_city_file <- function(my_city, infile) {
 }
 
 for (my_city in cities) {
-  #my_city <- cities[38]
   pattern_gunluk <- "günlük_detaylı"
   pattern_saatlik <- "saatlik_detaylı"
 

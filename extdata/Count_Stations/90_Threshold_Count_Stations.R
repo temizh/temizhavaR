@@ -1,7 +1,6 @@
-library(tidyverse)
+#library(tidyverse)
 library(readxl)
 library(temizhavaR)
-library(DBI)
 library(uuid)
 
 data_dir <- "C:/Hourly_detail/"

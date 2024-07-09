@@ -3,8 +3,6 @@
 #' @param data station based air parameters data.
 #' @export
 
-
-
 daily_station_average <- function(parameter_name, threshold = 90) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
@@ -19,5 +17,7 @@ daily_station_average <- function(parameter_name, threshold = 90) {
 
   dbDisconnect(mydb)
 
-  return(query_result)
+  query_result %>%
+    arrange(desc(average)) %>%
+    mutate(average = round(average, 2))
 }

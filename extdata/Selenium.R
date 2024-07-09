@@ -1,8 +1,6 @@
 library(RSelenium)
 library(netstat)
 library(wdman)
-library(DBI)
-library(RSQLite)
 library(uuid)
 
 #Yeni bir chromedriver versiyonu oluştuğunda C:\Users\Hp\AppData\Local\binman\binman_chromedriver\win32 buradan lisans belgesini sil

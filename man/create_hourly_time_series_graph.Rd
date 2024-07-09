@@ -7,9 +7,11 @@
 create_hourly_time_series_graph(data, station_name, parameters)
 }
 \arguments{
-\item{station_name}{specified station name.}
+\item{data}{Dataframe containing data to be graphed}
 
-\item{query_result}{Dataframe containing data from database query.}
+\item{station_name}{specified station name}
+
+\item{parameters}{parameters to be graphed}
 }
 \description{
 Create Dygraphs

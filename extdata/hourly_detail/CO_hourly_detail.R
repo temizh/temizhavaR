@@ -1,24 +1,44 @@
 library(dplyr)
 library(temizhavaR)
-library(DBI)
 library(dygraphs)
 
-station_name <- "Erzincan"
-parameters <- c("CO")
-total_days <- 8761
-parameter = "CO"
+total_hours <- 8761
 parameter_name <- "CO"
-hourly_detail_data <- hourly_detail_load_from_database(station_name)
 
-create_hourly_time_series_graph(hourly_detail_data, station_name, parameters)
+init.temizhavaR()
 
-calculate_parameter_mean(hourly_detail_data , parameter, threshold = 0.9, total_days, verbose = TRUE)
+if (0) {
+  station_name <- "Erzincan"
+  parameters <- c("CO")
+  hourly_detail_data <- hourly_detail_load_from_database(station_name)
 
-print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-hourly_list_stations_with_parameter(parameter_name)
+  create_hourly_time_series_graph(hourly_detail_data, station_name, parameters)
+  calculate_parameter_mean(hourly_detail_data , parameter_name, threshold = 0.9, total_hours, verbose = TRUE)
+}
 
-print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
-hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output <- list(CO_1 = list(),
+               CO_2 = list(),
+               CO_3 = list())
+
+
+output$CO_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+output$CO_1$data <- hourly_list_stations_with_parameter(parameter_name)
+
+output$CO_2$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
+output$CO_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+
+output$CO_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
+output$CO_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+
+
+#data.frame tipinde olmayan data nesnesini data.frame nesnesine çevirir
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    output[[i]]$data <- as.data.frame(output[[i]]$data)
+  }
+}
+
+
+write_output_to_excel(output, result_co_hourly_excel_file)
+

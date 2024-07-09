@@ -1,47 +1,46 @@
 library(dplyr)
 library(temizhavaR)
-library(DBI)
 library(dygraphs)
 
-station_name <- "Erzincan"
-parameters <- c("NOX")
-total_days <- 8761
-parameter = "NOX"
+total_hours <- 8761
 parameter_name <- "NOX"
-hourly_detail_data <- hourly_detail_load_from_database(station_name)
 
-create_hourly_time_series_graph(hourly_detail_data, station_name, parameters)
+init.temizhavaR()
 
-calculate_parameter_mean(hourly_detail_data , parameter, threshold = 0.9, total_days, verbose = TRUE)
+if (0) {
+  station_name <- "Erzincan"
+  parameters <- c("NOX")
+  hourly_detail_data <- hourly_detail_load_from_database(station_name)
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-print(result_message)
-nox_1 <- hourly_list_stations_with_parameter(parameter_name)
-nox_1 <- rbind(result_message, nox_1)
-
-result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-print(result_message)
-nox_2 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-result_sorted <- nox_2 %>% arrange(desc(data_percentage))
-nox_2 <- rbind(result_message, result_sorted)
+  create_hourly_time_series_graph(hourly_detail_data, station_name, parameters)
+  calculate_parameter_mean(hourly_detail_data , parameter_name, threshold = 0.9, total_hours, verbose = TRUE)
+}
 
 
-result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
-print(result_message)
-nox_3 <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-nox_3 <- rbind(result_message, nox_3)
+output <- list(NOx_1 = list(),
+               NOx_2 = list(),
+               NOx_3 = list()
+               )
+
+output$NOx_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+output$NOx_1$data <- hourly_list_stations_with_parameter(parameter_name)
+
+
+output$NOx_2$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
+output$NOx_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 
 
-output <- list(NOx_1 = nox_1,
-               NOx_2 = nox_2,
-               NOx_3 = nox_3)
+output$NOx_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
+output$NOx_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-write_xlsx(
 
-  output,
-  path = result_nox_hourly_excel_file,
-  col_names = FALSE,
-  format_headers = TRUE,
-  use_zip64 = FALSE
-)
+#data.frame tipinde olmayan data nesnesini data.frame nesnesine çevirir
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    output[[i]]$data <- as.data.frame(output[[i]]$data)
+  }
+}
+
+
+write_output_to_excel(output, result_nox_hourly_excel_file)

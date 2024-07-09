@@ -1,7 +1,8 @@
 #' Create Dygraphs
 #'
-#' @param query_result Dataframe containing data from database query.
-#' @param station_name specified station name.
+#' @param data Dataframe containing data to be graphed
+#' @param station_name specified station name
+#' @param parameters parameters to be graphed
 #' @export
 
 create_hourly_time_series_graph <- function(data, station_name, parameters) {

@@ -9,9 +9,6 @@
 list_stations_above_data_threshold <- function(parameter_name, threshold = 40) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-
-
-
   query <- paste0("SELECT Istasyon, AVG(", parameter_name, ") AS yearly_average
                   FROM daily_detail
                   WHERE Istasyon IN
@@ -25,10 +22,11 @@ list_stations_above_data_threshold <- function(parameter_name, threshold = 40) {
                   GROUP BY Istasyon
                   HAVING AVG(", parameter_name, ") > ", threshold)
 
-
   query_result <- dbGetQuery(mydb, query)
 
   dbDisconnect(mydb)
 
-  return(query_result)
+  query_result %>%
+    arrange(desc(yearly_average)) %>%
+    mutate(yearly_average = round(yearly_average, 2))
 }

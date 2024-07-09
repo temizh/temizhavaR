@@ -1,4 +1,4 @@
-mydir <- "/home/acizmeli/Documents/KaraRaporu/HamVeriler_2023"
+mydir <- "C:/Users/tcmur/Desktop/HamVeriler_2023"
 
 setwd(mydir)
 
@@ -49,3 +49,4 @@ write_xlsx(
   col_names = TRUE,
   format_headers = TRUE
 )
+

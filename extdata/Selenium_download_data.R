@@ -2,8 +2,6 @@ library(RSelenium)
 library(netstat)
 library(wdman)
 library(uuid)
-library(DBI)
-library(RSQLite)
 library(temizhavaR)
 
 #dir.create(result_dir, recursive = TRUE)
