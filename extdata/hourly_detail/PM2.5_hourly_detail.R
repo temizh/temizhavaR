@@ -3,8 +3,12 @@ library(temizhavaR)
 library(uuid)
 library(dygraphs)
 
-total_days <- 8761
+total_hours <- 8761
 parameter_name <- "\"PM2.5\""
+
+
+init.temizhavaR()
+
 
 if (0) {
   station_name <- "Adana-Seyhan"
@@ -13,40 +17,49 @@ if (0) {
   all_hourly_detail_data <- all_hourly_detail_load_from_database()
 
   create_hourly_time_series_graph(hourly_detail_data, station_name, parameters)
-  calculate_parameter_mean(hourly_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
+  calculate_parameter_mean(hourly_detail_data , parameter_name, threshold = 0.9, total_hours, verbose = TRUE)
 }
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-pm25_1 <- hourly_list_stations_with_parameter(parameter_name)
-pm25_1 <- rbind(result_message, pm25_1)
+output <- list(PM25_1 = list(),
+               PM25_2 = list(),
+               PM25_3 = list(),
+               PM25_4 = list(),
+               PM25_5 = list(),
+               PM25_6 = list()
+               )
 
-result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
-pm25_2 <- hourly_list_stations_with_parameter_count(parameter_name)
-pm25_2 <- rbind(result_message, pm25_2)
 
-result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-pm25_3 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-result_sorted <- pm25_3 %>% arrange(desc(data_percentage))
-pm25_3 <- rbind(result_message, result_sorted)
+output$PM25_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+output$PM25_1$data <- hourly_list_stations_with_parameter(parameter_name)
 
-result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
-pm25_4 <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
-pm25_4 <- rbind(result_message, pm25_4)
 
-result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
-pm25_5 <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
-result_sorted <- pm25_5 %>% arrange(desc(data_percentage))
-pm25_5 <- rbind(result_message, result_sorted)
+output$PM25_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
+output$PM25_2$data <- hourly_list_stations_with_parameter_count(parameter_name)
 
-result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
-pm25_6 <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
-pm25_6 <- rbind(result_message, pm25_6)
 
-output <- list(PM25_1 = pm25_1,
-               PM25_2 = pm25_2,
-               PM25_3 = pm25_3,
-               PM25_4 = pm25_4,
-               PM25_5 = pm25_5,
-               PM25_6 = pm25_6)
+output$PM25_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
+output$PM25_3$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+
+
+output$PM25_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
+output$PM25_4$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+
+
+output$PM25_5$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
+output$PM25_5$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
+result_sorted <- output$PM25_5$data %>% arrange(desc(data_percentage))
+
+
+output$PM25_6$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
+output$PM25_6$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
+
+
+#data.frame tipinde olmayan data nesnesini data.frame nesnesine çevirir
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    output[[i]]$data <- as.data.frame(output[[i]]$data)
+  }
+}
+
 
 write_output_to_excel(output, result_pm25_hourly_excel_file)

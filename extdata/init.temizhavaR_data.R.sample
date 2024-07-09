@@ -1,6 +1,6 @@
 raw_dir <- options()$temizhavaR.raw_dir
 
-options(temizhavaR.YEAR = "2022")
+options(temizhavaR.YEAR = "2023")
 
 setwd(raw_dir)
 
