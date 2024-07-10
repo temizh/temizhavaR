@@ -49,3 +49,4 @@ Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır :
 -calculate_overall_average_by_city_thresold() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi.
 
 -calculate_overall_average_by_city() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi
+
