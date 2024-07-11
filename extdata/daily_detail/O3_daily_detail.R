@@ -23,7 +23,8 @@ output <- list(O3_1 = list(),
                O3_2 = list(),
                O3_3 = list(),
                O3_4 = list(),
-               O3_5 = list()
+               O3_5 = list(),
+               O3_6 = list()
                )
 
 output$O3_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
@@ -41,7 +42,7 @@ output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name
 output$O3_5$result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
 output$O3_5$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
 
-#output$O3_6$result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
-#output$O3_6$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$O3_6$result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
+output$O3_6$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
 
 write_output_to_excel(output, result_o3_daily_excel_file)
