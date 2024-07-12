@@ -7,12 +7,16 @@
 
 daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
 
-
   if (0) {
     mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
     if (!is.null(season) && season == "summer") {
       query <- paste0("SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL AND strftime('%m', Tarih) IN ('04', '05', '06', '07', '08', '09') THEN 1 ELSE 0 END) * 100 / 183) AS veri_mevcudiyet_yuzdesi
+                      FROM daily_detail
+                      GROUP BY Istasyon
+                      HAVING veri_mevcudiyet_yuzdesi >= ", threshold)
+    } else if (!is.null(season) && season == "winter") {
+      query <- paste0("SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL AND strftime('%m', Tarih) IN ('01', '02', '03', '10', '11', '12') THEN 1 ELSE 0 END) * 100 / 182) AS veri_mevcudiyet_yuzdesi
                       FROM daily_detail
                       GROUP BY Istasyon
                       HAVING veri_mevcudiyet_yuzdesi >= ", threshold)
@@ -34,8 +38,11 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     if (!is.null(season) && season == "summer") {
       query_result <- query_result %>%
         filter(month(Tarih) %in% 4:9)
-
       day_count <- 183
+    } else if (!is.null(season) && season == "winter") {
+      query_result <- query_result %>%
+        filter(month(Tarih) %in% c(1, 2, 3, 10, 11, 12))
+      day_count <- 182
     } else {
       day_count <- 365
     }
@@ -49,3 +56,4 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
 
   return(query_result)
 }
+
