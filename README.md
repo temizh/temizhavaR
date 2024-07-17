@@ -42,11 +42,11 @@ Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır :
 
 ## Güncelleme
 
+- write_to_excel() fonksiyonunu çağırdıktan sonra 'Error in output[[I]]$data[, 1] <- "" : matriste hatalı sayıda altindis hatası' hata mesajı geri dönüyordu.Düzeltildi.
+
 - exdata/daily_detail dizini altında olan NO2_daily_detail.R,PM2.5_daily_detail.R ve Pm10_daily_detail.R Script dosyaları istenilen verileri geri döndürmüyordu.Düzeltildi.
 
 - exdata/hourly_detail dizini altındaki bütün R script dosyaları düzgün çalışmıyordu ve istenilen verileri excel tablosuna aktarmıyordu.Düzeltildi.
 
--calculate_overall_average_by_city_thresold() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi.
 
--calculate_overall_average_by_city() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi
 
