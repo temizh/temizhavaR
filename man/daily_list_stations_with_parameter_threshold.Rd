@@ -7,13 +7,15 @@
 daily_list_stations_with_parameter_threshold(
   parameter_name,
   threshold = 90,
-  season
+  season = NULL
 )
 }
 \arguments{
 \item{parameter_name}{The name of the parameter.}
 
 \item{threshold}{The threshold percentage for data availability (default is 90).}
+
+\item{season}{The specific season to consider (e.g., "summer" for nisan, mayıs, haziran, temmuz, ağustos, eylül).}
 }
 \description{
 List Stations for specified parameter from daily_detail
