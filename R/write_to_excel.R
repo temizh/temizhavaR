@@ -4,21 +4,23 @@
 #' @param output_filename Name of the Excel file to write data in
 #' @export
 
+
+
 write_output_to_excel <- function(output, output_filename) {
   wb <- createWorkbook()
-  for (I in 1:length(output)) {
-    if (length(output[[1]]) > 0 ) {
+  for (I in seq_along(output)) {
+    # Çıkış listesinde veri olup olmadığını kontrol eder
+    if (is.data.frame(output[[I]]$data) && nrow(output[[I]]$data) > 0) {
       addWorksheet(wb, names(output)[I])
 
-      output[[I]]$data <- cbind(output[[I]]$data[,1], output[[I]]$data)
-      output[[I]]$data[,1] <- ""
-      output[[I]]$data[1,1] <- output[[I]]$result_message
-      colnames(output[[I]]$data)[1] <- "Task"
+      # Boş bir sütun eklenir ve veriler buraya kaydırılır
+      output[[I]]$data <- cbind(Task = "", output[[I]]$data)
+      output[[I]]$data[1, "Task"] <- output[[I]]$result_message
 
       hs1 <- createStyle(textDecoration = "Bold", border = "Bottom")
-      writeData(wb, I, output[[I]]$data, headerStyle = hs1)
-      setColWidths(wb, I, cols = 1, widths = 50)
-      setColWidths(wb, I, cols = 2:4, widths = 30)
+      writeData(wb, names(output)[I], output[[I]]$data, headerStyle = hs1)
+      setColWidths(wb, names(output)[I], cols = 1, widths = 50)
+      setColWidths(wb, names(output)[I], cols = 2:ncol(output[[I]]$data), widths = 30)
     }
   }
 
