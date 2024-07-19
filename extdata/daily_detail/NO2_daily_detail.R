@@ -57,4 +57,6 @@ output$NO2_9$result_message <- print(paste0(parameter_name, "_9 : İl NO2 yıll�
 output$NO2_9$data <- calculate_overall_average_by_city_threshold(parameter_name)
 
 
+
+
 write_output_to_excel(output, result_no2_daily_excel_file)
