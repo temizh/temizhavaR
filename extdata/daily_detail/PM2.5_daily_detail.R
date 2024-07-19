@@ -73,4 +73,17 @@ output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 y�
 output$PM25_14$data <- calculate_overall_average_by_city(parameter_name)
 
 
+# Tüm data elemanlarının yapısını kontrol eder ve gerekirse data.frame'e dönüştürür
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    if(length(output[[i]]$data) == 0) {
+      # Eğer data boşsa, dummy veri ekleyin
+      output[[i]]$data <- data.frame(Task = "No Data Available")
+    } else {
+      output[[i]]$data <- as.data.frame(output[[i]]$data)
+    }
+  }
+}
+
+
 write_output_to_excel(output, result_pm25_daily_excel_file)

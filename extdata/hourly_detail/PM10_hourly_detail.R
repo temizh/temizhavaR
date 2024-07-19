@@ -54,5 +54,13 @@ output$PM10_5$result_message <- print(paste(parameter_name,": Her bir istasyonun
 output$PM10_5$data <- hourly_station_average(parameter_name, threshold = 90)
 
 
+#data.frame tipinde olmayan data nesnesini data.frame nesnesine çevirir
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    output[[i]]$data <- as.data.frame(output[[i]]$data)
+  }
+}
+
+
 write_output_to_excel(output, result_pm10_hourly_excel_file)
 

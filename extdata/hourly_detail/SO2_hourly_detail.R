@@ -54,5 +54,13 @@ output$SO2_9$data <- hourly_above_exceedance_days_double_threshold(parameter_nam
 result_sorted <- output$SO2_9$data$ExceedanceDays.ExceedsThreshold %>% arrange(desc(ExceedsThreshold))
 
 
+#data.frame tipinde olmayan data nesnesini data.frame nesnesine çevirir
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    output[[i]]$data <- as.data.frame(output[[i]]$data)
+  }
+}
+
+
 write_output_to_excel(output, result_so2_hourly_excel_file)
 

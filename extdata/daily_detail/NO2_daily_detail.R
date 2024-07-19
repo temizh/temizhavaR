@@ -57,4 +57,17 @@ output$NO2_9$result_message <- print(paste0(parameter_name, "_9 : İl NO2 yıll�
 output$NO2_9$data <- calculate_overall_average_by_city_threshold(parameter_name)
 
 
+# Tüm data elemanlarının yapısını kontrol edin ve gerekirse data.frame'e dönüştürür
+for(i in seq_along(output)) {
+  if(!is.data.frame(output[[i]]$data) && !is.matrix(output[[i]]$data)) {
+    if(length(output[[i]]$data) == 0) {
+      # Eğer data boşsa, dummy veri ekleyin
+      output[[i]]$data <- data.frame(Task = "No Data Available")
+    } else {
+      output[[i]]$data <- as.data.frame(output[[i]]$data)
+    }
+  }
+}
+
+
 write_output_to_excel(output, result_no2_daily_excel_file)
