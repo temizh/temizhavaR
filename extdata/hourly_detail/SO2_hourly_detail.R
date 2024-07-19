@@ -54,7 +54,5 @@ output$SO2_9$data <- hourly_above_exceedance_days_double_threshold(parameter_nam
 result_sorted <- output$SO2_9$data$ExceedanceDays.ExceedsThreshold %>% arrange(desc(ExceedsThreshold))
 
 
-
-
 write_output_to_excel(output, result_so2_hourly_excel_file)
 

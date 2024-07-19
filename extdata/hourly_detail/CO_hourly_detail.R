@@ -31,8 +31,5 @@ output$CO_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name
 output$CO_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 output$CO_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-
-
-
 write_output_to_excel(output, result_co_hourly_excel_file)
 

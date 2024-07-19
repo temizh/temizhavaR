@@ -54,7 +54,5 @@ output$PM10_5$result_message <- print(paste(parameter_name,": Her bir istasyonun
 output$PM10_5$data <- hourly_station_average(parameter_name, threshold = 90)
 
 
-
-
 write_output_to_excel(output, result_pm10_hourly_excel_file)
 

@@ -35,6 +35,4 @@ output$NOx_3$result_message <- print(paste(parameter_name," : %90 Veri alınan i
 output$NOx_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 
-
-
 write_output_to_excel(output, result_nox_hourly_excel_file)
