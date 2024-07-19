@@ -40,7 +40,7 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
       summarise(available_hours = sum(!is.na(O3)),
                 data_availability = (available_hours / total_hours) * 100)
 
-    # Veri kullanılabilirliği %90 eşiğini aşan istasyonları filtreleyin
+    # Veri kullanılabilirliği %90 eşiğini aşan istasyonları filtreler
     high_availability_stations <- data_availability %>%
       filter(data_availability >= threshold) %>%
       nrow()

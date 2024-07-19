@@ -4,14 +4,14 @@
 \alias{calculate_aot40_hourly_threshold}
 \title{Calculate AOT40 for a given period}
 \usage{
-calculate_aot40_hourly_threshold(start_date, end_date, threshold = 90)
+calculate_aot40_hourly_threshold(start_dates, end_dates, threshold = 90)
 }
 \arguments{
-\item{threshold}{The threshold percentage for data availability (default is 90).}
-
 \item{start_dates}{The start dates of the period in "YYYY-MM-DD" format.}
 
 \item{end_dates}{The end dates of the period in "YYYY-MM-DD" format.}
+
+\item{threshold}{The threshold percentage for data availability (default is 90).}
 }
 \value{
 A data frame with columns: Istasyon, aot40, data_availability.
