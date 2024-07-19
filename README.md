@@ -46,6 +46,4 @@ Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır :
 
 - exdata/hourly_detail dizini altındaki bütün R script dosyaları düzgün çalışmıyordu ve istenilen verileri excel tablosuna aktarmıyordu.Düzeltildi.
 
--calculate_overall_average_by_city_thresold() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi.
 
--calculate_overall_average_by_city() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi
