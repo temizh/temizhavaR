@@ -1,5 +1,3 @@
-mydir <- "C:/Users/tcmur/Desktop/HamVeriler_2023"
-
 setwd(mydir)
 
 mydb <- dbConnect(RSQLite::SQLite(), file.path(mydir,"temiz-hava.sqlite"))

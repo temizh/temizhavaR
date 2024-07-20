@@ -25,7 +25,8 @@ output <- list(O3_1 = list(),
                O3_3 = list(),
                O3_4 = list(),
                O3_9 = list(),
-               O3_10 = list()
+               O3_10 = list(),
+               O3_11 = list()
                )
 
 
@@ -49,8 +50,12 @@ output$O3_9$result_message <- print(paste(parameter_name," : AOT 40 icin 1 saatl
 output$O3_9$data <- calculate_aot40_hourly_threshold(start_dates = c("2023-05-01", "2023-04-01"), end_dates = c("2023-07-31", "2023-09-30"),threshold = 90)
 
 
-output$O3_10$result_message <-  print(paste(parameter_name," : AOT 40 icin 1 saatlik degerlerin %90 ve üstü veri alınan istasyon sayısı"))
+output$O3_10$result_message <- print(paste(parameter_name," : AOT 40 icin 1 saatlik degerlerin %90 ve üstü veri alınan istasyon sayısı"))
 output$O3_10$data <- count_stations_aot40_threshold(start_dates = c("2023-05-01", "2023-04-01"), end_dates = c("2023-07-31", "2023-09-30"),threshold = 90)
+
+
+output$O3_11$result_message <-  print(paste(parameter_name," : 8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"))
+output$O3_11$data <- calculate_aot40_exceeding_stations(parameter_name)
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
