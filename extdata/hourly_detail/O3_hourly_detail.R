@@ -60,6 +60,7 @@ output$O3_11$data <- calculate_aot40_exceeding_stations(parameter_name)
 
 
 output$O3_12$result_message <- print(paste(parameter_name, "Mayıs ayından temmuz ayına kadar AOT 40 değerlerinin toplamı "))
-output$O3_12$data <- calculate_AOT40_vegetation_and_forest_protection(parameter_name,start_month = "05",end_month = "07")
+output$O3_12$data <- calculate_aot40_vegetation_and_forest_protection(parameter_name,start_month = "05",end_month = "07")
+
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
