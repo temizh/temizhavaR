@@ -1,4 +1,4 @@
-mydir <- "C:/Users/tcmur/Desktop/HamVeriler_2023"
+mydir <- options()$temizhavaR.raw_dir
 
 setwd(mydir)
 

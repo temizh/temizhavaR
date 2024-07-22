@@ -46,8 +46,4 @@ Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır :
 
 - exdata/hourly_detail dizini altındaki bütün R script dosyaları düzgün çalışmıyordu ve istenilen verileri excel tablosuna aktarmıyordu.Düzeltildi.
 
--calculate_overall_average_by_city_thresold() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi.
 
--calculate_overall_average_by_city() fonksiyonu istenilen verileri çıktı olarak geri döndermiyordu.Düzeltildi
-
-`save_excel_to_database.R` dosyasinda bulunan `detail_save_to_database()` fonksiyonu ile 2022 günlük ve saatlik verileri SQLite veritabanına yazın.
