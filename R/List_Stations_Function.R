@@ -17,6 +17,7 @@ list_stations <- function(processed_data, param_name) {
         if (any(!is.na(data[[param_name]]))) {
           cat(paste0(param_name, "  istasyonlar:\n"))
           cat(station_name, "\n")
+          return(station_name)
         } else {
           cat("Belirtilen parametre icin herhangi bir değer iceren istasyon bulunamadi.\n")
         }
@@ -29,7 +30,8 @@ list_stations <- function(processed_data, param_name) {
   } else {
     cat("İstasyon adlari bulunamadi.\n")
   }
-  station_name
+  #station_name
+  #return(NULL)
 }
 
 

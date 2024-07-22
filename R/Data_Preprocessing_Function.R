@@ -3,9 +3,10 @@
 #' @param data station based air parameters data.
 #' @export
 
-data_preprocessing <- function(data) {
+data_preprocessing <- function(data, station_name) {
   # take station name
-  station_name <- colnames(data)[2]
+  #station_name <- colnames(data)[2]
+  #station_name <- iconv(station_name, to = "UTF-8")
 
   colnames(data) <- data[1, ]
   param_names_with_units <- colnames(data)
@@ -18,12 +19,14 @@ data_preprocessing <- function(data) {
   colnames(data) <- param_names
 
   colnames(data)[1] <- "Tarih"
-  data$Tarih <- as.POSIXct(data$Tarih)
-
-  data <- data %>%
-    mutate(across(-1, ~as.numeric(gsub(",", ".", .))))
-
   data <- data[-1, ]
+  data$Tarih <- gsub("\\.", "\\/", data$Tarih)
+  #data$Tarih <- as.POSIXct(data$Tarih)
+  data$Tarih <- force_tz(dmy_hms(data$Tarih, tz = "UTC"), tzone = "Turkey")
+
+  suppressWarnings(data <- data %>%
+    mutate(across(-1, ~as.numeric(gsub(",", ".", .))))
+    )
 
   #return(data)
 

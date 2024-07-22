@@ -270,3 +270,25 @@
   #option_element$clickElement()
 
 
+
+
+create_location_table <- function() {
+
+  #location_selenium tablosu seleniumdan oluşturulacak
+
+}
+
+#download_stations <- function(data_dir, Bolge, Sehir, Sehir_Istasyon, begin_time, end_time )
+
+
+
+# query : get data from location table
+# for( all stations ) {
+
+      download_stations(data_dir,Bolge, Sehir, Sehir_Istasyon, 01.01.2023 00:00, 01.01.2024 00:00 )
+      Sys.sleep(60)
+      # sayfayı bastan yükle sys.sleep
+ }
+
+
+
