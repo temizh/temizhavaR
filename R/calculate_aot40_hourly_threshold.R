@@ -6,13 +6,13 @@
 #' @param start_dates The start dates of the period in "YYYY-MM-DD" format.
 #' @param end_dates The end dates of the period in "YYYY-MM-DD" format.
 #' @param threshold The threshold percentage for data availability (default is 90).
-#' @return A data frame with columns: Istasyon, aot40, data_availability.
+#' @return A data frame with columns: Istasyon, aot40_measured, measured_hours, aot40_estimated, period.
 #' @export
-# Function to calculate AOT40 for a given period and filter stations with data availability >= threshold
-
+#'
+#' @examples
+#' calculate_aot40_hourly_threshold(c("2021-04-01", "2021-07-01"), c("2021-06-30", "2021-09-30"),threshold = 90)
 
 calculate_aot40_hourly_threshold <- function(start_dates, end_dates, threshold = 90) {
-
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   # Her döneme ait sonuçları depolamak için boş bir liste başlatır
@@ -39,7 +39,7 @@ calculate_aot40_hourly_threshold <- function(start_dates, end_dates, threshold =
       filter(hour >= 8 & hour <= 20) %>%
       mutate(excess = ifelse(O3 > 80, O3 - 80, 0))
 
-    #İstasyon başına veri kullanılabilirliğini hesaplar
+    # İstasyon başına veri kullanılabilirliğini hesaplar
     total_hours <- length(seq(start_date, end_date, by = "day")) * 13
     data_availability <- data %>%
       group_by(Istasyon) %>%
@@ -51,7 +51,7 @@ calculate_aot40_hourly_threshold <- function(start_dates, end_dates, threshold =
       filter(data_availability >= threshold) %>%
       pull(Istasyon)
 
-    # Filtrelenen istasyonlar için AOT40'ı hesaplar.
+    # Filtrelenen istasyonlar için AOT40'ı hesaplar
     aot40_data <- data %>%
       filter(Istasyon %in% filtered_stations) %>%
       group_by(Istasyon) %>%
@@ -65,11 +65,10 @@ calculate_aot40_hourly_threshold <- function(start_dates, end_dates, threshold =
     all_results[[i]] <- aot40_data
   }
 
-  # Tüm dönem sonuçlarını tek bir data.frame'de birleştirir.
-  final_result <- bind_rows(all_results)
-
+  # Tüm dönem sonuçlarını tek bir data.frame'de birleştirir
+  final_result <- do.call(rbind, all_results)
 
   dbDisconnect(mydb)
 
-  return(final_result)
+  return(as.data.frame(final_result))
 }
