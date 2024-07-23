@@ -14,7 +14,14 @@ daily_count_stations_with_parameter_threshold <- function(parameter_name, thresh
 
     season_filter <- "AND strftime('%m', Tarih) IN ('04', '05', '06', '07', '08', '09')"
     days_in_season <- 183
-  } else {
+
+  } else if (!is.null(season) && season == "winter") {
+
+    season_filter <- "AND strftime('%m', Tarih) IN ('01', '02', '03', '10', '11', '12')"
+    days_in_season <- 182
+  }
+
+    else {
 
     season_filter <- ""
     days_in_season <- 365
