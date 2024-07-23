@@ -21,7 +21,13 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
       # Yaz ayları için filtreleme yapar
       season_filter <- "AND strftime('%m', Tarih) IN ('04', '05', '06', '07', '08', '09')"
       days_in_season <- 183  # Yaz sezonundaki gün sayısı (Nisan - Eylül)
-    } else {
+    } else if (!is.null(season)&& season == "winter"){
+      # Kış ayları için filtreleme yapar
+      season_filter <- "AND strftime('%m', Tarih) IN ('01', '02', '03', '10', '11', '12')"
+      days_in_season <- 182  # Kış sezonundaki gün sayısı (Ocak, Şubat, Mart, Ekim, Kasım, Aralık)
+    }
+
+    else {
       # Diğer sezonlar için uygun filtreleme yapılabilir
       stop("Geçersiz sezon parametresi.")
     }
