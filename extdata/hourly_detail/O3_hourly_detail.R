@@ -26,7 +26,8 @@ output <- list(O3_1 = list(),
                O3_4 = list(),
                O3_9 = list(),
                O3_10 = list(),
-               O3_11 = list()
+               O3_11 = list(),
+               O3_12 = list()
                )
 
 
@@ -56,6 +57,15 @@ output$O3_10$data <- count_stations_aot40_threshold(start_dates = c("2023-05-01"
 
 output$O3_11$result_message <-  print(paste(parameter_name," : 8 saatlik ortalamaların günlük maksimum degerlerinden 120 µg/m3'ü asanların sayısı"))
 output$O3_11$data <- calculate_aot40_exceeding_stations(parameter_name)
+
+
+output$O3_12$result_message <- print(paste(parameter_name, "Mayıs ayından Temmuz ayına kadar AOT 40 degerlerinin toplamı "))
+output$O3_12$data <- calculate_aot40_vegetation_and_forest_protection(
+                       parameter_name = "O3",
+                       start_month = "05",
+                       end_month = "07",
+                       thresholds = c(6000, 18000),
+                       period = "May-Jul")
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
