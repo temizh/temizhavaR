@@ -2,19 +2,29 @@
 % Please edit documentation in R/daily_list_stations_with_parameter_threshold.R
 \name{daily_list_stations_with_parameter_threshold}
 \alias{daily_list_stations_with_parameter_threshold}
-\title{List Stations for specified parameter from daily_detail}
+\title{List Stations for Specified Parameter from daily_detail}
 \usage{
 daily_list_stations_with_parameter_threshold(
   parameter_name,
   threshold = 90,
-  season
+  season = NULL
 )
 }
 \arguments{
 \item{parameter_name}{The name of the parameter.}
 
 \item{threshold}{The threshold percentage for data availability (default is 90).}
+
+\item{season}{The specific season to consider (e.g., "summer" for April to September). If NULL, considers the entire year.}
+}
+\value{
+A data frame with stations that meet the threshold criteria, sorted by data availability percentage in descending order.
 }
 \description{
-List Stations for specified parameter from daily_detail
+This function lists the stations that have data availability above a specified threshold for a given parameter.
+You can filter the results for a specific season or for the entire year.
+}
+\examples{
+daily_list_stations_with_parameter_threshold("PM10", 90, "summer")
+daily_list_stations_with_parameter_threshold("SO2", 85)
 }
