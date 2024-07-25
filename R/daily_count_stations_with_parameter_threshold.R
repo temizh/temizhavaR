@@ -2,16 +2,33 @@
 #'
 #' @param parameter_name The name of the parameter.
 #' @param threshold The threshold percentage for data availability (default is 90).
+#' @param season The season for which data availability should be calculated (Default is NULL). Use "summer" or "winter".
 #' @export
-daily_count_stations_with_parameter_threshold <- function(parameter_name, threshold = 90) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+daily_count_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
 
-  query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage >= ", threshold)
+  daily_data <- all_daily_detail_load_from_database(parameter_name)
 
-  query_result <- dbGetQuery(mydb, query)
+  daily_data <- daily_data %>%
+    mutate(Tarih = ymd_hms(Tarih),
+           year = year(Tarih),
+           month = month(Tarih),
+           day = day(Tarih))
 
-  dbDisconnect(mydb)
+  if (!is.null(season) && season == "summer") {
+    daily_data <- daily_data %>%
+      filter(month %in% c(4, 5, 6, 7, 8, 9))
+  }
 
-  return(data.frame(nrow(query_result)))
+
+  station_counts <- daily_data %>%
+    group_by(Istasyon) %>%
+    summarize(total_days = n_distinct(Tarih),
+              available_days = sum(!is.na(.data[[parameter_name]]))) %>%
+    ungroup() %>%
+    mutate(data_percentage = (available_days / total_days) * 100) %>%
+    filter(data_percentage >= threshold)
+
+  return(data.frame(nrow(station_counts)))
 }
+
