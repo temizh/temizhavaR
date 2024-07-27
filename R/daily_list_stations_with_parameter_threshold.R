@@ -12,14 +12,18 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
   data <- all_daily_detail_load_from_database(parameter_name)
   data$Tarih <- as.Date(data$Tarih)
 
-  if (!is.null(season) && season == "summer") {
+  if (!is.null(season)) {
+    if (season == "summer") {
+      summer_months <- c(4, 5, 6, 7, 8, 9)
+      data <- data %>% filter(month(Tarih) %in% summer_months)
+      days_in_season <-length(unique(data$Tarih))
 
-    summer_months <- c(4, 5, 6, 7, 8, 9)
-    data <- data %>% filter(month(Tarih) %in% summer_months)
-    days_in_season <- length(unique(data$Tarih))
-  }
-
-  else {
+    } else if (season == "winter") {
+      winter_months <- c(1, 2, 3, 10, 11, 12)
+      data <- data %>% filter(month(Tarih) %in% winter_months)
+      days_in_season <- length(unique(data$Tarih))
+    }
+  } else {
     days_in_season <- length(unique(data$Tarih))
   }
 
@@ -30,6 +34,4 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
 
   return(as.data.frame(query_result))
-
 }
-
