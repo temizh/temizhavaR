@@ -31,7 +31,8 @@ output <- list(O3_1 = list(),
                O3_12 = list(),
                O3_13 = list(),
                O3_14 = list(),
-               O3_15 = list()
+               O3_15 = list(),
+               O3_16 = list()
                )
 
 
@@ -88,6 +89,9 @@ output$O3_14$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,ho
 output$O3_15$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum değerlerinden 240 µg/m3'ü aşanların sayısı"))
 output$O3_15$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=240)
 
+
+output$O3_16$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"))
+output$O3_16$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 8,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=120)
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
