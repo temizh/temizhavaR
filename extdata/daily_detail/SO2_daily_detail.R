@@ -3,6 +3,7 @@ library(temizhavaR)
 library(dygraphs)
 library(readxl)
 library(writexl)
+library(lubridate)
 
 total_days <- 365
 parameter_name <- "SO2"
@@ -25,6 +26,7 @@ output <- list(SO2_1 = list(),
                SO2_4 = list(),
                SO2_7 = list(),
                SO2_8 = list(),
+               SO2_9 = list(),
                SO2_10 = list(),
                SO2_11 = list())
 
@@ -48,7 +50,8 @@ output$SO2_7$data <- calculate_above_exceedance_days_all_stations(parameter_name
 output$SO2_8$result_message <- print(paste0(parameter_name, "_8 : Günlük ortalaması 125 µg/m3'ün üstündeki istasyonların listesi ve aştıkları gun sayısı" ))
 output$SO2_8$data <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 125)
 
-# 9 missing
+output$SO2_9$result_message <- print(paste(parameter_name,"Gunluk ortalaması 125 µg/m3'u 3 defadan fazla asan istasyonlar ve kac defa astıkları"))
+output$SO2_9$data <- calculate_above_exceedance_days_all_stations(parameter_name,threshold = 125,exceedance_count = 3)
 
 output$SO2_10$result_message <- print(paste0(parameter_name, "_10 : için istasyon ortalamaları"))
 output$SO2_10$data <- daily_station_average(parameter_name, threshold = 90)
