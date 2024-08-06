@@ -1,5 +1,6 @@
 library(dplyr)
 library(temizhavaR)
+library(lubridate)
 
 total_days <- 365
 parameter_name <- "NO2"

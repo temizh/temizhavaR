@@ -10,17 +10,37 @@
 #' @export
 
 calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 125, exceedance_count = 3) {
-
-
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-
-
   daily_data <- dbReadTable(mydb, "daily_detail")
-
-
   dbDisconnect(mydb)
 
-  # Calculate exceedance days for each station
+  # Orijinal sütun adlarını yazdırır
+  print("Orijinal sütun adları:")
+  print(names(daily_data))
+
+  # Sütun adlarındaki fazladan tırnak işaretlerini ve boşlukları kaldırır
+  names(daily_data) <- gsub("^\"|\"$", "", names(daily_data))
+  names(daily_data) <- trimws(names(daily_data))
+
+  # Güncellenmiş sütun adlarını yazdır
+  print("Güncellenmiş sütun adları:")
+  print(names(daily_data))
+
+  # parameter değerindeki tırnak işaretlerini ve boşlukları kaldırır
+  parameter <- gsub("^\"|\"$", "", parameter)
+  parameter <- trimws(parameter)
+
+  # Parametre adının sütun adları arasında olup olmadığını kontrol eder
+  if (!(parameter %in% names(daily_data))) {
+    similar_cols <- names(daily_data)[grep(parameter, names(daily_data), ignore.case = TRUE)]
+    if (length(similar_cols) > 0) {
+      parameter <- similar_cols[1]
+      warning(paste("Tam eşleşme bulunamadı. Benzer sütun kullanılıyor:", parameter))
+    } else {
+      stop(paste("Parametre '", parameter, "' veri setinde bulunamadı. Mevcut sütunlar:", paste(names(daily_data), collapse=", ")))
+    }
+  }
+
   exceedance_days <- daily_data %>%
     filter(!is.na(.data[[parameter]])) %>%
     mutate(ExceedsThreshold = .data[[parameter]] > threshold) %>%
@@ -31,4 +51,3 @@ calculate_above_exceedance_days_all_stations <- function(parameter, threshold = 
 
   return(exceedance_days)
 }
-
