@@ -10,28 +10,48 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
 
   parameter_name <- gsub('\\"', "", parameter_name)
   data <- all_daily_detail_load_from_database(parameter_name)
-  data$Tarih <- as.Date(data$Tarih)
+
+  print("Orijinal veri boyutu:")
+  print(dim(data))
 
   if (!is.null(season)) {
     if (season == "summer") {
       summer_months <- c(4, 5, 6, 7, 8, 9)
       data <- data %>% filter(month(Tarih) %in% summer_months)
-      days_in_season <-length(unique(data$Tarih))
-
     } else if (season == "winter") {
       winter_months <- c(1, 2, 3, 10, 11, 12)
       data <- data %>% filter(month(Tarih) %in% winter_months)
-      days_in_season <- length(unique(data$Tarih))
     }
-  } else {
-    days_in_season <- length(unique(data$Tarih))
   }
 
+  print("Sezon filtrelemesi sonrası veri boyutu:")
+  print(dim(data))
+
+  days_in_season <- length(unique(data$Tarih))
+  print("Sezondaki gün sayısı:")
+  print(days_in_season)
+
   query_result <- data %>%
-    select(Istasyon, Tarih, parameter_value = .data[[parameter_name]]) %>%
     group_by(Istasyon) %>%
-    summarise(veri_mevcudiyet_yuzdesi = round(length(which(!is.na(parameter_value))) / days_in_season * 100)) %>%
+    summarise(
+      total_days = n(),
+      non_na_days = sum(!is.na(.data[[parameter_name]])),
+      veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2)
+    ) %>%
+    mutate(threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")) %>%
     arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
+
+  print("İstasyon sayımı sonuçları:")
+  print(query_result)
+
+  print("Eşik değerin üstündeki istasyon sayısı:")
+  print(sum(query_result$threshold_status == "Üstünde"))
+
+  print("Eşik değerin altındaki istasyon sayısı:")
+  print(sum(query_result$threshold_status == "Altında"))
+
+  print("Toplam istasyon sayısı:")
+  print(nrow(query_result))
 
   return(as.data.frame(query_result))
 }
