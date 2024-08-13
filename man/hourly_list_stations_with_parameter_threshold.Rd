@@ -11,6 +11,9 @@ hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 \item{threshold}{The threshold percentage for data availability (default is 90).}
 }
+\value{
+A data frame with stations and their data availability percentage.
+}
 \description{
 List Stations for specified parameter from hourly_detail
 }

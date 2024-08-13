@@ -1,6 +1,7 @@
 library(dplyr)
 library(temizhavaR)
 library(writexl)
+library(lubridate)
 
 total_days <- 365
 parameter_name <- "PM10"
@@ -13,11 +14,11 @@ if (0) {
 
   daily_detail_data <- daily_detail_load_from_database(station_name)
   all_daily_detail_data <- all_daily_detail_load_from_database()
-  create_hourly_time_series_graph(daily_detail_data, station_name, c("PM10"))
+  create_hourly_time_series_graph(daily_detail_data, station_name, c('PM10'))
   calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
 
   hourly_detail_data <- hourly_detail_load_from_database(station_name)
-  create_hourly_time_series_graph(hourly_detail_data, station_name, c("PM10"))
+  create_hourly_time_series_graph(hourly_detail_data, station_name, c('PM10'))
 }
 
 output <- list(PM10_1 = list(),

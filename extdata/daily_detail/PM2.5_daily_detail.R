@@ -2,6 +2,7 @@ library(dplyr)
 library(temizhavaR)
 library(dygraphs)
 library(writexl)
+library(rlang)
 
 total_days <- 365
 parameter_name <- "\"PM2.5\""

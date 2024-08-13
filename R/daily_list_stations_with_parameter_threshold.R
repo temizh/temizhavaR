@@ -1,33 +1,65 @@
-#' List Stations for specified parameter from daily_detail
+#' List Stations for Specified Parameter and Season from daily_detail
 #'
 #' @param parameter_name The name of the parameter.
 #' @param threshold The threshold percentage for data availability (default is 90).
+#' @param season The season for which data availability is calculated (default is NULL). Use "summer" or "winter".
+#' @return A data frame with stations and their data availability percentage.
 #' @export
 
-daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season) {
+daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
 
-  init.temizhavaR()
+  parameter_name <- gsub('\\"', "", parameter_name)
+  data <- all_daily_detail_load_from_database(parameter_name)
 
-  if (0) {
-    mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  print("Orijinal veri boyutu:")
+  print(dim(data))
 
-    query <- paste0("SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS veri_mevcudiyet_yuzdesi
-                   FROM daily_detail
-                   GROUP BY Istasyon
-                   HAVING veri_mevcudiyet_yuzdesi >= ", threshold)
-
-    query_result <- dbGetQuery(mydb, query)
-    dbDisconnect(mydb)
-  }
-  else {
-    parameter_name <- gsub('\\"', "", parameter_name)
-    query_result <- all_daily_detail_load_from_database(parameter_name) %>%
-      select(Istasyon, Tarih, rlang::sym(parameter_name)) %>%
-      group_by(Istasyon) %>%
-      summarise(veri_mevcudiyet_yuzdesi = round(length(which(!is.na(.data[[parameter_name]]))) / 365 * 100)) %>%
-      arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
+  if (!is.null(season)) {
+    if (season == "summer") {
+      summer_months <- c(4, 5, 6, 7, 8, 9)
+      data <- data %>% filter(month(Tarih) %in% summer_months)
+    } else if (season == "winter") {
+      winter_months <- c(1, 2, 3, 10, 11, 12)
+      data <- data %>% filter(month(Tarih) %in% winter_months)
+    }
   }
 
+  print("Sezon filtrelemesi sonrası veri boyutu:")
+  print(dim(data))
 
-  return(query_result)
+  days_in_season <- length(unique(data$Tarih))
+  print("Sezondaki gün sayısı:")
+  print(days_in_season)
+
+  query_result <- data %>%
+    group_by(Istasyon) %>%
+    summarise(
+      total_days = n(),
+      non_na_days = sum(!is.na(.data[[parameter_name]])),
+      veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2)
+    ) %>%
+    # %89.5 ile %90 arasındaki veri mevcudiyet yüzdelerini %90'a yuvarlama
+    mutate(
+      veri_mevcudiyet_yuzdesi = ifelse(
+        veri_mevcudiyet_yuzdesi >= 89.5 & veri_mevcudiyet_yuzdesi < 90,
+        90,
+        veri_mevcudiyet_yuzdesi
+      ),
+      threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")
+    ) %>%
+    arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
+
+  print("İstasyon sayımı sonuçları:")
+  print(query_result)
+
+  print("Eşik değerin üstündeki istasyon sayısı:")
+  print(sum(query_result$threshold_status == "Üstünde"))
+
+  print("Eşik değerin altındaki istasyon sayısı:")
+  print(sum(query_result$threshold_status == "Altında"))
+
+  print("Toplam istasyon sayısı:")
+  print(nrow(query_result))
+
+  return(as.data.frame(query_result))
 }

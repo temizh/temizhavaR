@@ -4,12 +4,18 @@
 \alias{daily_count_stations_with_parameter_threshold}
 \title{Count Stations for specified parameter from daily_detail}
 \usage{
-daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+daily_count_stations_with_parameter_threshold(
+  parameter_name,
+  threshold = 90,
+  season = NULL
+)
 }
 \arguments{
 \item{parameter_name}{The name of the parameter.}
 
 \item{threshold}{The threshold percentage for data availability (default is 90).}
+
+\item{season}{The season for which data availability should be calculated (Default is NULL). Use "summer" or "winter".}
 }
 \description{
 Count Stations for specified parameter from daily_detail

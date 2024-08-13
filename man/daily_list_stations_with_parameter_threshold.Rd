@@ -2,19 +2,24 @@
 % Please edit documentation in R/daily_list_stations_with_parameter_threshold.R
 \name{daily_list_stations_with_parameter_threshold}
 \alias{daily_list_stations_with_parameter_threshold}
-\title{List Stations for specified parameter from daily_detail}
+\title{List Stations for Specified Parameter and Season from daily_detail}
 \usage{
 daily_list_stations_with_parameter_threshold(
   parameter_name,
   threshold = 90,
-  season
+  season = NULL
 )
 }
 \arguments{
 \item{parameter_name}{The name of the parameter.}
 
 \item{threshold}{The threshold percentage for data availability (default is 90).}
+
+\item{season}{The season for which data availability is calculated (default is NULL). Use "summer" or "winter".}
+}
+\value{
+A data frame with stations and their data availability percentage.
 }
 \description{
-List Stations for specified parameter from daily_detail
+List Stations for Specified Parameter and Season from daily_detail
 }
