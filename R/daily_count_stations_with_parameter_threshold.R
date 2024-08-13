@@ -15,11 +15,17 @@ daily_count_stations_with_parameter_threshold <- function(parameter_name, thresh
            month = month(Tarih),
            day = day(Tarih))
 
-  if (!is.null(season) && season == "summer") {
-    daily_data <- daily_data %>%
-      filter(month %in% c(4, 5, 6, 7, 8, 9))
-  }
+  if (!is.null(season)) {
 
+    if (season == "summer") {
+      daily_data <- daily_data %>%
+        filter(month %in% c(4, 5, 6, 7, 8, 9))
+
+    } else if (season == "winter") {
+      daily_data <- daily_data %>%
+        filter(month %in% c(1, 2, 3, 10, 11, 12))
+    }
+  }
 
   station_counts <- daily_data %>%
     group_by(Istasyon) %>%
