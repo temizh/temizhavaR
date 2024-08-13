@@ -4,10 +4,17 @@
 \alias{daily_station_average}
 \title{Station Average for daily data}
 \usage{
-daily_station_average(parameter_name, threshold = 90)
+daily_station_average(parameter_name, threshold = 90, season = NULL)
 }
 \arguments{
-\item{data}{station based air parameters data.}
+\item{parameter_name}{The name of the parameter.}
+
+\item{threshold}{The threshold percentage for data availability (default is 90).}
+
+\item{season}{The season for which data availability is calculated (default is NULL). Use "summer" or "winter".}
+}
+\value{
+A data frame with station names, their data availability percentages, and parameter averages, sorted by data availability.
 }
 \description{
 Station Average for daily data

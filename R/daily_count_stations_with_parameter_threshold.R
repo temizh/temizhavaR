@@ -7,34 +7,49 @@
 
 daily_count_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
 
-  daily_data <- all_daily_detail_load_from_database(parameter_name)
+  parameter_name <- gsub('\\"', "", parameter_name)
+  data <- all_daily_detail_load_from_database(parameter_name)
 
-  daily_data <- daily_data %>%
-    mutate(Tarih = ymd_hms(Tarih),
-           year = year(Tarih),
-           month = month(Tarih),
-           day = day(Tarih))
+  print("Orijinal veri boyutu:")
+  print(dim(data))
+  print("Veri özeti:")
+  print(summary(data))
+
+  data$Tarih <- as.Date(data$Tarih)
 
   if (!is.null(season)) {
-
     if (season == "summer") {
-      daily_data <- daily_data %>%
-        filter(month %in% c(4, 5, 6, 7, 8, 9))
-
+      summer_months <- c(4, 5, 6, 7, 8, 9)
+      data <- data %>% filter(month(Tarih) %in% summer_months)
     } else if (season == "winter") {
-      daily_data <- daily_data %>%
-        filter(month %in% c(1, 2, 3, 10, 11, 12))
+      winter_months <- c(1, 2, 3, 10, 11, 12)
+      data <- data %>% filter(month(Tarih) %in% winter_months)
     }
   }
 
-  station_counts <- daily_data %>%
+  print("Sezon filtrelemesi sonrası veri boyutu:")
+  print(dim(data))
+
+  days_in_season <- length(unique(data$Tarih))
+  print("Sezondaki gün sayısı:")
+  print(days_in_season)
+
+  station_counts <- data %>%
     group_by(Istasyon) %>%
-    summarize(total_days = n_distinct(Tarih),
-              available_days = sum(!is.na(.data[[parameter_name]]))) %>%
-    ungroup() %>%
-    mutate(data_percentage = (available_days / total_days) * 100) %>%
-    filter(data_percentage >= threshold)
+    summarise(
+      total_days = n(),
+      non_na_days = sum(!is.na(.data[[parameter_name]])),
+      veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2)
+    ) %>%
+    filter(veri_mevcudiyet_yuzdesi >= threshold)
 
-  return(data.frame(nrow(station_counts)))
+  print("İstasyon sayımı sonuçları:")
+  print(station_counts)
+
+  result <- nrow(station_counts)
+
+  print("Sonuç:")
+  print(result)
+
+  return(data.frame(count = result))
 }
-

@@ -15,10 +15,10 @@ hourly_above_exceedance_days_double_threshold(
 
 \item{threshold}{The threshold value for the parameter.}
 
-\item{daily_data}{The daily detail data containing parameter values for each day.}
+\item{exceedance_limit}{The minimum number of hours a station must exceed the threshold to be considered.}
 }
 \value{
-A data frame containing the number of days exceeding the specified threshold for the parameter for each station.
+A data frame containing the station names and the number of days exceeding the specified threshold for the parameter.
 }
 \description{
 This function calculates the number of days exceeding a specified threshold for a given parameter from daily_detail data for all stations.

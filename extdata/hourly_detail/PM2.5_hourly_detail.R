@@ -47,7 +47,6 @@ output$PM25_4$data <- hourly_count_stations_with_parameter_threshold(parameter_n
 
 output$PM25_5$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
 output$PM25_5$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
-result_sorted <- output$PM25_5$data %>% arrange(desc(data_percentage))
 
 
 output$PM25_6$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))

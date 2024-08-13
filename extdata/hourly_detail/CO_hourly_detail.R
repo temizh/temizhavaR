@@ -21,7 +21,8 @@ if (0) {
 output <- list(CO_1 = list(),
                CO_2 = list(),
                CO_3 = list(),
-               CO_4 = list()
+               CO_4 = list(),
+               CO_5 = list()
                )
 
 
@@ -34,8 +35,11 @@ output$CO_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name
 output$CO_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 output$CO_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-output$CO_4$result_message <- print(paste(parameter_name," : Maksimum günlük 8 saatlik ortalaması 10 mg/m3'ü (miligram/m3) aşan istasyonlar"))
+output$CO_4$result_message <- print(paste(parameter_name," : Maksimum gunluk 8 saatlik ortalaması 10 mg/m3'u (miligram/m3) asan istasyonlar"))
 output$CO_4$data <- calculate_co_exceeding_stations()
+
+output$CO_5$result_message <- print(paste(parameter_name, "CO için kayan 8 saatlik ortalamalar"))
+output$CO_5$data <- calculate_rolling_8hour_avg_CO()
 
 
 write_output_to_excel(output, result_co_hourly_excel_file)
