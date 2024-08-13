@@ -8,7 +8,8 @@ calculate_hourly_aot40_exceeding_stations(
   parameter_name,
   hour_window = 1,
   months = c(4, 5, 6, 7, 8, 9),
-  threshold = 180
+  threshold = 180,
+  aggregation_period = "daily"
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ calculate_hourly_aot40_exceeding_stations(
 Set to NULL for the entire year.}
 
 \item{threshold}{A numeric value representing the threshold value for the parameter. Default is 180.}
+
+\item{aggregation_period}{A string representing the aggregation period, either "daily" or "monthly". Default is "daily".}
 }
 \value{
 A data.frame with the number of stations that exceed the threshold for the specified parameter.
@@ -27,5 +30,6 @@ A data.frame with the number of stations that exceed the threshold for the speci
 \description{
 This function calculates the number of stations that exceed a specified threshold
 for a given parameter over a specified hourly window and within certain months,
-or for the entire year if no months are specified.
+or for the entire year if no months are specified. The calculation can be done
+on a daily or monthly basis.
 }

@@ -32,7 +32,8 @@ output <- list(O3_1 = list(),
                O3_13 = list(),
                O3_14 = list(),
                O3_15 = list(),
-               O3_16 = list()
+               O3_16 = list(),
+               O3_17 = list()
                )
 
 
@@ -61,7 +62,7 @@ output$O3_10$data <- count_stations_aot40_threshold(start_dates = c("2023-05-01"
 
 
 output$O3_11$result_message <-  print(paste(parameter_name," : 8 saatlik ortalamaların günlük maksimum degerlerinden 120 µg/m3'ü asanların sayısı"))
-output$O3_11$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 8,threshold = 120)
+output$O3_11$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 8,months = NULL,threshold = 120,aggregation_period = "daily")
 
 
 output$O3_12$result_message <- print(paste(parameter_name, "Mayıs ayından Temmuz ayına kadar AOT 40 degerlerinin toplamı "))
@@ -82,16 +83,21 @@ output$O3_13$data <-  calculate_aot40_vegetation_and_forest_protection(
                           period = "Apr-Sep")
 
 
-output$O3_14$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum değerlerinden 180 µg/m3'ü aşanların sayısı"))
-output$O3_14$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=180)
+output$O3_14$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum degerlerinden 180 µg/m3'ü asanların sayısı"))
+output$O3_14$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=180,aggregation_period = "daily")
 
 
-output$O3_15$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum değerlerinden 240 µg/m3'ü aşanların sayısı"))
-output$O3_15$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=240)
+output$O3_15$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum degerlerinden 240 µg/m3'ü asanların sayısı"))
+output$O3_15$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=240,aggregation_period = "daily")
 
 
-output$O3_16$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"))
-output$O3_16$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 8,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=120)
+output$O3_16$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 8 saatlik ortalamaların günlük maksimum degerlerinden 120 µg/m3'ü asanların sayısı"))
+output$O3_16$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 8,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=120,aggregation_period = "daily")
+
+
+output$O3_17$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların aylık maksimum degerlerinden 120 µg/m3'ü asanların sayısı"))
+output$O3_17$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=120,aggregation_period = "monthly")
+
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
