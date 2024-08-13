@@ -1,23 +1,38 @@
 #' Station Average for daily data
 #'
-#' @param data station based air parameters data.
+#' @param parameter_name The name of the parameter.
+#' @param threshold The threshold percentage for data availability (default is 90).
+#' @param season The season for which data availability is calculated (default is NULL). Use "summer" or "winter".
+#' @return A data frame with station names, their data availability percentages, and parameter averages, sorted by data availability.
 #' @export
 
-daily_station_average <- function(parameter_name, threshold = 90) {
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+daily_station_average <- function(parameter_name, threshold = 90, season = NULL) {
+  parameter_name <- gsub('\\"', "", parameter_name)
+  data <- all_daily_detail_load_from_database(parameter_name)
 
-  query <- paste0("SELECT Istasyon, AVG(", parameter_name, ") AS average FROM daily_detail WHERE Istasyon IN
-                  (SELECT Istasyon FROM (SELECT Istasyon,
-                  SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) AS non_null_count
-                  FROM daily_detail GROUP BY Istasyon)
-                  WHERE non_null_count >= 365 * ", threshold / 100, ")
-                  GROUP BY Istasyon")
+  if (!is.null(season)) {
+    if (season == "summer") {
+      summer_months <- c(4, 5, 6, 7, 8, 9)
+      data <- data %>% filter(month(Tarih) %in% summer_months)
+    } else if (season == "winter") {
+      winter_months <- c(1, 2, 3, 10, 11, 12)
+      data <- data %>% filter(month(Tarih) %in% winter_months)
+    }
+  }
 
-  query_result <- dbGetQuery(mydb, query)
+  days_in_season <- length(unique(data$Tarih))
 
-  dbDisconnect(mydb)
+  query_result <- data %>%
+    group_by(Istasyon) %>%
+    summarize(
+      total_days = n(),
+      non_na_days = sum(!is.na(.data[[parameter_name]])),
+      veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2),
+      average = mean(.data[[parameter_name]], na.rm = TRUE)
+    ) %>%
+    filter(veri_mevcudiyet_yuzdesi >= threshold) %>%
+    arrange(desc(veri_mevcudiyet_yuzdesi), desc(average)) %>%
+    as.data.frame()
 
-  query_result %>%
-    arrange(desc(average)) %>%
-    mutate(average = round(average, 2))
+  return(query_result)
 }

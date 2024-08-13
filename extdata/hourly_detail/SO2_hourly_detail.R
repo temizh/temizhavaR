@@ -32,7 +32,6 @@ output$SO2_1$data <- hourly_list_stations_with_parameter(parameter_name)
 
 output$SO2_2$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
 output$SO2_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-result_sorted <- output$SO2_2$data$data_percentage %>% arrange(desc(data_percentage))
 
 
 output$SO2_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
@@ -41,17 +40,14 @@ output$SO2_3$data <- hourly_count_stations_with_parameter_threshold(parameter_na
 
 output$SO2_5$result_message <- print(paste(parameter_name," : Saatlik ortalaması 350 esik degerini asan istasyonlar ve kac gün boyunca" ))
 output$SO2_5$data <- hourly_above_exceedance_days_threshold(parameter_name, threshold = 350)
-result_sorted <- output$SO2_5$data$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
 
 
 output$SO2_6$result_message <- print(paste(parameter_name,": Saatlik ortalaması 350 esik degerini 24 kere asan istasyonlar ve kaç gün boyunca" ))
 output$SO2_6$data <- hourly_above_exceedance_days_double_threshold(parameter_name, threshold = 350, 24)
-result_sorted <- output$SO2_6$data$ExceedanceDays %>% arrange(desc(ExceedsThreshold))
 
 
 output$SO2_9$result_message <- print(paste(parameter_name,": Saatlik ortalaması 125 esik degerini 3 kere asan istasyonlar ve kaç gün boyunca" ))
 output$SO2_9$data <- hourly_above_exceedance_days_double_threshold(parameter_name, threshold = 125, 3)
-result_sorted <- output$SO2_9$data$ExceedanceDays.ExceedsThreshold %>% arrange(desc(ExceedsThreshold))
 
 
 write_output_to_excel(output, result_so2_hourly_excel_file)

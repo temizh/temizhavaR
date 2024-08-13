@@ -2,16 +2,14 @@
 #'
 #' This function calculates the number of days exceeding a specified threshold for a given parameter from daily_detail data for all stations.
 #'
-#' @param daily_data The daily detail data containing parameter values for each day.
 #' @param parameter The parameter for which the exceedance days are calculated.
 #' @param threshold The threshold value for the parameter.
-#' @return A data frame containing the number of days exceeding the specified threshold for the parameter for each station.
+#' @param exceedance_limit The minimum number of hours a station must exceed the threshold to be considered.
+#' @return A data frame containing the station names and the number of days exceeding the specified threshold for the parameter.
 #' @export
 
 hourly_above_exceedance_days_double_threshold <- function(parameter, threshold, exceedance_limit) {
-
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-
   stations_query <- paste0("SELECT Istasyon
                             FROM hourly_detail
                             GROUP BY Istasyon
@@ -19,19 +17,13 @@ hourly_above_exceedance_days_double_threshold <- function(parameter, threshold, 
 
   stations <- dbGetQuery(mydb, stations_query)
 
-  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold
+  query <- paste0("SELECT Istasyon, SUM(CASE WHEN ", parameter, " > ", threshold, " THEN 1 ELSE 0 END) AS ExceedanceDays
                    FROM hourly_detail
-                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
-
+                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')
+                   GROUP BY Istasyon")
 
   query_result <- dbGetQuery(mydb, query)
-
   dbDisconnect(mydb)
-
-  exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
-
-  exceedance_days_filtered <- exceedance_days[exceedance_days$ExceedsThreshold > exceedance_limit, ]
-
-  return(list(ExceedanceDays = exceedance_days_filtered))
-
+  exceedance_days_filtered <- query_result[query_result$ExceedanceDays > exceedance_limit, ]
+  return(exceedance_days_filtered)
 }

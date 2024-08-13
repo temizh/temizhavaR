@@ -51,7 +51,7 @@ output$SO2_8$result_message <- print(paste0(parameter_name, "_8 : Günlük ortal
 output$SO2_8$data <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 125)
 
 output$SO2_9$result_message <- print(paste0(parameter_name, "_9 :Günlük ortalaması 125 µg/m3'ü 3 defadan fazla aşan istasyonlar ve kaç defa aştıkları "))
-output$SO2_9$data <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 125, exceedance_count = 3)
+output$SO2_9$data <- exceedance_days_3_threshold(parameter_name, threshold = 125, exceedance_count = 3)
 
 output$SO2_10$result_message <- print(paste0(parameter_name, "_10 : için istasyon ortalamaları"))
 output$SO2_10$data <- daily_station_average(parameter_name, threshold = 90)

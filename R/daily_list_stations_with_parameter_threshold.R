@@ -38,7 +38,15 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
       non_na_days = sum(!is.na(.data[[parameter_name]])),
       veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2)
     ) %>%
-    mutate(threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")) %>%
+    # %89.5 ile %90 arasındaki veri mevcudiyet yüzdelerini %90'a yuvarlama
+    mutate(
+      veri_mevcudiyet_yuzdesi = ifelse(
+        veri_mevcudiyet_yuzdesi >= 89.5 & veri_mevcudiyet_yuzdesi < 90,
+        90,
+        veri_mevcudiyet_yuzdesi
+      ),
+      threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")
+    ) %>%
     arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
 
   print("İstasyon sayımı sonuçları:")

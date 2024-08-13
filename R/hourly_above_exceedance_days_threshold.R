@@ -9,26 +9,31 @@
 #' @export
 
 hourly_above_exceedance_days_threshold <- function(parameter, threshold) {
-
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
+  # Sadece yeterli veri olan istasyonları seç
   stations_query <- paste0("SELECT Istasyon
                             FROM hourly_detail
                             GROUP BY Istasyon
                             HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) >= 90")
-
   stations <- dbGetQuery(mydb, stations_query)
 
-  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold
+  # Eşik değeri aşıp aşmadığını kontrol eden sorgu
+  query <- paste0("SELECT Istasyon, DATE(Tarih) AS Date, ", parameter, " > ", threshold, " AS ExceedsThreshold
                    FROM hourly_detail
                    WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
-
 
   query_result <- dbGetQuery(mydb, query)
 
   dbDisconnect(mydb)
 
-  exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
+  # Aşım günlerini hesapla
+  exceedance_days <- query_result %>%
+    group_by(Istasyon, Date) %>%
+    summarise(ExceedsThreshold = any(ExceedsThreshold)) %>%
+    group_by(Istasyon) %>%
+    summarise(ExceedanceDays = sum(ExceedsThreshold, na.rm = TRUE)) %>%
+    as.data.frame()
 
-  return(list(ExceedanceDays = exceedance_days))
+  return(exceedance_days)
 }

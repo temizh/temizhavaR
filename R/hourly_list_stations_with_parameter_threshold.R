@@ -2,20 +2,22 @@
 #'
 #' @param parameter_name The name of the parameter.
 #' @param threshold The threshold percentage for data availability (default is 90).
+#' @return A data frame with stations and their data availability percentage.
 #' @export
+
 hourly_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90) {
+  parameter_name <- gsub('\\"', "", parameter_name)
+  data <- all_hourly_detail_load_from_database()
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  query_result <- data %>%
+    group_by(Istasyon) %>%
+    summarize(
+      total_hours = n(),
+      non_na_hours = sum(!is.na(.data[[parameter_name]])),
+      veri_mevcudiyet_yuzdesi = round(non_na_hours / 8761 * 100, 2)
+    ) %>%
+    arrange(desc(veri_mevcudiyet_yuzdesi)) %>%
+    mutate(threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında"))
 
-  #query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) AS data_percentage FROM hourly_detail GROUP BY Istasyon) WHERE data_percentage >= ", threshold)
-  query <- paste0("SELECT Istasyon, (SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) AS data_percentage
-                   FROM hourly_detail
-                   GROUP BY Istasyon
-                   HAVING data_percentage >= ", threshold)
-
-  query_result <- dbGetQuery(mydb, query)
-
-  dbDisconnect(mydb)
-
-  return(query_result)
+  return(as.data.frame(query_result))
 }

@@ -33,7 +33,8 @@ output <- list(O3_1 = list(),
                O3_14 = list(),
                O3_15 = list(),
                O3_16 = list(),
-               O3_17 = list()
+               O3_17 = list(),
+               O3_18 = list()
                )
 
 
@@ -98,6 +99,9 @@ output$O3_16$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,ho
 output$O3_17$result_message <- print(paste(parameter_name,"Nisan-Eylül aylarında 1 saatlik ortalamaların aylık maksimum degerlerinden 120 µg/m3'ü asanların sayısı"))
 output$O3_17$data <- calculate_hourly_aot40_exceeding_stations(parameter_name,hour_window = 1,months = c(4 ,5 ,6 ,7 ,8 ,9),threshold=120,aggregation_period = "monthly")
 
+
+output$O3_18$result_message <- print(paste(parameter_name,"%90 veri ve üzeri istasyonlar için Kayan 8 saatlik ortalamalar"))
+output$O3_18$data <- calculate_rolling_8hour_avg()
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
