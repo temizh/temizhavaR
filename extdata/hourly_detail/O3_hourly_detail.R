@@ -27,7 +27,8 @@ output <- list(O3_1 = list(),
                O3_9 = list(),
                O3_10 = list(),
                O3_11 = list(),
-               O3_12 = list()
+               O3_12 = list(),
+               O3_13 = list()
                )
 
 
@@ -66,6 +67,16 @@ output$O3_12$data <- calculate_aot40_vegetation_and_forest_protection(
                           end_month = "07",
                           thresholds = c(6000, 18000),
                           period = "May-Jul")
+
+
+output$O3_13$result_message <-  print(paste(parameter_name, "Nisan ayından Eylül ayına kadar AOT 40 degerlerinin toplamı "))
+output$O3_13$data <-  calculate_aot40_vegetation_and_forest_protection(
+                          parameter_name = "O3",
+                          start_month = "04",
+                          end_month = "09",
+                          thresholds = c(20000),
+                          period = "Apr-Sep")
+
 
 
 write_output_to_excel(output, result_o3_hourly_excel_file)
