@@ -28,7 +28,7 @@ calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, sta
 
   # AOT40 değerlerinin hesaplanması (08:00 - 20:00 saatleri arası)
   data <- data %>%
-    filter(hour >= 8 & hour <= 20 & !is.na(get(parameter_name)) & get(parameter_name) > 80) %>%
+    filter(hour > 8 & hour <= 20 & !is.na(get(parameter_name)) & get(parameter_name) > 80) %>%
     mutate(AOT40 = get(parameter_name) - 80)
 
   # İstasyonlar bazında toplam AOT40 değerinin hesaplanması

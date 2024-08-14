@@ -7,7 +7,7 @@
 #' @return The overall average value of the parameter for all stations in the city.
 #' @export
 
-calculate_overall_average_by_city <- function(parameter) {
+calculate_overall_average_by_city_pm25 <- function(parameter) {
 
   init.temizhavaR()
 

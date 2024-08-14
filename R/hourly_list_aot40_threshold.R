@@ -36,7 +36,7 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
     data <- data %>%
       mutate(TarihSaat = ymd_hms(Tarih),
              hour = hour(TarihSaat)) %>%
-      filter(hour >= 8 & hour <= 20) %>%
+      filter(hour > 8 & hour <= 20) %>%
       mutate(excess = ifelse(O3 > 80, O3 - 80, 0))
 
     # İstasyon başına veri kullanılabilirliğini hesaplar
