@@ -32,7 +32,7 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
     #Veri kullanılabilirliğini hesaplamak için verileri işler
     data <- data %>%
       mutate(hour = hour(ymd_hms(Tarih))) %>%
-      filter(hour >= 8 & hour <= 20)
+      filter(hour > 8 & hour <= 20)
 
     # İstasyon başına veri kullanılabilirliğini hesaplar
     total_hours <- length(seq(start_date, end_date, by = "day")) * 13

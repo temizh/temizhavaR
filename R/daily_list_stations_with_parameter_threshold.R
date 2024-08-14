@@ -40,11 +40,6 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     ) %>%
     # %89.5 ile %90 arasındaki veri mevcudiyet yüzdelerini %90'a yuvarlama
     mutate(
-      veri_mevcudiyet_yuzdesi = ifelse(
-        veri_mevcudiyet_yuzdesi >= 89.5 & veri_mevcudiyet_yuzdesi < 90,
-        90,
-        veri_mevcudiyet_yuzdesi
-      ),
       threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")
     ) %>%
     arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
