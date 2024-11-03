@@ -1,5 +1,10 @@
 # temizhavaR
 
+# Ham Veriler
+
+Hava kalitesi ham verileri https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew 
+adresinden indirilmektedir.
+
 Yeni DB yaratmak için : 
 .Rprofile dosyasına ham verilerin bulunduğu dizin ismini belirtin
 
@@ -15,6 +20,7 @@ Database tablo şemalarını yaratın. Script ? `SQLite.R`
 library(temizhavaR)
 create_SQL_schema()
 ```
+
 
 ## Eksik dosya analizi
 
