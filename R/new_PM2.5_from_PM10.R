@@ -20,9 +20,16 @@ new_pm25_from_pm10_yearly_average <- function() {
   stations_string <- paste0("'", threshold_stations, "'", collapse = ", ")
 
   # PM25 yüzde yetmişbeş'ten az olan istasyonların PM10 verileri yüzde doksan'dan fazla mı kontrol ediliyor
-  pm10_threshold_query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN PM10 IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(*)) AS pm10_percentage FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon) WHERE pm10_percentage >= 90")
+  #pm10_threshold_query <- paste0("SELECT Istasyon, pm10_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN PM10 IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(*)) AS pm10_percentage FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon) WHERE pm10_percentage >= 90")
+  #pm10_threshold_stations <- dbGetQuery(mydb, pm10_threshold_query)
 
-  pm10_threshold_stations <- dbGetQuery(mydb, pm10_threshold_query)$Istasyon
+  #Compute PM10 availability by Station
+  pm10_threshold_stations <- daily_list_stations_with_parameter_threshold("PM10", threshold = 90, verbose = FALSE)
+  pm10_threshold_stations <- pm10_threshold_stations$Istasyon
+
+  #dplyr::filter(pm10_threshold_stations, grepl("Hatay",Istasyon))
+  #45               Hatay - Antakya              97
+  #46            Hatay - İskenderun              94
 
   all_stations_query <- "SELECT Istasyon, AVG(\"PM2.5\") AS PM25 FROM daily_detail GROUP BY Istasyon"
   all_stations_data <- dbGetQuery(mydb, all_stations_query)

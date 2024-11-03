@@ -71,7 +71,7 @@ output$PM25_13$result_message <- print(paste0(parameter_name, "_13 : PM10 yıll�
 output$PM25_13$data <- new_pm25_from_pm10_yearly_average()
 
 output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 yıllık ortalaması" ))
-output$PM25_14$data <- calculate_overall_average_by_city(parameter_name)
+output$PM25_14$data <- calculate_overall_PM25_average_by_city()
 
 
 write_output_to_excel(output, result_pm25_daily_excel_file)

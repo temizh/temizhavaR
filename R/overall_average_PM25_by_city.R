@@ -1,4 +1,4 @@
-#' Calculate Overall Average for specified parameter from daily_detail for all stations in a city
+#' Calculate Overall Average PM2.5 for specified parameter from daily_detail for all stations in a city
 #'
 #' This function calculates the overall average value of a specified parameter from daily_detail data for all stations in a city.
 #'
@@ -7,8 +7,9 @@
 #' @return The overall average value of the parameter for all stations in the city.
 #' @export
 
-calculate_overall_average_by_city <- function(parameter) {
+calculate_overall_PM25_average_by_city <- function() {
 
+  parameter =
   init.temizhavaR()
 
   YEAR <- options()$temizhavaR.YEAR
@@ -19,29 +20,41 @@ calculate_overall_average_by_city <- function(parameter) {
   cities <- city_query$Sehir
 
   overall_avgs <- sapply(cities, function(city_name) {
-
     station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
     station_avgs <- sapply(stations, function(station) {
-
       pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
       pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
 
       if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
+        #Take the PM2.5 measurement
         pm25_query <- paste0("SELECT \"PM2.5\" FROM daily_detail WHERE Istasyon='", station, "'")
-        pm25_values <- dbGetQuery(mydb, pm25_query)$PM2.5
-        return(pm25_values)
+        pm25 <- dbGetQuery(mydb, pm25_query)$PM2.5
+
+        pm25_values <- data.frame(Istasyon = station, PM25 = pm25,
+                                  pm25_veri_mevcudiyet_yuzdesi = pm25_data_percentage,
+                                  pm10_veri_mevcudiyet_yuzdesi = NA,
+                                  pm10_value = NA)
+
       } else {
 
-        pm25_from_pm10_df <- new_pm25_for_city_based_mean()
-        pm25_from_pm10_value <- pm25_from_pm10_df$PM25[pm25_from_pm10_df$Istasyon == station]
-        if (length(pm25_from_pm10_value) > 0) {
-          return(pm25_from_pm10_value)
-        } else {
-          return(NA)
-        }
+#DEBUG
+print(station)
+
+        #Estimate PM2.5 from PM10 measurements if PM10 satisfies 90 availability treshold
+        pm25_values <- new_pm25_for_city_based_mean(station)
+
+        #pm25_from_pm10_value <- pm25_from_pm10_df$PM25[pm25_from_pm10_df$Istasyon == station]
+
+        #if (length(pm25_from_pm10_value) > 0) {
+        #  return(pm25_from_pm10_value)
+        #} else {
+        #  return(NA)
+        #}
       }
+      pm25_values
+
     }, USE.NAMES = FALSE)
 
     station_avgs <- unlist(station_avgs)
@@ -58,6 +71,7 @@ calculate_overall_average_by_city <- function(parameter) {
 
   dbDisconnect(mydb)
 
+  browser()
   result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
 
   row.names(result) <- NULL

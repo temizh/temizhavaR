@@ -4,7 +4,7 @@
 #' @export
 
 
-all_daily_detail_load_from_database <- function(parm) {
+all_daily_detail_load_from_database <- function(parm, verbose = FALSE) {
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
   query <- "SELECT * FROM daily_detail"
@@ -14,17 +14,19 @@ all_daily_detail_load_from_database <- function(parm) {
   # Tarih formatını standardize eder
   query_result$Tarih <- as.Date(query_result$Tarih)
 
-  print("Orijinal veri boyutu:")
-  print(dim(query_result))
+  if (verbose) {
+    print("Orijinal veri boyutu:")
+    print(dim(query_result))
 
-  print("Orijinal sütun adları:")
-  print(names(query_result))
+    print("Orijinal sütun adları:")
+    print(names(query_result))
 
-  print("Veri özeti:")
-  print(summary(query_result))
+    print("Veri özeti:")
+    print(summary(query_result))
 
-  print("NA değerler:")
-  print(colSums(is.na(query_result)))
+    print("NA değerler:")
+    print(colSums(is.na(query_result)))
+  }
 
   if (!missing(parm)) {
     # parm değerindeki tırnak işaretlerini ve boşlukları kaldırır
@@ -40,14 +42,16 @@ all_daily_detail_load_from_database <- function(parm) {
       select(Istasyon, Tarih, all_of(parm))
   }
 
-  print("Seçilen sütunlar:")
-  print(names(query_result))
+  if (verbose) {
+    print("Seçilen sütunlar:")
+    print(names(query_result))
 
-  print("Seçilen veri özeti:")
-  print(summary(query_result))
+    print("Seçilen veri özeti:")
+    print(summary(query_result))
 
-  print("Seçilen verideki NA değerler:")
-  print(colSums(is.na(query_result)))
+    print("Seçilen verideki NA değerler:")
+    print(colSums(is.na(query_result)))
+  }
 
   return(query_result)
 }

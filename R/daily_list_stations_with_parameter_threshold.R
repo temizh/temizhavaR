@@ -6,10 +6,10 @@
 #' @return A data frame with stations and their data availability percentage.
 #' @export
 
-daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL, verbose = TRUE) {
+daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL, verbose = FALSE) {
 
   parameter_name <- gsub('\\"', "", parameter_name)
-  data <- all_daily_detail_load_from_database(parameter_name)
+  data <- all_daily_detail_load_from_database(parameter_name, verbose = FALSE)
 
   if (verbose) {
     print("Orijinal veri boyutu:")
