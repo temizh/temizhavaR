@@ -20,10 +20,11 @@ data_preprocessing <- function(data, station_name) {
 
   colnames(data)[1] <- "Tarih"
   data <- data[-1, ]
-  data$Tarih <- gsub("\\.", "\\/", data$Tarih)
-  #data$Tarih <- as.POSIXct(data$Tarih)
-  data$Tarih <- force_tz(dmy_hms(data$Tarih, tz = "UTC"), tzone = "Turkey")
-
+  if (! "POSIXct" %in% class(data$Tarih)) {
+    data$Tarih <- gsub("\\.", "\\/", data$Tarih)
+    #data$Tarih <- as.POSIXct(data$Tarih)
+    data$Tarih <- force_tz(dmy_hms(data$Tarih, tz = "UTC"), tzone = "Turkey")
+  }
   suppressWarnings(data <- data %>%
     mutate(across(-1, ~as.numeric(gsub(",", ".", .))))
     )
