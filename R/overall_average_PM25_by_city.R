@@ -18,7 +18,7 @@ calculate_overall_PM25_average_by_city <- function() {
   city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
 
-    overall_avgs <- lapply(cities, function(city_name) {
+  overall_avgs <- lapply(cities, function(city_name) {
     station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
