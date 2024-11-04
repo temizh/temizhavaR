@@ -22,7 +22,7 @@ calculate_overall_PM25_average_by_city <- function() {
     station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
-    station_avgs <- lapply(stations, function(station) {
+    station_data <- lapply(stations, function(station) {
       pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
       pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
 
@@ -45,11 +45,15 @@ calculate_overall_PM25_average_by_city <- function() {
       pm25_values
     })
 
-    station_avgs <- do.call("rbind", station_avgs)
-    #print(paste(city_name, ", class : ", class(station_avgs), ", dim : ", dim(station_avgs) ))
-    station_avgs <- cbind(data.frame(Sehir = NA), station_avgs)
-    station_avgs$Sehir <- city_name
-    head(station_avgs, 2)
+    station_data <- do.call("rbind", station_data)
+    #print(paste(city_name, ", class : ", class(station_data), ", dim : ", dim(station_data) ))
+    station_data <- cbind(data.frame(Sehir = NA), station_data)
+    station_data$Sehir <- city_name
+
+    #if (station == "Erzurum - Palandöken") browser()
+    #if (city_name  == "Erzurum") browser()
+
+    station_data
   })
 
   dbDisconnect(mydb)
