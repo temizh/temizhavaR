@@ -11,6 +11,7 @@ init.temizhavaR()
 
 if (0) {
   station_name <- "Mersin - Akdeniz"
+  station_name <- "Erzurum - Palandöken"
   parameters <- c("PM2.5")
   daily_detail_data <- daily_detail_load_from_database(station_name)
   calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
@@ -73,9 +74,9 @@ output$PM25_13$data <- calculate_overall_PM25_average_by_city()
 output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 yıllık ortalaması" ))
 output$PM25_14$data <-output$PM25_13$data %>%
   group_by(Sehir) %>%
-  summarise(PM25_Sehir_Ortalama = mean(PM25, na.rm = T),
-            PM25_Sehir_Standat_Sapma = sd(PM25,  na.rm = T), n = n(na.rm = T)) %>%
-  select(Sehir, PM25_Sehir_Ortalama)
+  summarise(PM25_Sehir_Yillik_Ortalama = mean(PM25, na.rm = T),
+            PM25_Sehir_Yillik_Standat_Sapma = sd(PM25,  na.rm = T), n = sum(!is.na(PM25))) %>%
+  select(Sehir, n, PM25_Sehir_Yillik_Ortalama, PM25_Sehir_Yillik_Standat_Sapma)
 
 
 write_output_to_excel(output, result_pm25_daily_excel_file)
