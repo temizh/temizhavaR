@@ -1,6 +1,6 @@
 #' Calculate PM2.5 Values from PM10 Yearly Averages for Stations with Less Than 75% Data
 #'
-#' This function calculates the PM2.5 values from the PM10 yearly averages for stations with less than 75% data availability.
+#' This function calculates the PM2.5 values from the PM10 yearly averages for a given station with less than 75% data availability.
 #'
 #' @param parameter_name The name of the parameter (e.g., "PM10") for which the PM2.5 values are calculated.
 #' @return A data frame containing the calculated PM2.5 values for stations with less than 75% data availability.
@@ -11,7 +11,7 @@ new_pm25_for_city_based_mean <- function(station, verbose = FALSE) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   pm25_threshold <- 75
-  pm10_threshold <- 90
+  pm10_threshold <- 75
 
   threshold_query <- paste0("SELECT Istasyon, data_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", pm25_threshold)
   threshold_stations <- dbGetQuery(mydb, threshold_query)
@@ -26,18 +26,35 @@ new_pm25_for_city_based_mean <- function(station, verbose = FALSE) {
   #if (!grepl(station, threshold_stations$Istasyon)) {
   #  threshold_stations$Istasyon <- NA
   #}
+
+  NODATA <- FALSE
+
   pm25_threshold_stations <- threshold_stations %>% dplyr::filter(Istasyon==station)
   pm10_threshold_stations <- pm10_threshold_stations %>% dplyr::filter(Istasyon==station)
 
-  if (pm10_threshold_stations$veri_mevcudiyet_yuzdesi < pm10_threshold) {
+  if (nrow(pm25_threshold_stations)==0) {
+    pm25_threshold_stations <- data.frame(Istasyon = station, data_percentage = 0)
+  }
+  if (nrow(pm10_threshold_stations) == 0) {
+    pm10_threshold_stations <- data.frame(Istasyon = station, veri_mevcudiyet_yuzdesi = 0)
+  }
+
+  if (nrow(pm25_threshold_stations)==0 & nrow(pm10_threshold_stations) == 0) {
+    NODATA <- TRUE
     if (verbose)
-      print(paste(station, ": Yüzde doksan ve üzeri PM10 verisi sağlanmadığı için PM25 hesaplanamıyor."))
+      print(paste(station, ": No PM2.5 or PM10 data could be find for this station"))
+  }
+
+  if (NODATA || pm10_threshold_stations$veri_mevcudiyet_yuzdesi < pm10_threshold) {
+    if (verbose)
+      print(paste(station, ": %", as.character(pm10_threshold), "ve üzeri PM10 verisi sağlanmadığı için PM25 hesaplanamıyor."))
 
     pm10_values <- NA
   } else {
-    pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail GROUP BY Istasyon")
+#browser()
+    pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon = '", station, "'")
     pm10_query_result <- dbGetQuery(mydb, pm10_query)
-    pm10_query_result <- pm10_query_result %>% dplyr::filter(grepl(station, Istasyon))
+    #pm10_query_result <- pm10_query_result %>% dplyr::filter(grepl(station, Istasyon))
     pm10_values <- pm10_query_result$Yillik_Ortalama
   }
 

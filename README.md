@@ -1,7 +1,9 @@
 # temizhavaR
 
-# Ham Veriler
+2003 Eksik Yanlis veriler : 
+[1] "Erzurum - Palandöken"
 
+# Ham Veriler
 Hava kalitesi ham verileri https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew 
 adresinden indirilmektedir.
 

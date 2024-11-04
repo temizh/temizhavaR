@@ -9,8 +9,7 @@
 
 calculate_overall_PM25_average_by_city <- function() {
 
-  parameter =
-  init.temizhavaR()
+  parameter =  init.temizhavaR()
 
   YEAR <- options()$temizhavaR.YEAR
 
@@ -19,232 +18,44 @@ calculate_overall_PM25_average_by_city <- function() {
   city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
 
-  overall_avgs <- sapply(cities, function(city_name) {
+    overall_avgs <- lapply(cities, function(city_name) {
     station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
-    station_avgs <- sapply(stations, function(station) {
+    station_avgs <- lapply(stations, function(station) {
       pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
       pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
 
       if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
         #Take the PM2.5 measurement
-        pm25_query <- paste0("SELECT \"PM2.5\" FROM daily_detail WHERE Istasyon='", station, "'")
-        pm25 <- dbGetQuery(mydb, pm25_query)$PM2.5
+        pm25_query <- paste0("SELECT AVG(\"PM2.5\") AS Yillik_Ortalama FROM daily_detail WHERE Istasyon='", station, "'")
+        pm25 <- dbGetQuery(mydb, pm25_query)
 
-        pm25_values <- data.frame(Istasyon = station, PM25 = pm25,
+        pm25_values <- data.frame(Istasyon = station, PM25 = pm25$Yillik_Ortalama,
                                   pm25_veri_mevcudiyet_yuzdesi = pm25_data_percentage,
                                   pm10_veri_mevcudiyet_yuzdesi = NA,
                                   pm10_value = NA)
 
       } else {
 
-#DEBUG
-print(station)
-
         #Estimate PM2.5 from PM10 measurements if PM10 satisfies 90 availability treshold
-        pm25_values <- new_pm25_for_city_based_mean(station)
-
-        #pm25_from_pm10_value <- pm25_from_pm10_df$PM25[pm25_from_pm10_df$Istasyon == station]
-
-        #if (length(pm25_from_pm10_value) > 0) {
-        #  return(pm25_from_pm10_value)
-        #} else {
-        #  return(NA)
-        #}
+        pm25_values <- new_pm25_for_city_based_mean(station, verbose = TRUE)
       }
+
       pm25_values
+    })
 
-    }, USE.NAMES = FALSE)
-
-    station_avgs <- unlist(station_avgs)
-    station_avgs <- station_avgs[!is.na(station_avgs)]
-
-    if (length(station_avgs) > 0) {
-      overall_avg <- mean(station_avgs, na.rm = TRUE)
-    } else {
-      overall_avg <- NA
-    }
-
-    return(overall_avg)
+    station_avgs <- do.call("rbind", station_avgs)
+    #print(paste(city_name, ", class : ", class(station_avgs), ", dim : ", dim(station_avgs) ))
+    station_avgs <- cbind(data.frame(Sehir = NA), station_avgs)
+    station_avgs$Sehir <- city_name
+    head(station_avgs, 2)
   })
 
   dbDisconnect(mydb)
 
-  browser()
-  result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
-
-  row.names(result) <- NULL
-
-  result %>%
-    arrange(desc(Ortalama)) %>%
-    mutate(Ortalama = round(Ortalama, 2))
+  result <- do.call("rbind", overall_avgs) %>%
+    #arrange(desc(PM25)) %>%
+    mutate(PM25 = round(PM25, 5)) %>%
+    mutate(pm10_value = round(pm10_value, 5))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# calculate_overall_average_by_city <- function(parameter) {
-#
-#   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-#
-#  city_query <- dbGetQuery(mydb, "SELECT DISTINCT Sehir FROM location_2023")
-#
-#  cities <- city_query$Sehir
-#
-#  overall_avgs <- sapply(cities, function(city_name) {
-#   station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_2023 WHERE Sehir='", city_name, "'"))
-#   stations <- station_query$Istasyonlar
-#
-#   station_avgs <- sapply(stations, function(station) {
-#     pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
-#     pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
-#
-#     if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
-#       pm25_query <- paste0("SELECT \"PM2.5\" FROM daily_detail WHERE Istasyon='", station, "'")
-#       pm25_values <- dbGetQuery(mydb, pm25_query)$PM2.5
-#       return(pm25_values)
-#     } else {
-#       pm25_from_pm10_df <- new_pm25_for_city_based_mean()
-#       pm25_from_pm10_value <- pm25_from_pm10_df$PM25[pm25_from_pm10_df$Istasyon == station]
-#       if (length(pm25_from_pm10_value) > 0) {
-#         return(pm25_from_pm10_value)
-#       } else {
-#         return(NA)
-#       }
-#     }
-#   }, USE.NAMES = FALSE)
-#
-#   station_avgs <- unlist(station_avgs)
-#   station_avgs <- station_avgs[!is.na(station_avgs)]
-#
-#   overall_avg <- mean(station_avgs, na.rm = TRUE)
-#   return(overall_avg)
-# })
-#
-# dbDisconnect(mydb)
-#
-# result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
-# result <- result[!is.na(result$Ortalama), ]
-# row.names(result) <- NULL
-#
-# return(result)
-# }
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# overall_avgs <- sapply(cities, function(city_name) {
-#
-#   station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_2023 WHERE Sehir='", city_name, "'"))
-#
-#   stations <- station_query$Istasyonlar
-#
-#   stations_string <- paste0("'", stations, "'", collapse = ", ")
-#
-#   query <- paste0("SELECT ", parameter, " FROM daily_detail WHERE Istasyon IN (", stations_string, ")")
-#
-#   daily_data <- dbGetQuery(mydb, query)
-#
-#   parameter <- gsub('"', '' , parameter)
-#
-#   overall_avg <- mean(daily_data[[parameter]], na.rm = TRUE)
-#
-#   return(overall_avg)
-# })
-#
-# dbDisconnect(mydb)
-#
-# result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
-# result <- result[!is.na(result$Ortalama), ]
-# row.names(result) <- NULL
-#
-# return(result)
-# }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# calculate_overall_average_by_city <- function(parameter) {
-#
-#   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-#
-#   city_query <- dbGetQuery(mydb, "SELECT DISTINCT Sehir FROM location")
-#
-#   cities <- city_query$Sehir
-#
-#   overall_avgs <- sapply(cities, function(city_name) {
-#
-#     station_query <- dbGetQuery(mydb, paste0("SELECT Sehir_Istasyon FROM location WHERE Sehir='", city_name, "'"))
-#
-#     stations <- station_query$Sehir_Istasyon
-#
-#     stations_string <- paste0("'", stations, "'", collapse = ", ")
-#
-#     query <- paste0("SELECT ", parameter, " FROM daily_detail WHERE Istasyon IN (", stations_string, ")")
-#
-#     daily_data <- dbGetQuery(mydb, query)
-#
-#     parameter <- gsub('"', '' , parameter)
-#
-#     overall_avg <- mean(daily_data[[parameter]], na.rm = TRUE)
-#
-#     return(overall_avg)
-#   })
-#
-#   dbDisconnect(mydb)
-#
-#   result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
-#   result <- result[!is.na(result$Ortalama), ]
-#   row.names(result) <- NULL
-#
-#   return(result)
-# }

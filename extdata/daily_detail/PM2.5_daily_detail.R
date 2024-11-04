@@ -68,10 +68,14 @@ output$PM25_12$result_message <- print(paste0(parameter_name, "_12 : Günlük or
 output$PM25_12$data <- calculate_below_exceedance_days_all_stations(parameter_name, threshold = 15)
 
 output$PM25_13$result_message <- print(paste0(parameter_name, "_13 : PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilecek hesaplanan PM25" ))
-output$PM25_13$data <- new_pm25_from_pm10_yearly_average()
+output$PM25_13$data <- calculate_overall_PM25_average_by_city()
 
 output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 yıllık ortalaması" ))
-output$PM25_14$data <- calculate_overall_PM25_average_by_city()
+output$PM25_14$data <-output$PM25_13$data %>%
+  group_by(Sehir) %>%
+  summarise(PM25_Sehir_Ortalama = mean(PM25, na.rm = T),
+            PM25_Sehir_Standat_Sapma = sd(PM25,  na.rm = T), n = n(na.rm = T)) %>%
+  select(Sehir, PM25_Sehir_Ortalama)
 
 
 write_output_to_excel(output, result_pm25_daily_excel_file)
