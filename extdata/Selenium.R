@@ -127,7 +127,6 @@ dropdown12_element <- tryCatch({
   message("Element not found within the timeout.")
   NULL
 })
-print(dropdown12_element)
 dropdown12_element$clickElement()
 Sys.sleep(3)
 
