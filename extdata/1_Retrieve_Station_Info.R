@@ -128,42 +128,18 @@ for (bolge in bolge_list_dolu) {
   Sys.sleep(3)
 }
 
-dbDisconnect(mydb)
 
 driver$close()
 
-dropdown1_element <- driver$findElement(using = 'id', value = 'dropdown1-contentDataDowloadNew')
-dropdown1_element$clickElement()
-Sys.sleep(2)
 
-dropdown1_list_items <- driver$findElements(using = "css", value = ".k-reset li")
-sehir_list <- sapply(dropdown1_list_items, function(item) item$getElementText()[[1]])
-sehir_list_dolu <- sehir_list[sehir_list != ""]
 
-clickByXpath(driver, '//*[@id="page-wrapper"]/div[1]')
-
-clickByXpath(driver, '//*[@id="dropdown2-contentDataDowloadNew"]')
-Sys.sleep(2)
-dropdown_element_list2 <- driver$findElements(using = 'css', value = '.k-reset li')
-station_list <- sapply(dropdown_element_list2, function(item) item$getElementText()[[1]])
-station_list_dolu <- station_list[station_list != ""]
-
-dropdown12_element <- driver$findElement(using = 'id', value = 'dropdown12-contentDataDowloadNew')
-dropdown12_element$clickElement()
-Sys.sleep(2)
-
-dropdown12_list_items <- driver$findElements(using = "css", value = ".k-reset li")
-
-bolge_list <- sapply(dropdown12_list_items, function(item) item$getElementText()[[1]])
-bolge_list_dolu <- bolge_list[bolge_list != ""]
-
-query <- "SELECT * FROM location_deneme LIMIT 10"
+# mydb <- dbConnect(RSQLite::SQLite(), paste0(DBDIR, "temiz-hava.sqlite"))
+query <- "SELECT * FROM location_2023 LIMIT 10"
 result <- dbGetQuery(mydb, query)
 
 print(result)
 
 dbDisconnect(mydb)
 
-driver$close()
 
 
