@@ -1,2 +1,8 @@
 .Rproj.user
 .Rhistory
+
+renv/library/
+
+renv
+
+temiz-hava.sqlite
