@@ -4,18 +4,18 @@
 \alias{download_check}
 \title{Download check}
 \usage{
-download_check(city_dir, istasyon, data_type)
+download_check(city_dir, istasyon, data_type, startdate)
 }
 \arguments{
 \item{istasyon}{The station to select.}
 
 \item{data_type}{The type of data to download ("hourly" or "daily").}
 
+\item{startdate}{The start date for the data download (format: "DD.MM.YYYY").}
+
 \item{bolge}{The region to select.}
 
 \item{sehir}{The city to select.}
-
-\item{startdate}{The start date for the data download (format: "DD.MM.YYYY").}
 
 \item{enddate}{The end date for the data download (format: "DD.MM.YYYY").}
 

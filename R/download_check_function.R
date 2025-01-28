@@ -11,20 +11,26 @@
 #' @export
 
 
-download_check <- function(city_dir, istasyon, data_type) {
-  hourly_detail <- paste0(istasyon, "_saatlik_detay_2023.xlsx")
-  hourly_summary <- paste0(istasyon, "_saatlik_ozet_2023.xlsx")
-  daily_detail <- paste0(istasyon, "_gunluk_detay_2023.xlsx")
-  daily_summary <- paste0(istasyon, "_gunluk_ozet_2023.xlsx")
+download_check <- function(city_dir, istasyon, data_type, startdate) {
+  year <- format(as.Date(startdate, "%d.%m.%Y"), "%Y")
+  hourly_detail <- paste0(istasyon, "_saatlik_detay_", year, ".xlsx")
+  hourly_summary <- paste0(istasyon, "_saatlik_ozet_", year, ".xlsx")
+  daily_detail <- paste0(istasyon, "_gunluk_detay_", year, ".xlsx")
+  daily_summary <- paste0(istasyon, "_gunluk_ozet_", year, ".xlsx")
 
   required_files <- list(hourly_detail, hourly_summary, daily_detail, daily_summary)
   existing_files <- list.files(city_dir)
+  
+  # Debugging logs
+  # cat("Checking files in directory:", city_dir, "\n")
+  # cat("Required files:", paste(required_files, collapse = ", "), "\n")
+  # cat("Existing files:", paste(existing_files, collapse = ", "), "\n")
 
   for (file in required_files) {
     if (!(file %in% existing_files)) {
-      return(TRUE)
+      cat("File not found:", file, "\n")
+      return(TRUE)  
     }
   }
-
-  return(FALSE)
+  return(FALSE) 
 }
