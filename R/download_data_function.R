@@ -116,9 +116,12 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       set_input_value('id', 'StationDataDownload_EndDateTime', enddate)
     }
 
+    startYear <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
+    endYear <- format(as.Date(enddate, format = "%d.%m.%Y"), "%Y")
+
     # Download detail data
     click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[1]/div/div/div/button')
-    Sys.sleep(10)
+    Sys.sleep(15) 
     
     click_element('css selector', "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel")
     Sys.sleep(6)
@@ -128,7 +131,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
       if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
         year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", year, ".xlsx")
+        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
         yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
         file.rename(mevcut_dosya, yeni_dosya_yolu)
         log_message(paste("Detail data successfully downloaded for station:", istasyon))
@@ -141,14 +144,14 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
     # Download summary data
     click_element('css selector', "fieldset[data-element='SummaryGrid'] a.k-button.k-button-icontext.k-grid-excel")
-    Sys.sleep(6)
+    Sys.sleep(10)  
 
     indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
     if (length(indirilen_dosyalar) > 0) {
       mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
       if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
         year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", year, ".xlsx")
+        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", startYear, "-", endYear, ".xlsx")
         yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
         file.rename(mevcut_dosya, yeni_dosya_yolu)
         log_message(paste("Summary data successfully downloaded for station:", istasyon))

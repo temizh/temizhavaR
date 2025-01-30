@@ -11,12 +11,14 @@
 #' @export
 
 
-download_check <- function(city_dir, istasyon, data_type, startdate) {
-  year <- format(as.Date(startdate, "%d.%m.%Y"), "%Y")
-  hourly_detail <- paste0(istasyon, "_saatlik_detay_", year, ".xlsx")
-  hourly_summary <- paste0(istasyon, "_saatlik_ozet_", year, ".xlsx")
-  daily_detail <- paste0(istasyon, "_gunluk_detay_", year, ".xlsx")
-  daily_summary <- paste0(istasyon, "_gunluk_ozet_", year, ".xlsx")
+download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
+  startYear <- format(as.Date(startdate, "%d.%m.%Y"), "%Y")
+  endYear <- format(as.Date(enddate, "%d.%m.%Y"), "%Y")
+  
+  hourly_detail <- paste0(istasyon, "_saatlik_detay_", startYear, "-", endYear, ".xlsx")
+  hourly_summary <- paste0(istasyon, "_saatlik_ozet_", startYear, "-", endYear, ".xlsx")
+  daily_detail <- paste0(istasyon, "_gunluk_detay_", startYear, "-", endYear, ".xlsx")
+  daily_summary <- paste0(istasyon, "_gunluk_ozet_", startYear, "-", endYear, ".xlsx")
 
   required_files <- list(hourly_detail, hourly_summary, daily_detail, daily_summary)
   existing_files <- list.files(city_dir)

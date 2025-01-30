@@ -119,7 +119,7 @@ for (i in 1:nrow(location)) {
     dir.create(city_dir, recursive = TRUE, showWarnings = FALSE)
   }
   
-  if (download_check(city_dir, istasyon, "daily", startdate)) {
+  if (download_check(city_dir, istasyon, "daily", startdate, enddate)) {
     cat("Downloading daily data for:", istasyon, "\n")
     download_data(
       remDr = remDr,
@@ -131,11 +131,11 @@ for (i in 1:nrow(location)) {
       enddate = enddate,
       result_dir = result_dir
     )
-    Sys.sleep(8)  
+    Sys.sleep(12)  
     handle_downloaded_file(result_dir, city_dir, istasyon, "daily", startdate)
   }
   
-  if (download_check(city_dir, istasyon, "hourly", startdate)) {
+  if (download_check(city_dir, istasyon, "hourly", startdate, enddate)) {
     cat("Downloading hourly data for:", istasyon, "\n")
     download_data(
       remDr = remDr,
@@ -147,7 +147,7 @@ for (i in 1:nrow(location)) {
       enddate = enddate,
       result_dir = result_dir
     )
-    Sys.sleep(8)  
+    Sys.sleep(12) 
     handle_downloaded_file(result_dir, city_dir, istasyon, "hourly", startdate)
   }
 }
@@ -161,7 +161,7 @@ for (i in 1:nrow(location)) {
 
 # Default mode with specific start and end dates
 
-download_temizhava_data(startdate = "01.01.2021", enddate = "01.01.2022")
+download_temizhava_data(startdate = "01.01.2014", enddate = "01.01.2024")
 
 # Yearly mode for 2023
 # download_temizhava_data(mode = "yearly", year = 2023)
