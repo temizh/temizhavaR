@@ -6,5 +6,7 @@ renv/library/
 renv
 
 temiz-hava.sqlite
+temiz-hava (copy).sqlite
 
 TemizHava_raw_data/
+TemizHava_raw_data (copy)/

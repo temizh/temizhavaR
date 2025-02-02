@@ -12,37 +12,41 @@ create_SQL_schema <- function() {
   # create a connection to database
   mydb <- dbConnect(RSQLite::SQLite(), DBDIR)
 
-
+  # delete table
+  dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
+  dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
+  
   mydb_hourly_detail <- "
    CREATE TABLE hourly_detail (
     Istasyon TEXT,
     location_id TEXT,
     Tarih DATETIME,
     PM10 DOUBLE,
-    \"PM2.5\" DOUBLE,
+    `PM2.5` DOUBLE,
     SO2 DOUBLE,
     CO DOUBLE,
     NO2 DOUBLE,
     NOX DOUBLE,
     NO DOUBLE,
-    O3 DOUBLE
-
+    O3 DOUBLE,
+    Istasyon_modified TEXT
 );
 "
 
   mydb_daily_detail <- "
-CREATE TABLE daily_detail(
-   Istasyon TEXT,
+CREATE TABLE daily_detail (
+    Istasyon TEXT,
     location_id TEXT,
     Tarih DATETIME,
     PM10 DOUBLE,
-    \"PM2.5\" DOUBLE,
+    `PM2.5` DOUBLE,
     SO2 DOUBLE,
     CO DOUBLE,
     NO2 DOUBLE,
     NOX DOUBLE,
     NO DOUBLE,
-    O3 DOUBLE
+    O3 DOUBLE,
+    Istasyon_modified TEXT
 );
 "
 
