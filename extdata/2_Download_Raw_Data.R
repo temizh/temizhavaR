@@ -4,43 +4,9 @@ library(wdman)
 library(uuid)
 library(RSQLite)
 library(temizhavaR)
+library(stringr)
 
 
-
-
-handle_downloaded_file <- function(download_dir, city_dir, istasyon, data_type, startdate) {
-  indirilen_dosyalar <- list.files(download_dir, pattern = "\\.xlsx$", full.names = TRUE)
-  
-  cat("Checking download directory:", download_dir, "\n")
-  cat("Number of files found:", length(indirilen_dosyalar), "\n")
-  
-  if (length(indirilen_dosyalar) == 0) {
-    message("No Excel files found in download directory")
-    return(FALSE)
-  }
-  
-  mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
-  if (is.na(mevcut_dosya) || !nzchar(mevcut_dosya)) {
-    message("Invalid filename encountered.")
-    return(FALSE)
-  }
-  cat("Latest downloaded file:", mevcut_dosya, "\n")
-
-  if (file.exists(mevcut_dosya)) {
-    year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-    yeni_dosya_adi <- paste0(istasyon, "_", 
-                            if (data_type == "hourly") "saatlik" else "gunluk", 
-                            "_", year, ".xlsx")
-    yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
-
-    file.rename(mevcut_dosya, yeni_dosya_yolu)
-    message(paste("File successfully moved to:", yeni_dosya_yolu))
-    return(TRUE)
-  } else {
-    message(paste("Download failed or file not found for:", istasyon))
-    return(FALSE)
-  }
-}
 
 download_temizhava_data <- function(mode = "default", 
                                     startdate = NULL, enddate = NULL, year = NULL, start_year = NULL) {
@@ -97,7 +63,7 @@ download_temizhava_data <- function(mode = "default",
   remDr$navigate("https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew")
   Sys.sleep(5)
 
-  
+  all_downloads_completed <- TRUE  
 
 for (i in 1:nrow(location)) {
   current_station <- location[i, , drop = FALSE]
@@ -107,11 +73,14 @@ for (i in 1:nrow(location)) {
   
   bolge <- as.character(current_station$Bolge)
   sehir <- as.character(current_station$Sehir)
-  istasyon <- as.character(current_station$Istasyonlar)
-  
+  istasyon_original <- as.character(current_station$Istasyonlar)
+    # Replace slashes  with _, and remove spaces and  dots from the station name
+  istasyon_modified  <- str_replace_all(istasyon_original, c(" " = "", "\\." = "", "/" = "_"))
+
+    
   cat("Bolge:", bolge, "\n")
   cat("Sehir:", sehir, "\n")
-  cat("Istasyon:", istasyon, "\n")
+  cat("Istasyon:", istasyon_original, "\n")
   
   city_dir <- file.path(result_dir, sehir)
   if (!dir.exists(city_dir)) {
@@ -119,44 +88,61 @@ for (i in 1:nrow(location)) {
     dir.create(city_dir, recursive = TRUE, showWarnings = FALSE)
   }
   
-  if (download_check(city_dir, istasyon, "daily", startdate, enddate)) {
-    cat("Downloading daily data for:", istasyon, "\n")
-    download_data(
-      remDr = remDr,
-      bolge = bolge,
-      sehir = sehir,
-      istasyon = istasyon,
-      data_type = "daily",
-      startdate = startdate,
-      enddate = enddate,
-      result_dir = result_dir
-    )
-    Sys.sleep(12)  
-    handle_downloaded_file(result_dir, city_dir, istasyon, "daily", startdate)
-  }
-  
-  if (download_check(city_dir, istasyon, "hourly", startdate, enddate)) {
-    cat("Downloading hourly data for:", istasyon, "\n")
-    download_data(
-      remDr = remDr,
-      bolge = bolge,
-      sehir = sehir,
-      istasyon = istasyon,
-      data_type = "hourly",
-      startdate = startdate,
-      enddate = enddate,
-      result_dir = result_dir
-    )
-    Sys.sleep(12) 
-    handle_downloaded_file(result_dir, city_dir, istasyon, "hourly", startdate)
-  }
+  tryCatch({
+    cat("Checking existing files for:", istasyon_original, "\n")
+    
+    if (download_check(city_dir, istasyon_modified, "daily", startdate, enddate)) {
+      cat("Downloading daily data for:", istasyon_original, "\n")
+      download_data(
+        remDr = remDr,
+        bolge = bolge,
+        sehir = sehir,
+        istasyon = istasyon_original,
+        data_type = "daily",
+        startdate = startdate,
+        enddate = enddate,
+        result_dir = result_dir
+      )
+      Sys.sleep(12)  
+    } else {
+      cat("Skipping daily data download - file already exists\n")
+    }
+    
+    if (download_check(city_dir, istasyon_modified, "hourly", startdate, enddate)) {
+      cat("Downloading hourly data for:", istasyon_original, "\n")
+      download_data(
+        remDr = remDr,
+        bolge = bolge,
+        sehir = sehir,
+        istasyon = istasyon_original,
+        data_type = "hourly",
+        startdate = startdate,
+        enddate = enddate,
+        result_dir = result_dir
+      )
+      Sys.sleep(12) 
+    } else {
+      cat("Skipping hourly data download - file already exists\n")
+    }
+  }, error = function(e) {
+    cat("Error downloading data for station:", istasyon_original, "\n")
+    cat("Error message:", e$message, "\n")
+    all_downloads_completed <- FALSE
+  })
 }
 
+if (all_downloads_completed) {
+  cat("\nAll station downloads completed successfully!\n")
+} else {
+  cat("\nDownloads completed with some errors. Please check the logs above.\n")
+}
 
-  remDr$close()
-  remote_driver$server$stop()
+remDr$close()
+remote_driver$server$stop()
 
-  dbDisconnect(mydb)
+dbDisconnect(mydb)
+cat("\nDatabase connection closed.\n")
+
 }
 
 # Default mode with specific start and end dates

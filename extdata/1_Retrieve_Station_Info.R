@@ -3,6 +3,13 @@ library(netstat)
 library(wdman)
 library(uuid)
 library(DBI)
+library(stringr)
+
+
+# Download Selenium Driver
+wdman::selenium(port = 4445L, retcommand = TRUE)
+
+
 
 # Retry mechanism for finding elements
 findElementWithRetry <- function(driver, using, value, max_retries = 5) {
@@ -45,22 +52,22 @@ safeClick <- function(driver, element) {
 # Database setup
 initializeDatabase <- function(db_path) {
   mydb <- dbConnect(RSQLite::SQLite(), db_path)
-  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Id TEXT)")
+  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Istasyonlar_modified TEXT, Id TEXT)")
   dbExecute(mydb, "DELETE FROM location") 
   return(mydb)
 }
 
 # Insert data into the database
-insertLocation <- function(db, bolge, sehir, plaka, istasyon, id) {
+insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified, id) {
   tryCatch({
     if (!dbIsValid(db)) stop("Database connection is invalid.")
-    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, id))
+    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
     # Start transaction
     dbExecute(db, "BEGIN TRANSACTION")
     
-    dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Id) VALUES (?, ?, ?, ?, ?)",
-              params = list(bolge, sehir, plaka, istasyon, id))
+    dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Istasyonlar_modified, Id) VALUES (?, ?, ?, ?, ?, ?)",
+              params = list(bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
     # Commit transaction
     dbExecute(db, "COMMIT")
@@ -262,7 +269,11 @@ retrieveStationInfo <- function() {
           print(paste("Processing istasyon:", istasyon))
           id <- UUIDgenerate()
           plaka <- plaka_list[[sehir]]
-          insertLocation(mydb, bolge, sehir, plaka, istasyon, id)
+          istasyon_modified  <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+
+          
+
+          insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified, id)
         }
         clickClearButton(driver, "dropdown1-contentDataDowloadNew", "Temizle")
       }

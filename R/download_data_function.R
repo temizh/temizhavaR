@@ -1,3 +1,6 @@
+library(stringr)
+
+
 #' Download air quality data from the specified website
 #'
 #' @param bolge The region to select.
@@ -131,7 +134,8 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
       if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
         year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
+        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+        yeni_dosya_adi <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
         yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
         file.rename(mevcut_dosya, yeni_dosya_yolu)
         log_message(paste("Detail data successfully downloaded for station:", istasyon))
@@ -151,7 +155,13 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
       if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
         year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        yeni_dosya_adi <- paste0(istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", startYear, "-", endYear, ".xlsx")
+        # Replace slashes with _, and remove spaces  and  dots from the station name
+        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+
+        
+
+
+        yeni_dosya_adi <- paste0(modified_istasyon , "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", startYear, "-", endYear, ".xlsx")
         yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
         file.rename(mevcut_dosya, yeni_dosya_yolu)
         log_message(paste("Summary data successfully downloaded for station:", istasyon))

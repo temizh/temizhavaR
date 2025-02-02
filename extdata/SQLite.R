@@ -2,15 +2,16 @@ library(uuid)
 library(dplyr)
 library(readxl)
 library(writexl)
+library(temizhavaR)
 
 create_SQL_schema <- function() {
 
   init.temizhavaR()
 
-  YEAR <- options()$temizhavaR.YEAR
-
+  DBDIR <- "./temiz-hava.sqlite"
   # create a connection to database
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir,"temiz-hava.sqlite"))
+  mydb <- dbConnect(RSQLite::SQLite(), DBDIR)
+
 
   mydb_hourly_detail <- "
    CREATE TABLE hourly_detail (
@@ -46,21 +47,25 @@ CREATE TABLE daily_detail(
 "
 
   mydb_location <- paste0("
-CREATE TABLE IF NOT EXISTS location_", YEAR, "(
+CREATE TABLE IF NOT EXISTS location (
     Bolge TEXT,
     Sehir TEXT,
     Plaka TEXT,
     Istasyonlar TEXT,
-    Id TEXT PRIMARY KEY,
-    gunluk_files2022 TEXT,
-    saatlik_files2022 TEXT
+    Istasyonlar_modified TEXT,
+    Id TEXT PRIMARY KEY
 );
 ")
 
   # CREATE TABLE
   dbExecute(mydb, mydb_location)
+  tryCatch({
+    dbExecute(mydb, "ALTER TABLE location ADD COLUMN Istasyonlar_modified TEXT")
+  }, error = function(e) {
+    print(e)
+    print("Column already exists")
+  })
   dbExecute(mydb, mydb_hourly_detail)
-
   dbExecute(mydb, mydb_daily_detail)
 }
 
@@ -70,10 +75,10 @@ CREATE TABLE IF NOT EXISTS location_", YEAR, "(
 #query_result1 <- dbGetQuery(mydb, "SELECT * FROM hourly_detail LIMIT 10")
 
 create_SQL_schema()
-source("make_location_table_2022.R")
-location_data <- create_location_table_2022()
+# source("make_location_table_2022.R")
+# location_data <- create_location_table_2022()
 
-daily_detail_save_to_database()
+# daily_detail_save_to_database()
 
 
 
