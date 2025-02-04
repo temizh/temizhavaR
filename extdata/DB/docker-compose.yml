@@ -30,5 +30,5 @@ services:
         POSTGRES_DB: ${POSTGRES_DB}
         POSTGRES_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}  # Password for postgres user
       entrypoint: >
-        bash -c "PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgis -U $$POSTGRES_USER -d $$POSTGRES_DB -c 
-                'ALTER USER postgres WITH PASSWORD $$POSTGRES_ADMIN_PASSWORD;'"
+        bash -c "PGPASSWORD=${POSTGRES_PASSWORD} psql -h postgis -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 
+                'ALTER USER postgres WITH PASSWORD ${POSTGRES_ADMIN_PASSWORD};'"
