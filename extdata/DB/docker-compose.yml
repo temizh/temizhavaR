@@ -1,7 +1,6 @@
 services:
   postgis:
     image: postgis/postgis:17-3.5
-    user: "345:345"  # Specify the UID and GID for the postgres process
     container_name: temizhava-postgis
     restart: always
     environment:
@@ -21,7 +20,6 @@ services:
 
   setup:
       image: postgis/postgis:17-3.5
-      user: "345:345"  # Specify the UID and GID for the postgres process user      
       depends_on:
         - postgis
       environment:
