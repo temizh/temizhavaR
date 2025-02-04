@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   postgis:
     image: postgis/postgis:17-3.5
-    user: "345:345"  # Specify the UID and GID for the mongodb user      
+    user: "345:345"  # Specify the UID and GID for the postgres process
     container_name: temizhava-postgis
     restart: always
     environment:
@@ -14,7 +12,8 @@ services:
     ports:
       - "5422:5432"
     volumes:
-      - ./postgis_data:/var/lib/postgresql/data
+      - /home/temizhava/postgis_data:/var/lib/postgresql/data
+      - /home/temizhava/logs:/var/log/postgresql  # Added logs mount to troubleshoot
     command: >
       bash -c "echo 'host all all 0.0.0.0/0 md5' >> /var/lib/postgresql/data/pg_hba.conf &&
                echo 'listen_addresses=*' >> /var/lib/postgresql/data/postgresql.conf &&
@@ -22,7 +21,7 @@ services:
 
   setup:
       image: postgis/postgis:17-3.5
-      user: "345:345"  # Specify the UID and GID for the mongodb user      
+      user: "345:345"  # Specify the UID and GID for the postgres process user      
       depends_on:
         - postgis
       environment:
