@@ -31,6 +31,9 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
   }
 }
 
+# define parameters to ckeck
+parameters <- c("PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3")
+
 # import raw data path from options
 raw_data_dir <- options()$temizhavaR.raw_dir
 
@@ -50,9 +53,19 @@ log_appender(appender_file(log_file))
 log_layout(layout_glue_generator(format = "{time} | {level} | {msg}"))
 
 # connect to the database
+message("Connecting to the database...")
 con <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_data_dir, "temiz-hava.sqlite")) # nolint
 
+# get daily data table
+message("Reading daily data table...")
+daily_detail <- dbGetQuery(con, "SELECT * FROM daily_detail")
+
+# get hourly data table
+message("Reading hourly data table...")
+hourly_detail <- dbGetQuery(con, "SELECT * FROM hourly_detail")
+
 # get the location table
+message("Reading location table...")
 locations <- dbGetQuery(con, "SELECT * FROM location")
 
 # instantiate report data frame
@@ -69,10 +82,21 @@ report <- locations %>%
     daily_data_file_station_name_match = 0,
     daily_summary_file_station_name_match = 0,
     hourly_data_file_station_name_match = 0,
-    hourly_summary_file_station_name_match = 0
+    hourly_summary_file_station_name_match = 0,
+    daily_data_file_row_count_match = 0,
+    hourly_data_file_row_count_match = 0
   )
 
+# add data count match columns for each parameter to report
+for (parameter in parameters) {
+  report <- report %>%
+    mutate(
+      !!paste0("daily_data_file_", parameter, "_data_count_match") := 0
+    )
+}
+
 # get missing locations
+message("Checking for missing locations...")
 missing_locations <- locations %>%
   filter(is.na(Bolge) | is.na(Sehir) | is.na(Plaka) | is.na(Istasyonlar_modified) | is.na(Id)) # nolint
 
@@ -85,12 +109,14 @@ if (nrow(missing_locations) > 0) {
 
 # romove missing locations
 locations <- locations %>%
-  filter(!is.na(Bolge) & !is.na(Sehir) & !is.na(Plaka) & !is.na(Istasyonlar_modified) & !is.na(Id)) # nolint
+  filter(!is.na(Bolge) & !is.na(Sehir) & !is.na(Plaka) & !is.na(Istasyonlar_modified) & !is.na(Id)) %>% # nolint
+  # take first 5 rows for testing
+  head(5)
 
 # loop through the locations
 for (i in seq_len(nrow(locations))) { # nolint
   location <- locations[i, ]
-  print(paste0("Processing location: ", location$Istasyonlar_modified)) # nolint
+  message(paste0("Processing location: ", location$Istasyonlar_modified)) # nolint
 
   # get the file paths
   daily_data_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyonlar_modified, "_gunluk_detay_2014-2024", ".xlsx")) # nolint
@@ -98,36 +124,7 @@ for (i in seq_len(nrow(locations))) { # nolint
   hourly_data_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyonlar_modified, "_saatlik_detay_2014-2024", ".xlsx")) # nolint
   hourly_summary_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyonlar_modified, "_saatlik_ozet_2014-2024", ".xlsx")) # nolint
 
-  # check if files exist (daily data, daily summary, hourly data, hourly summary) # nolint
-  if (!file.exists(daily_data_file)) {
-    log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file does not exist: ", daily_data_file)) # nolint
-
-    # fuzzy search in directory for the file
-    closest_file <- find_closest_file(basename(daily_data_file), dirname(daily_data_file)) # nolint
-    if (nchar(closest_file) > 0) {
-      log_warn(paste0(location$Istasyonlar_modified, " | ", "Closest daily data file found: ", closest_file)) # nolint
-    }
-  } else {
-    report[report$station == location$Istasyonlar_modified, "daily_data_file"] <- daily_data_file # nolint
-
-    # read the daily data file
-    suppressMessages(daily_data <- read_excel(daily_data_file))
-
-    # get second column name (it contains station name)
-    columns <- colnames(daily_data)
-    second_column <- columns[2]
-
-    # check if the second column name is the same as the station name
-    if (second_column != location$Istasyonlar) {
-      log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file station name mismatch: ", daily_data_file)) # nolint
-    } else {
-      report[report$station == location$Istasyonlar_modified, "daily_data_file_station_name_match"] <- 1 # nolint
-    }
-
-    # print number of rows
-    print(paste0("Number of rows in daily data file: ", nrow(daily_data))) # nolint
-  }
-
+  # check if files exist (daily data, daily summary, hourly data, hourly summary) and apply respective checks # nolint
   if (!file.exists(daily_summary_file)) {
     log_error(paste0(location$Istasyonlar_modified, " | ", "Daily summary file does not exist: ", daily_summary_file)) # nolint
 
@@ -151,10 +148,79 @@ for (i in seq_len(nrow(locations))) { # nolint
       log_error(paste0(location$Istasyonlar_modified, " | ", "Daily summary file station name mismatch: ", daily_summary_file)) # nolint
     } else {
       report[report$station == location$Istasyonlar_modified, "daily_summary_file_station_name_match"] <- 1 # nolint
+
+      # get the total data count for the location
+      total_daily_data_count <- daily_summary %>%
+        filter(Parametre == parameters[1]) %>%
+        select("Olması Gereken Veri") %>%
+        pull()
+
+      # get the daily summary metrics
+      daily_summary_metrics <- daily_summary %>%
+        filter(!is.na(Parametre)) %>%
+        select("Parametre", "Veri Adeti")
+    }
+  }
+
+  if (!file.exists(daily_data_file)) {
+    log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file does not exist: ", daily_data_file)) # nolint
+
+    # fuzzy search in directory for the file
+    closest_file <- find_closest_file(basename(daily_data_file), dirname(daily_data_file)) # nolint
+    if (nchar(closest_file) > 0) {
+      log_warn(paste0(location$Istasyonlar_modified, " | ", "Closest daily data file found: ", closest_file)) # nolint
+    }
+  } else {
+    report[report$station == location$Istasyonlar_modified, "daily_data_file"] <- daily_data_file # nolint
+
+    # read the daily data file
+    suppressMessages(daily_data <- read_excel(daily_data_file))
+
+    # get second column name (it contains station name)
+    columns <- colnames(daily_data)
+    second_column <- columns[2]
+
+    # remove NA date rows from daily data
+    daily_data <- daily_data %>%
+      filter(!is.na(Tarih))
+
+    # check if the second column name is the same as the station name
+    if (second_column != location$Istasyonlar) {
+      log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file station name mismatch: ", daily_data_file)) # nolint
+    } else {
+      report[report$station == location$Istasyonlar_modified, "daily_data_file_station_name_match"] <- 1 # nolint
     }
 
-    # print number of rows
-    print(paste0("Number of rows in daily summary file: ", nrow(daily_summary))) # nolint
+    # get the daily data from the daily detail table for location
+    daily_detail_for_location <- daily_detail %>%
+      filter(location_id == location$Id)
+
+    # check if the number of rows in the daily data file is the same as the daily detail table # nolint
+    if (nrow(daily_data) != nrow(daily_detail_for_location) && (nrow(daily_data) != total_daily_data_count)) { # nolint
+      log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file row count mismatch.")) # nolint
+    } else {
+      report[report$station == location$Istasyonlar_modified, "daily_data_file_row_count_match"] <- 1 # nolint
+    }
+
+    # for each parameter, check not NA data count
+    for (parameter in parameters) {
+      # get the daily data for the parameter
+      daily_data_for_parameter <- daily_detail_for_location %>%
+        select(parameter) %>%
+        filter(!is.na(parameter))
+
+      parameter_data_count <- daily_summary_metrics %>%
+        filter(Parametre == parameter) %>%
+        select("Veri Adeti") %>%
+        pull()
+
+      # check if the number of not NA data for the parameter is the same as the daily summary metrics # nolint
+      if (nrow(daily_data_for_parameter) != parameter_data_count) {
+        log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file parameter data count mismatch: ", parameter)) # nolint
+      } else {
+        report[report$station == location$Istasyonlar_modified, paste0("daily_data_file_", parameter, "_data_count_match")] <- 1 # nolint
+      }
+    }
   }
 
   if (!file.exists(hourly_data_file)) {
@@ -181,9 +247,6 @@ for (i in seq_len(nrow(locations))) { # nolint
     } else {
       report[report$station == location$Istasyonlar_modified, "hourly_data_file_station_name_match"] <- 1 # nolint
     }
-
-    # print number of rows
-    print(paste0("Number of rows in hourly data file: ", nrow(hourly_data))) # nolint
   }
 
   if (!file.exists(hourly_summary_file)) {
@@ -210,9 +273,6 @@ for (i in seq_len(nrow(locations))) { # nolint
     } else {
       report[report$station == location$Istasyonlar_modified, "hourly_summary_file_station_name_match"] <- 1 # nolint
     }
-
-    # print number of rows
-    print(paste0("Number of rows in hourly summary file: ", nrow(hourly_summary))) # nolint
   }
 }
 
@@ -221,3 +281,9 @@ write_xlsx(report, report_file)
 
 # close the connection
 dbDisconnect(con)
+
+# log the completion
+log_info("Data checks completed successfully")
+
+# message the completion
+message("Data checks completed successfully")
