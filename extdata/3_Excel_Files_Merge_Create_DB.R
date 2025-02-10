@@ -139,18 +139,16 @@ read_and_write_data <- function(delete_previous = FALSE) {
     data$location_id <- location_id
     data$Istasyon <- location_name
     
-    # Clean data: replace NA with "-" and remove any remaining empty rows
     data <- data %>% 
-      mutate(across(everything(), ~ifelse(is.na(.) | . == "", "-", .))) %>%
-      filter(Tarih != "-") 
+      mutate(across(everything(), ~ifelse(is.na(.) | . == "", NA, .))) %>%
+      filter(!is.na(Tarih)) 
 
     expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
     for (col in expected_cols) {
       if (!col %in% names(data)) {
-        data[[col]] <- "-"
+        data[[col]] <- NA
       }
     }
-
 
     data <- data[, expected_cols]
 
