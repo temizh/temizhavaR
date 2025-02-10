@@ -1,5 +1,5 @@
 library(stringr)
-
+library(openxlsx)
 
 #' Download air quality data from the specified website
 #'
@@ -97,7 +97,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
     Sys.sleep(1)
 
     click_element('xpath', 
-             sprintf("//ul[@aria-hidden='false']/li[contains(text(), '%s')]", istasyon))
+             sprintf("//ul[@aria-hidden='false']/li[normalize-space(text())='%s']", istasyon))
 
     click_element('xpath', '//*[@id="page-wrapper"]/div[1]')
     Sys.sleep(1)

@@ -1,4 +1,3 @@
-
 library(stringr)
 
 
@@ -16,14 +15,12 @@ library(stringr)
 
 
 download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
- modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+  modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
   start_date <- as.Date(startdate, format="%d.%m.%Y")
   end_date <- as.Date(enddate, format="%d.%m.%Y")
   
-  # Format years for filename
   year_pattern <- paste0(format(start_date, "%Y"), "-", format(end_date, "%Y"))
   
-  # Define expected filenames based on data type
   if (data_type == "hourly") {
     required_files <- c(
       paste0(modified_istasyon, "_saatlik_detay_", year_pattern, ".xlsx"),
