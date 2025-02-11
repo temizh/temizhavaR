@@ -11,7 +11,8 @@ download_data(
   data_type,
   startdate,
   enddate,
-  result_dir
+  result_dir,
+  remDr
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ download_data(
 \item{enddate}{The end date for the data download (format: "DD.MM.YYYY").}
 
 \item{result_dir}{The directory where the downloaded data will be saved.}
+
+\item{remDr}{The remote driver object for the Selenium web browser.}
 }
 \value{
 None. Downloads the data and saves it to the specified directory.
