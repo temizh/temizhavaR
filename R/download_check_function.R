@@ -1,4 +1,5 @@
 library(stringr)
+library(readxl)
 
 
 #' Download check
@@ -49,8 +50,25 @@ download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
       valid_file <- !is.na(file_size) && file_size > 0
       if (!valid_file) {
         cat(sprintf("File exists but is empty: %s\n", file))
+        return(FALSE)
       }
-      return(valid_file)
+      station_in_file <- NA
+      if (data_type == "hourly") {
+        station_in_file <- tryCatch({
+          read_excel(full_path, range = "B1", col_names = FALSE)[[1,1]]
+        }, error = function(e) NA)
+      } else if (data_type == "daily") {
+        station_in_file <- tryCatch({
+          read_excel(full_path, range = "A2", col_names = FALSE)[[1,1]]
+        }, error = function(e) NA)
+        station_in_file <- sub("^İstasyon:\\s*", "", station_in_file)
+      }
+      station_in_file_modified <- str_replace_all(station_in_file, c(" " = "", "\\." = "", "/" = "_"))
+      if (station_in_file_modified != modified_istasyon) {
+        cat(sprintf("File %s has mismatched station name: %s, expected: %s\n", file, station_in_file_modified, modified_istasyon))
+        return(FALSE)
+      }
+      return(TRUE)
     } else {
       cat(sprintf("Missing file: %s\n", file))
       return(FALSE)
