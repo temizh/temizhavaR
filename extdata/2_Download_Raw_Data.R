@@ -36,7 +36,7 @@ download_temizhava_data <- function(mode = "default",
   }
 
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- dbConnect(RSQLite::SQLite(), "./temiz-hava.sqlite")
   location <- dbReadTable(mydb, "location")
 
   if (nrow(location) == 0) {
@@ -75,9 +75,7 @@ for (i in 1:nrow(location)) {
   bolge <- as.character(current_station$Bolge)
   sehir <- as.character(current_station$Sehir)
   istasyon_original <- as.character(current_station$Istasyonlar)
-    # Replace slashes  with _, and remove spaces and  dots from the station name
-  istasyon_modified  <- str_replace_all(istasyon_original, c(" " = "", "\\." = "", "/" = "_"))
-
+  istasyon_modified <- as.character(current_station$Istasyonlar_modified)
     
   cat("Bolge:", bolge, "\n")
   cat("Sehir:", sehir, "\n")
