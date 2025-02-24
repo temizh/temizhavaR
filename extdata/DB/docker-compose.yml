@@ -3,30 +3,18 @@ services:
     image: postgis/postgis:17-3.5
     container_name: temizhava-postgis
     restart: always
+    env_file: ".env"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_INITDB_ARGS: "--auth-host=md5"  # Ensure authentication
     ports:
-      - "5422:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
-      - /home/temizhava/postgis_data:/var/lib/postgresql/data
-      - /home/temizhava/logs:/var/log/postgresql  # Added logs mount to troubleshoot
-    command: >
-      bash -c "echo 'host all all 0.0.0.0/0 md5' >> /var/lib/postgresql/data/pg_hba.conf &&
-               echo 'listen_addresses=*' >> /var/lib/postgresql/data/postgresql.conf &&
-               exec docker-entrypoint.sh postgres"
+      - temizhava_postgis_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d  # Custom init scripts
+        
+volumes:
+  temizhava_postgis_data:  
+    name: temizhava_postgis_data  # Explicitly set the volume name
 
-  setup:
-      image: postgis/postgis:17-3.5
-      depends_on:
-        - postgis
-      environment:
-        POSTGRES_USER: ${POSTGRES_USER}
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        POSTGRES_DB: ${POSTGRES_DB}
-        POSTGRES_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}  # Password for postgres user
-      entrypoint: >
-        bash -c "PGPASSWORD=${POSTGRES_PASSWORD} psql -h postgis -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 
-                'ALTER USER postgres WITH PASSWORD ${POSTGRES_ADMIN_PASSWORD};'"
