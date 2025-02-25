@@ -15,23 +15,19 @@ api_key_middleware <- Middleware$new(
     # Get the API key from the request headers
     api_key <- .req$get_header("X-API-Key")
 
+    print(paste0("API key: ", api_key, " == ", "Valid key: ", valid_key))
+
     # Check if the API key exists
     if (is.null(api_key)) {
       # Respond with a 401 Unauthorized error
-      .res$set_status_code(401)
-      .res$set_body("Missing API key.")
-      return(FALSE)  # Stop the request processing
+      raise(HTTPError$unauthorized())
     }
 
     # Validate API key
     if (api_key != valid_key) {
       # Respond with a 403 Forbidden error
-      .res$set_status_code(403)
-      .res$set_body("Invalid API key.")
-      return(FALSE)  # Stop the request processing
+      raise(HTTPError$forbidden())
     }
-
-    return(TRUE)  # Continue processing the request
   },
   id = "api_key"
 )

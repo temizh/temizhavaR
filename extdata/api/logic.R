@@ -6,7 +6,7 @@ source("db_connect.R")  # Load database connection
 # Function to get data from the database with nessesary filters
 get_data <- function(frequency = "daily",
                      parameters = c("PM10", "PM2.5", "NO2", "SO2", "CO", "O3"),
-                     start_date = "2014-01-01",
+                     start_date = "2013-01-01",
                      end_date = "2024-01-01",
                      region = NULL,
                      station = NULL,
