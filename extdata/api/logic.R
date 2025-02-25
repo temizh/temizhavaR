@@ -1,5 +1,6 @@
 library(DBI)
 library(dplyr)
+library(openxlsx)
 
 source("db_connect.R")  # Load database connection
 
@@ -45,6 +46,12 @@ get_data <- function(frequency = "daily",
     data <- data %>% filter(data$Istasyon_modified == station)
   }
 
+  # if frequency is hourly, create hour column
+  if (frequency == "hourly") {
+    data <- data %>%
+      mutate("Tarih&Saat" = openxlsx::convertToDateTime(Tarih)) # nolint
+  }
+
   # filter time range
   data <- data %>%
     # convert date format
@@ -53,7 +60,7 @@ get_data <- function(frequency = "daily",
     filter(Tarih >= start_date & Tarih <= end_date)
 
   # filter parameters(columns)
-  data <- data %>% select(Tarih, Istasyon_modified, all_of(parameters)) # nolint
+  data <- data %>% select("Tarih", "Tarih&Saat", "Istasyon_modified", all_of(parameters)) # nolint
 
   return(data)
 }

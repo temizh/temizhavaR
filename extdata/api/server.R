@@ -9,7 +9,7 @@ app$append_middleware(api_key_middleware)
 
 # Load and register endpoints
 source("endpoints.R")
-app$add_get(path = "/data", FUN = get_data_handler)
+app$add_get(path = "/get_data", FUN = get_data_handler)
 
 # Return the API app
 app

@@ -15,8 +15,6 @@ api_key_middleware <- Middleware$new(
     # Get the API key from the request headers
     api_key <- .req$get_header("X-API-Key")
 
-    print(paste0("API key: ", api_key, " == ", "Valid key: ", valid_key))
-
     # Check if the API key exists
     if (is.null(api_key)) {
       # Respond with a 401 Unauthorized error
