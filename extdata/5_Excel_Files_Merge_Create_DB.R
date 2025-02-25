@@ -115,12 +115,23 @@ read_and_write_data <- function(delete_previous = FALSE) {
     data$Istasyon_modified <- location_match$Istasyonlar_modified[1]
     data$Istasyon <- location_match$Istasyonlar[1]
     data$location_id <- location_match$Id[1]
+    data$station_type <- location_match$station_type[1]
+    data$Sampling_Point_Id <- location_match$Sampling_Point_Id[1]
+    data$Longitude <- location_match$Longitude[1]
+    data$Latitude <- location_match$Latitude[1]
+    data$Altitude <- location_match$Altitude[1]
+    data$LONGTD <- location_match$LONGTD[1]
+    data$LATTD <- location_match$LATTD[1]
     
     data <- data %>% 
       mutate(across(everything(), ~ifelse(is.na(.) | . == "", NA, .))) %>%
       filter(!is.na(Tarih)) 
 
-    expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
+    expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM2.5", "SO2", 
+                      "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified",
+                      "station_type", "Sampling_Point_Id", "Longitude", "Latitude",
+                      "Altitude", "LONGTD", "LATTD")
+
     for (col in expected_cols) {
       if (!col %in% names(data)) {
         data[[col]] <- NA
