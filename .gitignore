@@ -6,3 +6,5 @@ renv/library/
 renv
 
 temiz-hava.sqlite
+
+.env

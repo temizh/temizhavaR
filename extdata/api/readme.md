@@ -118,5 +118,3 @@ The server will start at `http://localhost:8080`, assuming port is defined as 80
 ## Database Connection
 
 The database connection is managed in `db_connect.R`. The connection details are retrieved from environment variables. Database is postgres database.
-
----
