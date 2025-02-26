@@ -46,11 +46,8 @@ get_data <- function(frequency = "daily",
     data <- data %>% filter(data$Istasyon_modified == station)
   }
 
-  # if frequency is hourly, create hour column
-  if (frequency == "hourly") {
-    data <- data %>%
-      mutate("Tarih&Saat" = openxlsx::convertToDateTime(Tarih)) # nolint
-  }
+  data <- data %>%
+    mutate("Tarih&Saat" = openxlsx::convertToDateTime(Tarih)) # nolint
 
   # filter time range
   data <- data %>%

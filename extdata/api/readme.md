@@ -85,6 +85,23 @@ curl -X GET "http://localhost:8080/get_data?frequency=daily&start_date=2024-01-0
      -H "X-API-Key: your_api_key"
 ```
 
+### 2. Fetch Air Quality Data by Configuration
+
+**Endpoint:** `/get_data_by_config`
+
+**Method:** `POST`
+
+**Body:**
+
+JSON object with parameters: frequency, parameters, start_date, end_date, region, station. Parameters have the same functionality as in `/get_data` endpoint.
+
+**Example Request (cURL):**
+
+```sh
+curl -X GET "http://localhost:8080/get_data?frequency=daily&start_date=2024-01-01&end_date=2024-01-31" \
+     -H "X-API-Key: your_api_key"
+```
+
 ### Authentication
 
 All requests require an API key in the request header:

@@ -37,3 +37,48 @@ get_data_handler <- function(.req, .res) {
   .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
   .res$set_content_type("application/json")
 }
+
+get_data_by_config_handler <- function(.req, .res) {
+
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  # Extract values from the parsed object
+  if (!is.null(request_data$frequency)) {
+    frequency <- request_data$frequency
+  } else {
+    frequency <- "daily"
+  }
+
+  if (!is.null(request_data$parameters)) {
+    parameters <- request_data$parameters
+  } else {
+    parameters <- c("PM10", "PM2.5", "NO2", "SO2", "CO", "O3")
+  }
+
+  if (!is.null(request_data$start_date)) {
+    start_date <- request_data$start_date
+  } else {
+    start_date <- "2013-01-01"
+  }
+
+  if (!is.null(request_data$end_date)) {
+    end_date <- request_data$end_date
+  } else {
+    end_date <- "2024-1-1"
+  }
+
+  region <- request_data$region
+  station <- request_data$station
+
+  data <- get_data(frequency, parameters, start_date, end_date, region, station, station_type) # nolint
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
