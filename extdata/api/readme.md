@@ -93,7 +93,7 @@ curl -X GET "http://localhost:8080/get_data?frequency=daily&start_date=2024-01-0
 
 **Body:**
 
-JSON object with parameters: frequency, parameters, start_date, end_date, region, station. Parameters have the same functionality as in `/get_data` endpoint.
+JSON object with parameters: frequency, parameters, start_date, end_date, region (optional), station (optional). Parameters have the same functionality as in `/get_data` endpoint.
 
 **Example Request (cURL):**
 
