@@ -75,44 +75,32 @@ read_and_write_data <- function(delete_previous = FALSE) {
     combined_header <- ifelse(is.na(header2) | header2 == "", header1, header2)
     combined_header <- trimws(combined_header)
     combined_header <- sub(" \\(.*\\)$", "", combined_header)
-    # Remove spaces in combined_header items 
     combined_header <- gsub(" ", "", combined_header)
     print(paste("Combined header:", combined_header))
     
     names(raw_data) <- combined_header
     data <- raw_data[-c(1, 2), ]
     
-    # Remove completely empty rows
     data <- data[rowSums(is.na(data)) != ncol(data), ]
     
     base_name <- tools::file_path_sans_ext(basename(file))
-    # ./TemizHava_raw_data/Adana/Adana-Valilik_gunluk_ozet_2014-2024.xlsx 
-    # We want Adana-Valilik
+   
     station_extracted <- str_extract(base_name, ".*(?=_gunluk|_saatlik)")
     if (is.na(station_extracted)) {
       cat("Could not extract station name from file:", file, "\n")
       next
     }
 
-    # Get Istasyonlar and Id from location table, in hourly and daily tables, the column name is different
-    # Istasyon and location_id
-
-    location <- location %>%
-       select(Istasyonlar_modified, Id)
-     
+    location_match <- location[location$Istasyonlar_modified == station_extracted, ]
     
-
-    
-    if (!any(grepl(station_extracted, location$Istasyonlar_modified, fixed = TRUE))) {
+    if (nrow(location_match) == 0) {
       cat("Station not found in location table:", station_extracted, "\n")
       next
     }
     
-   
-    
     dup_check <- dbGetQuery(db, paste0(
       "SELECT * FROM ", target_table, " WHERE Istasyon_modified = ? AND Tarih = ?"
-    ), params = list(station_extracted, data$Tarih[1]))
+    ), params = list(location_match$Istasyonlar_modified[1], data$Tarih[1]))
 
     if (nrow(dup_check) > 0) {
       cat("Data already exists in table", target_table, "for station:", station_extracted, "\n")
@@ -123,33 +111,22 @@ read_and_write_data <- function(delete_previous = FALSE) {
     data <- data %>% 
       mutate(across(-Tarih, ~ replace(., is.na(.), "-")))
 
-    data$Istasyon_modified <- str_replace_all(station_extracted, c(" " = "", "\\." = "", "/" = "_"))
-
-
+    # Use Istasyonlar_modified from location table
+    data$Istasyon_modified <- location_match$Istasyonlar_modified[1]
+    data$Istasyon <- location_match$Istasyonlar[1]
+    data$location_id <- location_match$Id[1]
     
-    loc_idx <- which(grepl(station_extracted, location$Istasyonlar_modified, fixed = TRUE))
-    if (length(loc_idx) == 0) {
-      cat("Station", station_extracted, "not found in location table.\n")
-      next
-    }
-    location_id <- location$Id[loc_idx[1]]
-    location_name <- location$Istasyonlar[loc_idx[1]]
-   
-    # data$Istasyon    <- station_extracted
-    data$location_id <- location_id
-    data$Istasyon <- location_name
-    
-    # Clean data: replace NA with "-" and remove any remaining empty rows
     data <- data %>% 
-      mutate(across(everything(), ~ifelse(is.na(.) | . == "", "-", .))) %>%
-      filter(Tarih != "-") 
+      mutate(across(everything(), ~ifelse(is.na(.) | . == "", NA, .))) %>%
+      filter(!is.na(Tarih)) 
 
     expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
     for (col in expected_cols) {
       if (!col %in% names(data)) {
-        data[[col]] <- "-"
+        data[[col]] <- NA
       }
     }
+    data[] <- lapply(data, function(x) ifelse(grepl("^\\s*-\\s*$", x), NA, x))
 
 
     data <- data[, expected_cols]

@@ -36,7 +36,7 @@ download_temizhava_data <- function(mode = "default",
   }
 
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- dbConnect(RSQLite::SQLite(), "./temiz-hava.sqlite")
   location <- dbReadTable(mydb, "location")
 
   if (nrow(location) == 0) {
@@ -64,6 +64,7 @@ download_temizhava_data <- function(mode = "default",
   Sys.sleep(5)
 
   all_downloads_completed <- TRUE  
+  all_missing_files <- list()
 
 for (i in 1:nrow(location)) {
   current_station <- location[i, , drop = FALSE]
@@ -74,9 +75,7 @@ for (i in 1:nrow(location)) {
   bolge <- as.character(current_station$Bolge)
   sehir <- as.character(current_station$Sehir)
   istasyon_original <- as.character(current_station$Istasyonlar)
-    # Replace slashes  with _, and remove spaces and  dots from the station name
-  istasyon_modified  <- str_replace_all(istasyon_original, c(" " = "", "\\." = "", "/" = "_"))
-
+  istasyon_modified <- as.character(current_station$Istasyonlar_modified)
     
   cat("Bolge:", bolge, "\n")
   cat("Sehir:", sehir, "\n")
@@ -93,7 +92,7 @@ for (i in 1:nrow(location)) {
     
     if (download_check(city_dir, istasyon_modified, "daily", startdate, enddate)) {
       cat("Downloading daily data for:", istasyon_original, "\n")
-      download_data(
+      missing_files <- download_data(
         remDr = remDr,
         bolge = bolge,
         sehir = sehir,
@@ -103,6 +102,7 @@ for (i in 1:nrow(location)) {
         enddate = enddate,
         result_dir = result_dir
       )
+      all_missing_files <- c(all_missing_files, missing_files)
       Sys.sleep(12)  
     } else {
       cat("Skipping daily data download - file already exists\n")
@@ -110,7 +110,7 @@ for (i in 1:nrow(location)) {
     
     if (download_check(city_dir, istasyon_modified, "hourly", startdate, enddate)) {
       cat("Downloading hourly data for:", istasyon_original, "\n")
-      download_data(
+      missing_files <- download_data(
         remDr = remDr,
         bolge = bolge,
         sehir = sehir,
@@ -120,6 +120,7 @@ for (i in 1:nrow(location)) {
         enddate = enddate,
         result_dir = result_dir
       )
+      all_missing_files <- c(all_missing_files, missing_files)
       Sys.sleep(12) 
     } else {
       cat("Skipping hourly data download - file already exists\n")
@@ -135,6 +136,13 @@ if (all_downloads_completed) {
   cat("\nAll station downloads completed successfully!\n")
 } else {
   cat("\nDownloads completed with some errors. Please check the logs above.\n")
+}
+
+if (length(all_missing_files) > 0) {
+  cat("\nMissing files report:\n")
+  for (missing_file in all_missing_files) {
+    cat(missing_file, "\n")
+  }
 }
 
 remDr$close()

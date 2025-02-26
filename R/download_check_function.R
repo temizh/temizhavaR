@@ -1,5 +1,5 @@
-
 library(stringr)
+library(readxl)
 
 
 #' Download check
@@ -15,24 +15,22 @@ library(stringr)
 #' @export
 
 
-download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
- modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+download_check <- function(city_dir, istasyon_modified, data_type, startdate, enddate) {
+  # No need to modify istasyon name here since we're now using the one from location table
   start_date <- as.Date(startdate, format="%d.%m.%Y")
   end_date <- as.Date(enddate, format="%d.%m.%Y")
   
-  # Format years for filename
   year_pattern <- paste0(format(start_date, "%Y"), "-", format(end_date, "%Y"))
   
-  # Define expected filenames based on data type
   if (data_type == "hourly") {
     required_files <- c(
-      paste0(modified_istasyon, "_saatlik_detay_", year_pattern, ".xlsx"),
-      paste0(modified_istasyon, "_saatlik_ozet_", year_pattern, ".xlsx")
+      paste0(istasyon_modified, "_saatlik_detay_", year_pattern, ".xlsx"),
+      paste0(istasyon_modified, "_saatlik_ozet_", year_pattern, ".xlsx")
     )
   } else if (data_type == "daily") {
     required_files <- c(
-      paste0(modified_istasyon, "_gunluk_detay_", year_pattern, ".xlsx"),
-      paste0(modified_istasyon, "_gunluk_ozet_", year_pattern, ".xlsx")
+      paste0(istasyon_modified, "_gunluk_detay_", year_pattern, ".xlsx"),
+      paste0(istasyon_modified, "_gunluk_ozet_", year_pattern, ".xlsx")
     )
   } else {
     stop("Invalid data_type. Must be 'hourly' or 'daily'")
@@ -41,7 +39,7 @@ download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
   # Get existing files
   existing_files <- list.files(city_dir)
   
-  cat(sprintf("\nChecking %s data files for station: %s\n", data_type, istasyon))
+  cat(sprintf("\nChecking %s data files for station: %s\n", data_type, istasyon_modified))
   cat("Required files:", paste(required_files, collapse = ", "), "\n")
   
   all_files_exist <- all(sapply(required_files, function(file) {
@@ -52,8 +50,25 @@ download_check <- function(city_dir, istasyon, data_type, startdate, enddate) {
       valid_file <- !is.na(file_size) && file_size > 0
       if (!valid_file) {
         cat(sprintf("File exists but is empty: %s\n", file))
+        return(FALSE)
       }
-      return(valid_file)
+      station_in_file <- NA
+      if (data_type == "hourly") {
+        station_in_file <- tryCatch({
+          read_excel(full_path, range = "B1", col_names = FALSE)[[1,1]]
+        }, error = function(e) NA)
+      } else if (data_type == "daily") {
+        station_in_file <- tryCatch({
+          read_excel(full_path, range = "A2", col_names = FALSE)[[1,1]]
+        }, error = function(e) NA)
+        station_in_file <- sub("^İstasyon:\\s*", "", station_in_file)
+      }
+      station_in_file_modified <- str_replace_all(station_in_file, c(" " = "", "\\." = "", "/" = "_"))
+      if (station_in_file_modified != istasyon_modified) {
+        cat(sprintf("File %s has mismatched station name: %s, expected: %s\n", file, station_in_file_modified, istasyon_modified))
+        return(FALSE)
+      }
+      return(TRUE)
     } else {
       cat(sprintf("Missing file: %s\n", file))
       return(FALSE)

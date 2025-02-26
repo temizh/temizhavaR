@@ -1,5 +1,5 @@
 library(stringr)
-
+library(openxlsx)
 
 #' Download air quality data from the specified website
 #'
@@ -69,6 +69,8 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
     })
   }
 
+  missing_files <- list()
+
   tryCatch({
     print(paste("Bolge: ", bolge))
     print(paste("Sehir: ", sehir))
@@ -97,7 +99,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
     Sys.sleep(1)
 
     click_element('xpath', 
-             sprintf("//ul[@aria-hidden='false']/li[contains(text(), '%s')]", istasyon))
+             sprintf("//ul[@aria-hidden='false']/li[normalize-space(text())='%s']", istasyon))
 
     click_element('xpath', '//*[@id="page-wrapper"]/div[1]')
     Sys.sleep(1)
@@ -141,9 +143,11 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
         log_message(paste("Detail data successfully downloaded for station:", istasyon))
       } else {
         log_message(paste("Detail data download failed for station:", istasyon))
+        missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
       }
     } else {
       log_message(paste("No files found for detail data download for station:", istasyon))
+      missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
     }
 
     # Download summary data
@@ -167,9 +171,11 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
         log_message(paste("Summary data successfully downloaded for station:", istasyon))
       } else {
         log_message(paste("Summary data download failed for station:", istasyon))
+        missing_files <- c(missing_files, paste("Summary data for station:", istasyon))
       }
     } else {
       log_message(paste("No files found for summary data download for station:", istasyon))
+      missing_files <- c(missing_files, paste("Summary data for station:", istasyon))
     }
 
     click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[2]/div/div/div/button ')
@@ -183,6 +189,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
   })
 
   log_message("Download process completed.")
+  return(missing_files)
 }
 
 #' Find element with retry
