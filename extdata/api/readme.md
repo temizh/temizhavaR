@@ -98,8 +98,17 @@ JSON object with parameters: frequency, parameters, start_date, end_date, region
 **Example Request (cURL):**
 
 ```sh
-curl -X GET "http://localhost:8080/get_data?frequency=daily&start_date=2024-01-01&end_date=2024-01-31" \
-     -H "X-API-Key: your_api_key"
+curl -X POST "http://localhost:8080/get_data_post" \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: your_api_key" \
+     -d '{
+           "frequency": "daily",
+           "parameters": ["PM10", "NO2", "CO"],
+           "start_date": "2024-01-01",
+           "end_date": "2024-01-31",
+           "region": "Istanbul",
+           "station": "Station A"
+         }'
 ```
 
 ### Authentication
