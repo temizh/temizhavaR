@@ -7,11 +7,11 @@ setwd("/home/temizhava/temizhavaR/extdata/DB")
 dotenv::load_dot_env()
 
 # Read the environment variables
-db_host <- "dev.pranageo.com"
+db_host <- Sys.getenv("POSTGRES_HOST")
 db_name <- Sys.getenv("TEMIZHAVA_DB")
 db_user <- Sys.getenv("POSTGRES_TUSER")
 db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
-db_port <-  Sys.getenv("POSTGRES_PORT")
+db_port <- Sys.getenv("POSTGRES_PORT")
 
 # Connect to the POSTGIS database
 postgres_con <- dbConnect(RPostgres::Postgres(),
