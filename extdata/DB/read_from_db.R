@@ -28,6 +28,7 @@ postgres_con <- dbConnect(RPostgres::Postgres(),
 
 # Create a tbl (new data.frame) object that keeps data in the DB server
 hrly <- tbl(postgres_con, "hourly_detail")
+location <- tbl(postgres_con, "location")
 
 # Number of stations
 # Number of data rows per station
@@ -37,12 +38,20 @@ summary <- hrly %>%
 dim(summary)
 #COMMENT : there are 329 distinct stations here. But the location table is 330 rows!
 
+result <- location %>%
+  distinct(Istasyonlar) %>%
+  anti_join(
+    hrly %>% distinct(Istasyon),
+    by = c("Istasyonlar" = "Istasyon")
+  )
+
+  
 # Number of data rows per station
 summary <- hrly %>% 
   group_by(Istasyon) %>%
   summarise(n = n()) %>%
-  arrange(desc(n)) %>% 
-  collect() 
+  arrange(desc(n)) %>%
+  collect()
 #COMMENT : Why these stations have more data?
 #1 Çorum                   87808
 #2 Adana - Doğankent       87653
@@ -54,7 +63,6 @@ summary %>% print(n = 500)
 
 # You can see the actual SQL query 
 summary %>% show_query()
-
 
 # Tarih value are not clear
 hrly %>% select(Tarih)
