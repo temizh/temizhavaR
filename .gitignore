@@ -1,10 +1,25 @@
 .Rproj.user
 .Rhistory
-
+.env
 renv/library/
 
 renv
 
 temiz-hava.sqlite
+temiz-hava (copy).sqlite
+
+temizhavaR/temiz-hava.sqlite
+temizhavaR/temiz-hava (copy).sqlite
+
+TemizHava_raw_data/
+TemizHava_raw_data (copy)/
+
+temizhavaR/TemizHava_raw_data/
+temizhavaR/TemizHava_raw_data (copy)/
+
+.Rprofile 
+.RBuildignore
+
+DESCRIPTION
 
 .env

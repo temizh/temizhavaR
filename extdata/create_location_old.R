@@ -1,5 +1,6 @@
 library(writexl)
 
+
 create_location_table_2022 <- function() {
 
   YEAR <- options()$temizhavaR.YEAR
