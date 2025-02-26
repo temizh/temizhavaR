@@ -27,8 +27,8 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
     # Belirtilen dönem ve zaman aralığı için O3 verilerini almak için sorgulama işlemi
     query <- paste0("SELECT Istasyon, Tarih, O3
                      FROM hourly_detail
-                     WHERE Tarih BETWEEN '", start_date, "' AND '", end_date, "'
-                     AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
+                     WHERE Tarih BETWEEN '", start_date, "' AND '", end_date,
+                     "' AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
 
     data <- dbGetQuery(mydb, query)
 
@@ -36,7 +36,7 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
     data <- data %>%
       mutate(TarihSaat = ymd_hms(Tarih),
              hour = hour(TarihSaat)) %>%
-      filter(hour >= 8 & hour <= 20) %>%
+      filter(hour > 8 & hour <= 20) %>%
       mutate(excess = ifelse(O3 > 80, O3 - 80, 0))
 
     # İstasyon başına veri kullanılabilirliğini hesaplar

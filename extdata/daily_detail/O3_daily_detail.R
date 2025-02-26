@@ -40,6 +40,12 @@ output$O3_3$data <- daily_list_stations_with_parameter_threshold(parameter_name,
 output$O3_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
+output$O3_3_2$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
+output$O3_3_2$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
+
+output$O3_4_2$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
+output$O3_4_2$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
+
 output$O3_5$result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
 output$O3_5$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
 

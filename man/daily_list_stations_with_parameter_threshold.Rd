@@ -7,7 +7,8 @@
 daily_list_stations_with_parameter_threshold(
   parameter_name,
   threshold = 90,
-  season = NULL
+  season = NULL,
+  verbose = FALSE
 )
 }
 \arguments{

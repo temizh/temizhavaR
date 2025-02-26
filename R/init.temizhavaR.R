@@ -5,7 +5,8 @@
 #' @export
 
 init.temizhavaR <- function(verbose = FALSE) {
-  raw_dir <- options()$temizhavaR.raw_dir
+  raw_dir <- getOption("temizhavaR.raw_dir")
+
 
   if (is.null(raw_dir))
     error("options()$temizhavaR.raw_dir is null. Set your raw data directory correctly")
@@ -16,10 +17,10 @@ init.temizhavaR <- function(verbose = FALSE) {
 
   setwd(raw_dir)
 
-  source("./init.temizhavaR_data.R")
+  # source("./init.temizhavaR_data.R")
 
   if (verbose) {
     print(paste("raw_dir =", raw_dir))
-    print('source("./init.temizhavaR_data.R")')
+    # print('source("./init.temizhavaR_data.R")')
   }
 }

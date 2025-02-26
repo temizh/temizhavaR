@@ -4,7 +4,7 @@
 \alias{all_daily_detail_load_from_database}
 \title{Hourly detail load from database}
 \usage{
-all_daily_detail_load_from_database(parm)
+all_daily_detail_load_from_database(parm, verbose = FALSE)
 }
 \arguments{
 \item{parameter}{The name of the parameter to return. All parameters are returned if not provided.}

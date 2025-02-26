@@ -1,0 +1,20 @@
+services:
+  postgis:
+    image: postgis/postgis:17-3.5
+    container_name: temizhava-postgis
+    restart: always
+    env_file: ".env"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"  # Ensure authentication
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - temizhava_postgis_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d  # Custom init scripts
+        
+volumes:
+  temizhava_postgis_data:  
+    name: temizhava_postgis_data  # Explicitly set the volume name
+

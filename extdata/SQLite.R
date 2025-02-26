@@ -2,65 +2,74 @@ library(uuid)
 library(dplyr)
 library(readxl)
 library(writexl)
+library(temizhavaR)
 
 create_SQL_schema <- function() {
 
   init.temizhavaR()
 
-  YEAR <- options()$temizhavaR.YEAR
-
+  DBDIR <- "./temiz-hava.sqlite"
   # create a connection to database
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir,"temiz-hava.sqlite"))
+  mydb <- dbConnect(RSQLite::SQLite(), DBDIR)
 
+  # delete table
+  dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
+  dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
+  
   mydb_hourly_detail <- "
    CREATE TABLE hourly_detail (
     Istasyon TEXT,
     location_id TEXT,
     Tarih DATETIME,
     PM10 DOUBLE,
-    \"PM2.5\" DOUBLE,
+    `PM2.5` DOUBLE,
     SO2 DOUBLE,
     CO DOUBLE,
     NO2 DOUBLE,
     NOX DOUBLE,
     NO DOUBLE,
-    O3 DOUBLE
-
+    O3 DOUBLE,
+    Istasyon_modified TEXT
 );
 "
 
   mydb_daily_detail <- "
-CREATE TABLE daily_detail(
-   Istasyon TEXT,
+CREATE TABLE daily_detail (
+    Istasyon TEXT,
     location_id TEXT,
     Tarih DATETIME,
     PM10 DOUBLE,
-    \"PM2.5\" DOUBLE,
+    `PM2.5` DOUBLE,
     SO2 DOUBLE,
     CO DOUBLE,
     NO2 DOUBLE,
     NOX DOUBLE,
     NO DOUBLE,
-    O3 DOUBLE
+    O3 DOUBLE,
+    Istasyon_modified TEXT
 );
 "
 
   mydb_location <- paste0("
-CREATE TABLE IF NOT EXISTS location_", YEAR, "(
+CREATE TABLE IF NOT EXISTS location (
     Bolge TEXT,
     Sehir TEXT,
     Plaka TEXT,
     Istasyonlar TEXT,
-    Id TEXT PRIMARY KEY,
-    gunluk_files2022 TEXT,
-    saatlik_files2022 TEXT
+    Istasyonlar_modified TEXT,
+    Id TEXT PRIMARY KEY
 );
 ")
 
   # CREATE TABLE
   dbExecute(mydb, mydb_location)
+  tryCatch({
+    dbExecute(mydb, "ALTER TABLE location ADD COLUMN Istasyonlar_modified TEXT")
+  }, error = function(e) {
+    print(e)
+    print("Column already exists")
+  })
   dbExecute(mydb, mydb_hourly_detail)
-
   dbExecute(mydb, mydb_daily_detail)
 }
 
@@ -70,10 +79,10 @@ CREATE TABLE IF NOT EXISTS location_", YEAR, "(
 #query_result1 <- dbGetQuery(mydb, "SELECT * FROM hourly_detail LIMIT 10")
 
 create_SQL_schema()
-source("make_location_table_2022.R")
-location_data <- create_location_table_2022()
+# source("make_location_table_2022.R")
+# location_data <- create_location_table_2022()
 
-daily_detail_save_to_database()
+# daily_detail_save_to_database()
 
 
 

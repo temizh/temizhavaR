@@ -3,6 +3,13 @@ library(netstat)
 library(wdman)
 library(uuid)
 library(DBI)
+library(stringr)
+
+
+# Download Selenium Driver
+wdman::selenium(port = 4445L, retcommand = TRUE)
+
+
 
 # Retry mechanism for finding elements
 findElementWithRetry <- function(driver, using, value, max_retries = 5) {
@@ -45,22 +52,22 @@ safeClick <- function(driver, element) {
 # Database setup
 initializeDatabase <- function(db_path) {
   mydb <- dbConnect(RSQLite::SQLite(), db_path)
-  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Id TEXT)")
+  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Istasyonlar_modified TEXT, Id TEXT)")
   dbExecute(mydb, "DELETE FROM location") 
   return(mydb)
 }
 
 # Insert data into the database
-insertLocation <- function(db, bolge, sehir, plaka, istasyon, id) {
+insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified, id) {
   tryCatch({
     if (!dbIsValid(db)) stop("Database connection is invalid.")
-    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, id))
+    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
     # Start transaction
     dbExecute(db, "BEGIN TRANSACTION")
     
-    dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Id) VALUES (?, ?, ?, ?, ?)",
-              params = list(bolge, sehir, plaka, istasyon, id))
+    dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Istasyonlar_modified, Id) VALUES (?, ?, ?, ?, ?, ?)",
+              params = list(bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
     # Commit transaction
     dbExecute(db, "COMMIT")
@@ -191,110 +198,100 @@ selectDropdownOption <- function(driver, dropdown_id, option_text, max_retries =
 
 
 ########## MAIN SCRIPT ##########
-tryCatch({
-  selenium_server <- rsDriver(browser = "chrome", port = 4445L, chromever = "latest")
-  driver <- selenium_server$client
-  driver$maxWindowSize()
-  print("Remote driver opened successfully")
+retrieveStationInfo <- function() {
+  tryCatch({
+    selenium_server <- rsDriver(browser = "chrome", port = 4445L, chromever = "latest", extraCapabilities = list(
+      chromeOptions = list(
+        args = c('--headless', '--disable-gpu', '--window-size=1280,800', '--no-sandbox', '--disable-dev-shm-usage')
+      )
+    ))
+    driver <- selenium_server$client
+    driver$maxWindowSize()
+    print("Remote driver opened successfully")
 
-  # Navigate to the URL
-  url <- "https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew"
-  driver$navigate(url)
-  print("Navigation successful")
+    # Navigate to the URL
+    url <- "https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew"
+    driver$navigate(url)
+    print("Navigation successful")
 
-  # Database setup
-  DBDIR <- "/home/byte/Desktop/Work/temizhavaR/"
-  mydb <- initializeDatabase(paste0(DBDIR, "temiz-hava.sqlite"))
+    # Database setup
+    DBDIR <- "./"
+    mydb <- initializeDatabase(paste0(DBDIR, "temiz-hava.sqlite"))
 
-  # Load plaka list
-  source("extdata/plaka_list.R")
-  all_cities <- names(plaka_list)
-  processed_cities <- c()
+    # Load plaka list
+    source("extdata/plaka_list.R")
+    all_cities <- names(plaka_list)
+    processed_cities <- c()
 
- 
-  
-  # Fetch region list
-  bolge_list <- fetchRegionListWithRetry(driver, 'dropdown12-contentDataDowloadNew', ".k-reset li")
-  
+    # Fetch region list
+    bolge_list <- fetchRegionListWithRetry(driver, 'dropdown12-contentDataDowloadNew', ".k-reset li")
 
-  for (bolge in bolge_list) {
-    print(paste("Processing bolge:", bolge))
-    selectDropdownOption(driver, 'dropdown12-contentDataDowloadNew', bolge)
+    for (bolge in bolge_list) {
+      print(paste("Processing bolge:", bolge))
+      selectDropdownOption(driver, 'dropdown12-contentDataDowloadNew', bolge)
 
-    sehir_dropdown <- findElementWithRetry(driver, 'id', 'dropdown1-contentDataDowloadNew')
-    safeClick(driver, sehir_dropdown)
-    Sys.sleep(2)
-
-    sehir_items <- driver$findElements(using = "css", value = ".k-reset li")
-    sehir_list <- sapply(sehir_items, function(item) item$getElementText()[[1]])
-    sehir_list <- sehir_list[sehir_list != ""]
-    sehir_list <- sehir_list[!grepl("Şehir Seçiniz|OPEN", sehir_list)]  
-    sehir_list <- unique(sehir_list) 
-    print(paste("Cleaned city list with", length(sehir_list), "items:", paste(sehir_list, collapse = ", ")))
-      
-
-    for (sehir in sehir_list) {
-      if (sehir %in% processed_cities) next
-      print(paste("Processing sehir:", sehir))
-      processed_cities <- c(processed_cities, sehir)
-      
-      selectDropdownOption(driver, 'dropdown1-contentDataDowloadNew', sehir)
-      
-      anotherArea <- findElementWithRetry(driver, 'xpath', '//*[@id="page-wrapper"]/div[1]')
-      safeClick(driver, anotherArea)
-      Sys.sleep(1)      
-      # Locate the dropdown visible wrapper (the clickable part of the dropdown)
-      dropdown_wrapper <- findElementWithRetry(driver, 'css', '.k-dropdown-wrap')
-
-      # Click on the dropdown to open it
-      safeClick(driver, dropdown_wrapper)
-
-      # Locate the "İstasyon Seçiniz..." option and click it
-      option <- findElementWithRetry(driver, 'xpath', "//span[contains(text(), 'İstasyon Seçiniz')]")
-
-      safeClick(driver, option) 
-      print("Clicked on istasyon dropdown")
+      sehir_dropdown <- findElementWithRetry(driver, 'id', 'dropdown1-contentDataDowloadNew')
+      safeClick(driver, sehir_dropdown)
       Sys.sleep(2)
 
+      sehir_items <- driver$findElements(using = "css", value = ".k-reset li")
+      sehir_list <- sapply(sehir_items, function(item) item$getElementText()[[1]])
+      sehir_list <- sehir_list[sehir_list != ""]
+      sehir_list <- sehir_list[!grepl("Şehir Seçiniz|OPEN", sehir_list)]  
+      sehir_list <- unique(sehir_list) 
+      print(paste("Cleaned city list with", length(sehir_list), "items:", paste(sehir_list, collapse = ", ")))
 
-      istasyon_list <- fetchStationListWithRetry(driver, '#dropdown2-contentDataDowloadNew > div > div > span.k-widget.k-dropdown.k-header.form-control', ".k-reset li",
-                                                  max_retries = 5)
-      # Extract the text content of each option 
-      print(paste("Fetched station list with", length(istasyon_list), "items"))
+      for (sehir in sehir_list) {
+        if (sehir %in% processed_cities) next
+        print(paste("Processing sehir:", sehir))
+        processed_cities <- c(processed_cities, sehir)
 
-      
-      # Filter out the default placeholder option İstasyon Seçiniz...
-      station_data <- istasyon_list[istasyon_list != "İstasyon Seçiniz..."]
-      
+        selectDropdownOption(driver, 'dropdown1-contentDataDowloadNew', sehir)
 
-      print(paste("Fetched station list with", length(istasyon_list), "items"))
-        
-      
-      print(paste("Stations in", sehir, ":", istasyon_list))
+        anotherArea <- findElementWithRetry(driver, 'xpath', '//*[@id="page-wrapper"]/div[1]')
+        safeClick(driver, anotherArea)
+        Sys.sleep(1)      
+        dropdown_wrapper <- findElementWithRetry(driver, 'css', '.k-dropdown-wrap')
+        safeClick(driver, dropdown_wrapper)
+        option <- findElementWithRetry(driver, 'xpath', "//span[contains(text(), 'İstasyon Seçiniz')]")
+        safeClick(driver, option) 
+        print("Clicked on istasyon dropdown")
+        Sys.sleep(2)
 
-      for (istasyon in istasyon_list) {
-        print(paste("Processing istasyon:", istasyon))
-        id <- UUIDgenerate()
-        plaka <- plaka_list[[sehir]]
-        insertLocation(mydb, bolge, sehir, plaka, istasyon, id)
+        istasyon_list <- fetchStationListWithRetry(driver, '#dropdown2-contentDataDowloadNew > div > div > span.k-widget.k-dropdown.k-header.form-control', ".k-reset li", max_retries = 5)
+        print(paste("Fetched station list with", length(istasyon_list), "items"))
+
+        station_data <- istasyon_list[istasyon_list != "İstasyon Seçiniz..."]
+        print(paste("Fetched station list with", length(istasyon_list), "items"))
+        print(paste("Stations in", sehir, ":", istasyon_list))
+
+        for (istasyon in istasyon_list) {
+          print(paste("Processing istasyon:", istasyon))
+          id <- UUIDgenerate()
+          plaka <- plaka_list[[sehir]]
+          istasyon_modified  <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+
+          
+
+          insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified, id)
+        }
+        clickClearButton(driver, "dropdown1-contentDataDowloadNew", "Temizle")
       }
-      clickClearButton(driver, "dropdown1-contentDataDowloadNew", "Temizle")
-
+      clickClearButton(driver, "dropdown12-contentDataDowloadNew", "Temizle")
     }
 
-    clickClearButton(driver, "dropdown12-contentDataDowloadNew", "Temizle")
-  }
+    city_count <- dbGetQuery(mydb, "SELECT COUNT(DISTINCT Sehir) AS city_count FROM location")$city_count
+    print(paste("Total unique cities in database:", city_count))
 
-  city_count <- dbGetQuery(mydb, "SELECT COUNT(DISTINCT Sehir) AS city_count FROM location")$city_count
-  print(paste("Total unique cities in database:", city_count))
+    dbDisconnect(mydb)
+    driver$close()
+    selenium_server$server$stop()
+  }, error = function(e) {
+    message("An error occurred: ", e$message)
+    if (exists("driver")) driver$close()
+    if (exists("selenium_server")) selenium_server$server$stop()
+  })
+}
 
-
-  dbDisconnect(mydb)
-  driver$close()
-  selenium_server$server$stop()
-}, error = function(e) {
-  message("An error occurred: ", e$message)
-
-  if (exists("driver")) driver$close()
-  if (exists("selenium_server")) selenium_server$server$stop()
-})
+# Call the function
+retrieveStationInfo()

@@ -6,14 +6,15 @@
 #' @return A data frame with stations and their data availability percentage.
 #' @export
 
-daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
+daily_list_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL, verbose = FALSE) {
 
   parameter_name <- gsub('\\"', "", parameter_name)
-  data <- all_daily_detail_load_from_database(parameter_name)
+  data <- all_daily_detail_load_from_database(parameter_name, verbose = FALSE)
 
-  print("Orijinal veri boyutu:")
-  print(dim(data))
-
+  if (verbose) {
+    print("Orijinal veri boyutu:")
+    print(dim(data))
+  }
   if (!is.null(season)) {
     if (season == "summer") {
       summer_months <- c(4, 5, 6, 7, 8, 9)
@@ -24,12 +25,16 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     }
   }
 
-  print("Sezon filtrelemesi sonrası veri boyutu:")
-  print(dim(data))
+  if (verbose) {
+    print("Sezon filtrelemesi sonrası veri boyutu:")
+    print(dim(data))
+  }
 
   days_in_season <- length(unique(data$Tarih))
-  print("Sezondaki gün sayısı:")
-  print(days_in_season)
+  if (verbose) {
+    print("Sezondaki gün sayısı:")
+    print(days_in_season)
+  }
 
   query_result <- data %>%
     group_by(Istasyon) %>%
@@ -40,26 +45,23 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     ) %>%
     # %89.5 ile %90 arasındaki veri mevcudiyet yüzdelerini %90'a yuvarlama
     mutate(
-      veri_mevcudiyet_yuzdesi = ifelse(
-        veri_mevcudiyet_yuzdesi >= 89.5 & veri_mevcudiyet_yuzdesi < 90,
-        90,
-        veri_mevcudiyet_yuzdesi
-      ),
       threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")
     ) %>%
     arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
 
-  print("İstasyon sayımı sonuçları:")
-  print(query_result)
+  if (verbose) {
+    print("İstasyon sayımı sonuçları:")
+    print(query_result)
 
-  print("Eşik değerin üstündeki istasyon sayısı:")
-  print(sum(query_result$threshold_status == "Üstünde"))
+    print("Eşik değerin üstündeki istasyon sayısı:")
+    print(sum(query_result$threshold_status == "Üstünde"))
 
-  print("Eşik değerin altındaki istasyon sayısı:")
-  print(sum(query_result$threshold_status == "Altında"))
+    print("Eşik değerin altındaki istasyon sayısı:")
+    print(sum(query_result$threshold_status == "Altında"))
 
-  print("Toplam istasyon sayısı:")
-  print(nrow(query_result))
+    print("Toplam istasyon sayısı:")
+    print(nrow(query_result))
+  }
 
   return(as.data.frame(query_result))
 }
