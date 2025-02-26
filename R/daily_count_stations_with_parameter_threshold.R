@@ -5,15 +5,17 @@
 #' @param season The season for which data availability should be calculated (Default is NULL). Use "summer" or "winter".
 #' @export
 
-daily_count_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL) {
+daily_count_stations_with_parameter_threshold <- function(parameter_name, threshold = 90, season = NULL, verbose = FALSE) {
 
   parameter_name <- gsub('\\"', "", parameter_name)
   data <- all_daily_detail_load_from_database(parameter_name)
 
-  print("Orijinal veri boyutu:")
-  print(dim(data))
-  print("Veri özeti:")
-  print(summary(data))
+  if (verbose) {
+    print("Orijinal veri boyutu:")
+    print(dim(data))
+    print("Veri özeti:")
+    print(summary(data))
+  }
 
   data$Tarih <- as.Date(data$Tarih)
 
@@ -27,12 +29,15 @@ daily_count_stations_with_parameter_threshold <- function(parameter_name, thresh
     }
   }
 
-  print("Sezon filtrelemesi sonrası veri boyutu:")
-  print(dim(data))
-
   days_in_season <- length(unique(data$Tarih))
-  print("Sezondaki gün sayısı:")
-  print(days_in_season)
+
+  if (verbose) {
+    print("Sezon filtrelemesi sonrası veri boyutu:")
+    print(dim(data))
+
+    print("Sezondaki gün sayısı:")
+    print(days_in_season)
+  }
 
   station_counts <- data %>%
     group_by(Istasyon) %>%
@@ -43,13 +48,16 @@ daily_count_stations_with_parameter_threshold <- function(parameter_name, thresh
     ) %>%
     filter(veri_mevcudiyet_yuzdesi >= threshold)
 
-  print("İstasyon sayımı sonuçları:")
-  print(station_counts)
-
   result <- nrow(station_counts)
 
-  print("Sonuç:")
-  print(result)
+  if (verbose) {
+    print("İstasyon sayımı sonuçları:")
+    print(station_counts)
+
+    print("Sonuç:")
+    print(result)
+  }
+
 
   return(data.frame(count = result))
 }

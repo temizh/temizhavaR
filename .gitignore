@@ -1,6 +1,6 @@
 .Rproj.user
 .Rhistory
-
+.env
 renv/library/
 
 renv
