@@ -5,7 +5,7 @@
 
 daily_list_stations_with_parameter <- function(parameter_name) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- db_connection()
 
   query <- paste0("SELECT DISTINCT Istasyon FROM daily_detail WHERE ", parameter_name, " IS NOT NULL")
 
