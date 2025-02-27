@@ -13,12 +13,12 @@
 
 calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, start_month, end_month, thresholds, period) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   # Verilen parametre ve ay aralığı için verileri saatlik detay tablosundan almak için sorgulama işlemi
   query <- paste0("SELECT Istasyon, Tarih, ", parameter_name, " FROM hourly_detail WHERE strftime('%m', Tarih) BETWEEN '", start_month, "' AND '", end_month, "'")
 
-  data <- dbGetQuery(mydb, query)
+  data <- dbGetQuery(conn, query)
 
   # Tarih ve saat bilgilerini işleme
   data <- data %>%
@@ -47,7 +47,7 @@ calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, sta
   total_AOT40 <- total_AOT40 %>%
     mutate(period = period)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   # Sonucu data.frame nesnesine dönüştürme
   result_df <- as.data.frame(total_AOT40)

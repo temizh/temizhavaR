@@ -20,15 +20,15 @@
   hourly_detail_load_from_database <- function(station_name) {
 
 
-   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+   conn <- create_postgres_conn()
 
     query <- paste0("SELECT * FROM hourly_detail WHERE Istasyon = '", station_name, "'")
-    query_result <- dbGetQuery(mydb, query)
+    query_result <- dbGetQuery(conn, query)
 
     query_result$Tarih <- as.POSIXct(query_result$Tarih, format = "%Y-%m-%d %H:%M:%S")
 
 
-    dbDisconnect(mydb)
+    disconnect_postgres(conn)
 
     return(query_result)
   }

@@ -11,11 +11,12 @@
 calculate_co_exceeding_stations <- function() {
 
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  #mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   query <- "SELECT Istasyon, Tarih, CO FROM hourly_detail"
 
-  data <- dbGetQuery(mydb, query)
+  data <- dbGetQuery(conn, query)
 
 
   data <- data %>%
@@ -50,7 +51,7 @@ calculate_co_exceeding_stations <- function() {
     filter(!is.na(annual_avg_max) & annual_avg_max > 10) %>%
     select(Istasyon, annual_avg_max)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
 
   return(exceeding_stations)

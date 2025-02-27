@@ -7,18 +7,18 @@
 
 
 all_hourly_detail_load_from_database <- function() {
-
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-
+ 
+ 
+  conn <- create_postgres_conn()
 
   query <- "SELECT * FROM hourly_detail"
-  query_result <- dbGetQuery(mydb, query)
+  query_result <- dbGetQuery(conn, query)
 
 
   query_result$Tarih <- as.POSIXct(query_result$Tarih, format = "%Y-%m-%d %H:%M:%S")
 
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
 
   return(query_result)

@@ -31,7 +31,7 @@ output$NO2_2$result_message <- print(paste0(parameter_name, "_2 : %90 veri alın
 output$NO2_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 output$NO2_3$result_message <- print(paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı" ))
-output$NO2_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$NO2_3$data <- count_stations_with_parameter_threshold(parameter_name, data_type = "hourly", threshold = 90)
 
 output$NO2_4$result_message <- print(paste0(parameter_name, "_4 : Saatlik ortalaması 200 esik degerini 18 kere asan istasyonlar ve kaç gün boyunca aştıkları" ))
 output$NO2_4$data <- hourly_above_exceedance_days_double_threshold(parameter_name, threshold = 200, 18)

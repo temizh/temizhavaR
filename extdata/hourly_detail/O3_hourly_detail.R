@@ -47,7 +47,7 @@ output$O3_3$result_message <- print(paste0(parameter_name, "_3 : %90 veri alına
 output$O3_3$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 output$O3_4$result_message <- print(paste0(parameter_name, "_4 : %90 Veri alınan istasyon sayısı" ))
-output$O3_4$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$O3_4$data <- count_stations_with_parameter_threshold(parameter_name, data_type = "hourly", threshold = 90)
 
 output$O3_9$result_message <- print(paste0(parameter_name, "_9 : AOT 40 icin 1 saatlik degerlerin %90 ve üstü veri alınan istasyon listesi"))
 output$O3_9$data <- hourly_list_aot40_threshold(start_dates = paste0(YEAR, c("-05-01", "-04-01")), end_dates = paste0(YEAR, c("-07-31", "-09-30")),threshold = 90)

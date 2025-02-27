@@ -10,12 +10,12 @@
 
 consecutive_hourly_list_stations <- function(parameter_name, threshold) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
   #query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE Istasyon = 'Adana - Çatalan' AND ", parameter_name, " IS NOT NULL LIMIT 20")
 
-  hourly_stations <- dbGetQuery(mydb, query)
+  hourly_stations <- dbGetQuery(conn, query)
 
   data <- hourly_stations %>%
     mutate(threshold_exceeded = ifelse(hourly_stations[[parameter_name]] >= threshold, 1, 0))
@@ -27,6 +27,8 @@ consecutive_hourly_list_stations <- function(parameter_name, threshold) {
     select(Istasyon) %>%
     distinct() %>%
     left_join(data %>% filter(threshold_exceeded == 1) %>% count(Istasyon), by = "Istasyon")
+
+  disconnect_postgres(conn)
 
   return(consecutive_stations)
 

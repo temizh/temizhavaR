@@ -5,13 +5,18 @@
 
 hourly_list_stations_with_parameter <- function(parameter_name) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
+  if (is.null(conn)) {
+    stop("Could not establish database connection")
+  }
+
+  # mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   query <- paste0("SELECT DISTINCT Istasyon FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
 
-  query_result <- dbGetQuery(mydb, query)
+  query_result <- dbGetQuery(conn, query)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(query_result)
 }
