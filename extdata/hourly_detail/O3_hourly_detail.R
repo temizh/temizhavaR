@@ -41,7 +41,7 @@ output$O3_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan is
 output$O3_1$data <- hourly_list_stations_with_parameter(parameter_name)
 
 output$O3_2$result_message <- print(paste0(parameter_name, "_2 : Veri alınan istasyon sayısı" ))
-output$O3_2$data <- hourly_list_stations_with_parameter_count(parameter_name)
+output$O3_2$data <- list_stations_with_parameter_count(parameter_name, "hourly")
 
 output$O3_3$result_message <- print(paste0(parameter_name, "_3 : %90 veri alınan istasyon listesi" ))
 output$O3_3$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)

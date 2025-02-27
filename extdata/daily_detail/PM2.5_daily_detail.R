@@ -37,7 +37,8 @@ output$PM25_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan 
 output$PM25_1$data <- daily_list_stations_with_parameter(parameter_name)
 
 output$PM25_2$result_message <- print(paste0(parameter_name, "_2 : Veri alınan istasyon sayısı" ))
-output$PM25_2$data <- daily_list_stations_with_parameter_count(parameter_name)
+output$PM25_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
+
 
 output$PM25_3$result_message <- print(paste0(parameter_name, "_3 : %90 veri alınan istasyon listesi" ))
 output$PM25_3$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)

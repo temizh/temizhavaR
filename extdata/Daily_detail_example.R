@@ -23,7 +23,7 @@ x <- calculate_parameter_mean(daily_detail_data, parameter = parameter_name, thr
 daily_list_stations_with_parameter(parameter_name)
 print(paste(parameter_name,": Veri alınan istasyon listesi" ))
 
-daily_list_stations_with_parameter_count(parameter_name)
+list_stations_with_parameter_count(parameter_name, "daily")
 print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
 
 average -> station_average(parameter_name, threshold = 90)
