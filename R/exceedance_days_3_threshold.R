@@ -9,14 +9,11 @@
 #'@export
 
 exceedance_days_3_threshold <- function(parameter_name, threshold = 125, exceedance_count = 3) {
-  # SQLite veritabanına bağlan
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
-  # daily_detail tablosunu oku
-  daily_data <- dbReadTable(mydb, "daily_detail")
+  daily_data <- dbGetQuery(conn, "SELECT * FROM daily_detail")
 
-  # Bağlantıyı kapat
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   # Sütun adlarındaki fazladan tırnak işaretlerini ve boşlukları kaldır
   names(daily_data) <- gsub("^\"|\"$", "", names(daily_data))

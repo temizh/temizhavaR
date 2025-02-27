@@ -1,3 +1,4 @@
+library(DBI)
 
 #' Calculate PM2.5 Values from PM10 Yearly Averages for Stations with Less Than 75% Data
 #'
@@ -9,7 +10,10 @@
 
 new_pm25_from_pm10_yearly_average <- function() {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- create_postgres_conn()
+  if (is.null(mydb)) {
+    stop("Unable to connect to database")
+  }
 
   threshold <- 75
 

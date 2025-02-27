@@ -6,8 +6,6 @@
 \title{Calculate Stations with Annual Average Above Threshold and Their Exceedance Days}
 \usage{
 calculate_above_exceedance_days_all_stations(parameter, threshold)
-
-calculate_above_exceedance_days_all_stations(parameter, threshold)
 }
 \arguments{
 \item{parameter}{The parameter for which the exceedance days are calculated.}

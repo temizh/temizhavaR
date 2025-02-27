@@ -13,14 +13,14 @@ compare_yearly_means_from_daily_hourly <- function(YEAR) {
   datadir <- paste0(options()$temizhavaR.basedir, YEAR)
   stopifnot(dir.exists(datadir))
 
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(datadir,"temiz-hava.sqlite"))
+  conn <- create_postgres_conn()
   #Get location table
-  full_stations <- dbGetQuery(mydb, paste0("SELECT * FROM location_", YEAR))
+  full_stations <- dbGetQuery(conn, paste0("SELECT * FROM location_", YEAR))
 
-  all_daily <- dbGetQuery(mydb, "SELECT * FROM daily_detail")
-  all_hourly <- dbGetQuery(mydb, "SELECT * FROM hourly_detail")
+  all_daily <- dbGetQuery(conn, "SELECT * FROM daily_detail")
+  all_hourly <- dbGetQuery(conn, "SELECT * FROM hourly_detail")
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   all_stations <- sort(unique(full_stations$Istasyonlar))
   all_stations <- tibble(Istasyon=all_stations)
