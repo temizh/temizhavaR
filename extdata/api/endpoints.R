@@ -76,6 +76,7 @@ get_data_by_config_handler <- function(.req, .res) {
 
   region <- request_data$region
   station <- request_data$station
+  station_type <- request_data$station_type
 
   data <- get_data(frequency, parameters, start_date, end_date, region, station, station_type) # nolint
 
