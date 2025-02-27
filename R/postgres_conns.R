@@ -120,14 +120,14 @@ get_table_row_count <- function(conn, table_name) {
   })
 }
 
-# Test section
-conn <- create_postgres_conn()
-get_postgres_tables(conn)
+# Test 
+# conn <- create_postgres_conn()
+# get_postgres_tables(conn)
 
-daily_count <- get_table_row_count(conn, "daily_detail")
-hourly_count <- get_table_row_count(conn, "hourly_detail")
+# daily_count <- get_table_row_count(conn, "daily_detail")
+# hourly_count <- get_table_row_count(conn, "hourly_detail")
 
-print(paste("Daily detail rows:", daily_count))
-print(paste("Hourly detail rows:", hourly_count))
+# print(paste("Daily detail rows:", daily_count))
+# print(paste("Hourly detail rows:", hourly_count))
 
-disconnect_postgres(conn)
+# disconnect_postgres(conn)
