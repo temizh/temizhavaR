@@ -28,7 +28,7 @@ print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
 
 average -> station_average(parameter_name, threshold = 90)
 daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
-daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+count_stations_with_parameter_threshold(parameter_name, threshold = 90, data_type = "daily")
 list_stations_above_data_threshold(parameter_name, threshold = 40)
 list_stations_below_data_threshold(parameter_name, threshold = 40)
 average <- station_average(parameter_name, threshold = 90)
