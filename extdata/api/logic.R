@@ -46,6 +46,15 @@ get_data <- function(frequency = "daily",
     data <- data %>% filter(data$Istasyon_modified == station)
   }
 
+  # get column names of the data
+  columns <- colnames(data)
+  print(columns)
+
+  # if station type is provided, get data for that station type
+  if (!is.null(station_type)) {
+    data <- data %>% filter(data$station_type == station_type)
+  }
+
   data <- data %>%
     mutate("Tarih&Saat" = openxlsx::convertToDateTime(Tarih)) # nolint
 
