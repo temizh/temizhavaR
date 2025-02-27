@@ -25,3 +25,5 @@ DESCRIPTION
 .env
 
 logs/
+
+man/
