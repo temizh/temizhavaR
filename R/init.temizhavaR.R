@@ -17,10 +17,12 @@ init.temizhavaR <- function(verbose = FALSE) {
 
   setwd(raw_dir)
 
-  # source("./init.temizhavaR_data.R")
-
   if (verbose) {
     print(paste("raw_dir =", raw_dir))
-    # print('source("./init.temizhavaR_data.R")')
   }
+}
+
+# .onLoad hook
+.onLoad <- function(libname, pkgname) {
+  init.temizhavaR()
 }
