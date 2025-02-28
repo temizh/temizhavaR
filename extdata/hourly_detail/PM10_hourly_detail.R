@@ -34,7 +34,7 @@ output <- list(PM10_1 = list(),
 # pm10_5 <- rbind(result_message, pm10_5)
 
 output$PM10_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-output$PM10_1$data <- hourly_list_stations_with_parameter(parameter_name)
+output$PM10_1$data <- list_stations_with_parameter(parameter_name, data_type = "hourly")
 
 
 output$PM10_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
@@ -42,7 +42,7 @@ output$PM10_2$data <- list_stations_with_parameter_count(parameter_name, data_ty
 
 
 output$PM10_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-output$PM10_3$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$PM10_3$data <- list_stations_with_parameter(parameter_name, data_type = "hourly", threshold = 90)
 
 
 output$PM10_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))

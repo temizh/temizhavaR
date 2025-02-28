@@ -33,7 +33,7 @@ output$CO_1$result_message <- paste0(parameter_name, "_1 : Veri alınan istasyon
 output$CO_1$data <- list_stations_with_parameter_count(parameter_name, "daily")
 
 output$CO_2$result_message <- paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi")
-output$CO_2$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$CO_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
 
 output$CO_3$result_message <- paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı")
 count_result <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90, verbose = TRUE)

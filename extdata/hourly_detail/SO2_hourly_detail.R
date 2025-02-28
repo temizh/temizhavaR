@@ -27,11 +27,11 @@ output <- list(SO2_1 = list(),
                )
 
 output$SO2_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-output$SO2_1$data <- hourly_list_stations_with_parameter(parameter_name)
+output$SO2_1$data <- list_stations_with_parameter(parameter_name, data_type = "hourly")
 
 
 output$SO2_2$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-output$SO2_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$SO2_2$data <- list_stations_with_parameter(parameter_name, data_type = "hourly", threshold = 90)
 
 
 output$SO2_3$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
