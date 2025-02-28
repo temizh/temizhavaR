@@ -2,6 +2,9 @@
 #'
 #' @param parameter_name Name of the parameter to count stations for
 #' @param data_type Either 'daily' or 'hourly'
+#' @param threshold Minimum percentage of available data required (default: 0)
+#' @import dplyr
+#' @import tidyr
 #' @export
 
 list_stations_with_parameter <- function(parameter_name, data_type = "daily", threshold = 0) {
@@ -54,5 +57,3 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
   return(result)
 }
-
-list_stations_with_parameter("PM10", "hourly")

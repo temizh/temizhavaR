@@ -1,18 +1,13 @@
-library(DBI)
-library(dotenv)
-library(dplyr)
-
-
-
+#' @import DBI
+#' @import dplyr
+#' @importFrom dotenv load_dot_env
 
 if (file.exists(".env")) {
-  dotenv::load_dot_env()
+  load_dot_env()
 } else {
   cat(".env file not found. Please make sure 
   it exists in the root directory.\n")
 }
-
-
 
 db_host <- Sys.getenv("POSTGRES_HOST")
 db_name <- Sys.getenv("TEMIZHAVA_DB")
@@ -22,6 +17,8 @@ db_port <- Sys.getenv("POSTGRES_PORT")
 
 #' Create a PostgreSQL database connection
 #' @return A PostgreSQL connection object
+#' @importFrom RPostgres Postgres
+#' @export
 create_postgres_conn <- function() {
   tryCatch({
     con <- dbConnect(RPostgres::Postgres(),
