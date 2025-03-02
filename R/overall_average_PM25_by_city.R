@@ -23,12 +23,12 @@ calculate_overall_PM25_average_by_city <- function() {
     stations <- station_query$Istasyonlar
 
     station_data <- lapply(stations, function(station) {
-      pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
+      pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
       pm25_data_percentage <- dbGetQuery(conn, pm25_data_percentage_query)$data_percentage
 
       if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
         #Take the PM2.5 measurement
-        pm25_query <- paste0("SELECT AVG(\"PM2.5\") AS Yillik_Ortalama FROM daily_detail WHERE Istasyon='", station, "'")
+        pm25_query <- paste0("SELECT AVG(PM25) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon='", station, "'")
         pm25 <- dbGetQuery(conn, pm25_query)
 
         pm25_values <- data.frame(Istasyon = station, PM25 = pm25$Yillik_Ortalama,

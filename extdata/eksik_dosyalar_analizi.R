@@ -17,23 +17,23 @@ u_stations_daily <- sort(unique(all_daily$Istasyon))
 u_stations_hourly <- sort(unique(all_hourly$Istasyon))
 
 daily_summary <- all_daily %>%
-  select(Istasyon, PM10, PM2.5, SO2, CO, NO2, NOX, NO, O3) %>%
+  select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
   group_by(Istasyon) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
-  rename(PM10_daily=PM10, PM2.5_daily=PM2.5, SO2_daily=SO2, CO_daily=CO, NO2_daily=NO2, NOX_daily=NOX, NO_daily=NO, O3_daily=O3)
+  rename(PM10_daily=PM10, PM25_daily=PM25, SO2_daily=SO2, CO_daily=CO, NO2_daily=NO2, NOX_daily=NOX, NO_daily=NO, O3_daily=O3)
 
 hourly_summary <- all_hourly %>%
-  select(Istasyon, PM10, PM2.5, SO2, CO, NO2, NOX, NO, O3) %>%
+  select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
   group_by(Istasyon) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
-  rename(PM10_hourly=PM10, PM2.5_hourly=PM2.5, SO2_hourly=SO2, CO_hourly=CO, NO2_hourly=NO2, NOX_hourly=NOX, NO_hourly=NO, O3_hourly=O3)
+  rename(PM10_hourly=PM10, PM25_hourly=PM25, SO2_hourly=SO2, CO_hourly=CO, NO2_hourly=NO2, NOX_hourly=NOX, NO_hourly=NO, O3_hourly=O3)
 
 all_summary <- left_join(all_stations, daily_summary, by = join_by(Istasyon)) %>%
   print(n=332)
 
 all_summary <- left_join(all_summary, hourly_summary, by = join_by(Istasyon)) %>%
   relocate(PM10_hourly, .after=PM10_daily) %>%
-  relocate(PM2.5_hourly, .after=PM2.5_daily) %>%
+  relocate(PM25_hourly, .after=PM25_daily) %>%
   relocate(SO2_hourly, .after=SO2_daily) %>%
   relocate(CO_hourly, .after=CO_daily) %>%
   relocate(NO2_hourly, .after=NO2_daily) %>%

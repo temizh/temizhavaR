@@ -18,7 +18,7 @@ new_pm25_for_city_based_mean <- function(station, verbose = FALSE) {
   pm25_threshold <- 75
   pm10_threshold <- 75
 
-  threshold_query <- paste0("SELECT Istasyon, data_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", pm25_threshold)
+  threshold_query <- paste0("SELECT Istasyon, data_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", pm25_threshold)
   threshold_stations <- dbGetQuery(mydb, threshold_query)
 
   # PM10 verilerinin yüzde doksanından fazlasını kontrol et

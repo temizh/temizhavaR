@@ -1,9 +1,9 @@
 library(readxl)
 library(DBI)
-library(RSQLite)
 library(stringdist)
+library(temizhavaR)
 
-initializeDatabase <- function(db_path) {
+initializeDatabase <- function() {
     raw_dir <- getOption("temizhavaR.raw_dir")
     
     if (!is.null(raw_dir)) {
@@ -12,10 +12,7 @@ initializeDatabase <- function(db_path) {
         cat("Warning: temizhavaR.raw_dir option is not set. Using current directory.\n")
     }
     
-    db_path <- normalizePath(db_path, mustWork = FALSE)
-    cat("Database path:", db_path, "\n")
-    
-    mydb <- dbConnect(RSQLite::SQLite(), db_path)
+    mydb <- create_postgres_conn()
     
     dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (
                         Istasyonlar_modified TEXT PRIMARY KEY,
@@ -26,7 +23,8 @@ initializeDatabase <- function(db_path) {
                         Altitude REAL,
                         LONGTD REAL,
                         LATTD REAL,
-                        Air_Quality_Station_Area TEXT)")
+                        Air_Quality_Station_Area TEXT,
+                        PM10ISTASYON TEXT)")
     
     return(mydb)
 }
@@ -108,8 +106,7 @@ matchStationTypes <- function() {
         stop("Station types file not found:", station_file)
     }
     station_types <- read_excel(station_file)
-    db_path <- "../temiz-hava.sqlite"
-    mydb <- initializeDatabase(db_path)
+    mydb <- initializeDatabase()
     tryCatch({
         dbExecute(mydb, "ALTER TABLE location ADD COLUMN station_type TEXT")
     }, error = function(e) {
@@ -120,12 +117,15 @@ matchStationTypes <- function() {
     }, error = function(e) {
         cat("Note: PM10ISTASYON column might already exist\n")
     })
-    existing_stations <- dbGetQuery(mydb, "PRAGMA table_info(location)")
-    column_names <- existing_stations$name
-    if ("PM10ISTASYON" %in% column_names) {
-        existing_stations <- dbGetQuery(mydb, "SELECT Istasyonlar_modified, PM10ISTASYON FROM location")
+    existing_stations <- dbGetQuery(mydb, "
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'location'")
+    column_names <- existing_stations$column_name
+    if ("pm10istasyon" %in% column_names) {
+        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified", "PM10ISTASYON" FROM location')
     } else {
-        existing_stations <- dbGetQuery(mydb, "SELECT Istasyonlar_modified FROM location")
+        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified" FROM location')
         existing_stations$PM10ISTASYON <- NA
     }
     matched_stations <- c()
@@ -138,18 +138,18 @@ matchStationTypes <- function() {
         }
         if (!is.na(best_match)) {
             dbExecute(mydb, 
-                     "UPDATE location SET 
-                      station_type = ?, 
-                      Sampling_Point_Id = ?, 
-                      Longitude = ?, 
-                      Latitude = ?, 
-                      Altitude = ?, 
-                      LONGTD = ?, 
-                      LATTD = ?, 
-                      Air_Quality_Station_Area = ?,
-                      PM10ISTASYON = ?
-                      WHERE lower(Istasyonlar_modified) = lower(?) 
-                        OR (PM10ISTASYON IS NOT NULL AND lower(PM10ISTASYON) = lower(?))",
+                     'UPDATE location SET 
+                      "station_type" = $1, 
+                      "Sampling_Point_Id" = $2, 
+                      "Longitude" = $3, 
+                      "Latitude" = $4, 
+                      "Altitude" = $5, 
+                      "LONGTD" = $6, 
+                      "LATTD" = $7, 
+                      "Air_Quality_Station_Area" = $8,
+                      "PM10ISTASYON" = $9
+                      WHERE lower("Istasyonlar_modified") = lower($10) 
+                        OR ("PM10ISTASYON" IS NOT NULL AND lower("PM10ISTASYON") = lower($10))',
                      params = list(
                          station_types$`İstasyon türü`[i],
                          station_types$`Sampling Point Id`[i],
@@ -160,7 +160,6 @@ matchStationTypes <- function() {
                          station_types$LATTD[i],
                          station_types$`Air Quality Station Area`[i],
                          station_types$`Air Quality Station Name`[i],
-                         best_match,
                          best_match
                      ))
             matched_stations <- c(matched_stations, station_name)
@@ -179,8 +178,8 @@ matchStationTypes <- function() {
                                                     "Air Quality Station Type"]
                 if (!is.na(station_type_csv[1])) {
                     dbExecute(mydb,
-                        "UPDATE location SET station_type = ? 
-                         WHERE lower(Istasyonlar_modified) = lower(?)",
+                        'UPDATE location SET "station_type" = $1 
+                         WHERE lower("Istasyonlar_modified") = lower($2)',
                         params = list(station_type_csv[1], best_match_csv))
                     matched_stations <- c(matched_stations, station_name)
                 }
@@ -189,19 +188,32 @@ matchStationTypes <- function() {
         unmatched_stations <- setdiff(unmatched_stations, matched_stations)
     }
 
-    sqlite_only <- character(0)
+    postgres_only <- character(0)
     excel_only <- character(0)
     na_station_types <- character(0)
-    sqlite_stations <- dbGetQuery(mydb, "SELECT Istasyonlar_modified, station_type FROM location")
+    
+    postgres_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified", "station_type" FROM location')
     excel_stations <- station_types$`Air Quality Station Name`
-    sqlite_only <- sqlite_stations$Istasyonlar_modified[
-        sapply(sqlite_stations$Istasyonlar_modified, 
-               function(x) !station_exists(x, excel_stations))
+    
+    postgres_stations$Istasyonlar_modified <- as.character(postgres_stations$Istasyonlar_modified)
+    postgres_stations$station_type <- as.character(postgres_stations$station_type)
+    
+    postgres_only <- postgres_stations$Istasyonlar_modified[
+        !sapply(postgres_stations$Istasyonlar_modified, function(x) {
+            any(sapply(excel_stations, function(y) station_exists(x, y)))
+        })
     ]
-    excel_only <- excel_stations[vapply(excel_stations, function(x) {
-        !station_exists(x, sqlite_stations$Istasyonlar_modified)
-    }, logical(1))]
-    na_station_types <- sqlite_stations$Istasyonlar_modified[is.na(sqlite_stations$station_type)]
+    
+    excel_only <- excel_stations[
+        !sapply(excel_stations, function(x) {
+            any(sapply(postgres_stations$Istasyonlar_modified, function(y) station_exists(x, y)))
+        })
+    ]
+    
+    na_station_types <- postgres_stations$Istasyonlar_modified[
+        is.na(postgres_stations$station_type)
+    ]
+
     cat("\n=== Matching Results ===\n")
     cat("Matched stations:", length(matched_stations), "\n")
     cat("Unmatched stations:", length(unmatched_stations), "\n")
@@ -210,9 +222,9 @@ matchStationTypes <- function() {
         print(unmatched_stations)
     }
     cat("\n=== Additional Analysis ===\n")
-    cat("\nStations in SQLite but not in Excel (", length(sqlite_only), "):\n")
-    print(sqlite_only)
-    cat("\nStations in Excel but not in SQLite (", length(excel_only), "):\n")
+    cat("\nStations in postgresbut not in Excel (", length(postgres_only), "):\n")
+    print(postgres_only)
+    cat("\nStations in Excel but not in postgres (", length(excel_only), "):\n")
     print(excel_only)
     cat("\nStations with NA station_types (", length(na_station_types), "):\n")
     print(na_station_types)

@@ -4,7 +4,7 @@ library(uuid)
 library(dygraphs)
 
 total_hours <- 8761
-parameter_name <- "\"PM2.5\""
+parameter_name <- "PM25"
 
 
 init.temizhavaR()
@@ -12,7 +12,7 @@ init.temizhavaR()
 
 if (0) {
   station_name <- "Adana-Seyhan"
-  parameters <- c("PM2.5")
+  parameters <- c("PM25")
   hourly_detail_data <- hourly_detail_load_from_database(station_name)
   all_hourly_detail_data <- all_hourly_detail_load_from_database()
 

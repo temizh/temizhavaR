@@ -32,7 +32,7 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
 }
 
 # define parameters to ckeck
-parameters <- c("PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3") # nolint
+parameters <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3") # nolint
 
 # import raw data path from options
 raw_data_dir <- options()$temizhavaR.raw_dir

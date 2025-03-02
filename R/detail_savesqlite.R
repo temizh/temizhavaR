@@ -16,7 +16,7 @@ detail_save_to_database <- function(processed_data, table_name, verbose = FALSE)
   # data$Tarih <- format(data$Tarih, "%Y-%m-%d")
   data$Tarih <- format(data$Tarih, "%Y-%m-%d %H:%M:%S")
   col_mapping <- c("Istasyon" = "Istasyon" ,"location_id"= "location_id","Tarih" = "Tarih", "PM10" = "PM10", "PM
-                   2.5" = "\"PM2.5\"", "SO2" = "SO2","CO" = "CO", "NO2" = "NO2", "NOX" = "NOX", "NO" = "NO", "O3" = "O3")
+                   25" = "PM25", "SO2" = "SO2","CO" = "CO", "NO2" = "NO2", "NOX" = "NOX", "NO" = "NO", "O3" = "O3")
   data$Istasyon <- station_name
 
   station_count <- dbGetQuery(mydb, paste0("SELECT COUNT(*) FROM ", table_name,  " WHERE Istasyon = '", station_name, "'"))

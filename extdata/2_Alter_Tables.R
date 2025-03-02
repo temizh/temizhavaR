@@ -2,7 +2,7 @@ library(DBI)
 library(RSQLite)
 
 alter_tables <- function() {
-  db <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  db <- create_postgres_conn()
   
   new_columns <- c(
     "station_type TEXT",

@@ -7,9 +7,9 @@ library(uuid)
 library(dygraphs)
 
 station_name <- "Adana - Çukurova"
-parameters <- c("PM2.5")
+parameters <- c("PM25")
 total_days <- 365
-parameter_name <- "'PM2.5'"
+parameter_name <- "PM25"
 #parameter_name <- "PM10"
 
 daily_detail_data <- daily_detail_load_from_database(station_name)
