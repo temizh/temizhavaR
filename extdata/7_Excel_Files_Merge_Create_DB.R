@@ -127,7 +127,7 @@ read_and_write_data <- function(delete_previous = FALSE) {
       mutate(across(everything(), ~ifelse(is.na(.) | . == "", NA, .))) %>%
       filter(!is.na(Tarih)) 
 
-    expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM2.5", "SO2", 
+    expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM25", "SO2", 
                       "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified",
                       "station_type", "Sampling_Point_Id", "Longitude", "Latitude",
                       "Altitude", "LONGTD", "LATTD")

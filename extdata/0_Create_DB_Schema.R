@@ -30,7 +30,7 @@ create_detail_tables <- function(mydb) {
     CREATE TABLE %s (
       Istasyon TEXT,
       location_id TEXT,
-      Tarih TIMESTAMP,
+      Tarih TIMESTAMPTZ,
       PM10 DOUBLE PRECISION,
       PM25 DOUBLE PRECISION,
       SO2 DOUBLE PRECISION,
