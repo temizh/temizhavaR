@@ -8,7 +8,7 @@
 #' @export
 
 list_stations_with_parameter <- function(parameter_name, data_type = "daily", threshold = 0) {
-  process_data <- function(data) {
+  process_data <- function(data, total_amount) {
     if (nrow(data) == 0) {
       warning("No data found for the given parameter")
       return(data.frame(Istasyon = character(0), Year = character(0)))
@@ -22,11 +22,13 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
     data_summary <- data %>%
       group_by(Istasyon, Year) %>%
       summarise(
-        total_entries = n(),
+        total_entries = total_amount,  # Total entries
         available_entries = sum(!is.na(.data[[parameter_name]])),  # Count non-NA values
         percentage = (available_entries / total_entries) * 100  # Calculate percentage
       ) %>%
       ungroup()
+
+    print(data_summary)
 
     # Filter stations based on threshold
     filtered_data <- data_summary %>%
@@ -46,13 +48,13 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
     query <- paste0("SELECT * FROM daily_detail WHERE \"", parameter_name, "\" IS NOT NULL")
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
-    result <- process_data(data)
+    result <- process_data(data, 365)
   } else if (data_type == 'hourly') {
     conn <- create_postgres_conn()
     query <- sprintf('SELECT * FROM hourly_detail WHERE "%s" IS NOT NULL', parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
-    result <- process_data(data)
+    result <- process_data(data, 365 * 24)
   }
 
   return(result)
