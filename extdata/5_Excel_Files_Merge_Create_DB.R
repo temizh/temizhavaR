@@ -19,7 +19,7 @@ library(stringr)
 library(dplyr)
 
 read_and_write_data <- function(delete_previous = FALSE) {
-  db <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  db <- create_postgres_conn()
   
   # if (delete_previous) {
   #   dbExecute(db, "DELETE FROM daily_detail")
@@ -148,7 +148,7 @@ read_and_write_data <- function(delete_previous = FALSE) {
     cat("Data written to", target_table, "for station:", station_extracted, "\n")
   }
   
-  dbDisconnect(db)
+  disconnect_postgres(db)
   
   return(rows_written)
 }

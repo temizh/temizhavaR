@@ -36,7 +36,14 @@ normalize_text <- function(text) {
     text <- gsub("[^a-z0-9çğıöşü ]", "", text)
     text <- gsub(" +", " ", text)
     text <- chartr("ğĞ", "gG", text)
-    trimws(text)
+    text <- chartr("ıİ", "iI", text)
+    text <- chartr("öÖ", "oO", text)
+    text <- chartr("şŞ", "sS", text)
+    text <- chartr("üÜ", "uU", text)
+    text <- chartr("çÇ", "cC", text)
+    return(
+         trimws(text)
+    )
 }
 
 find_best_match <- function(station_name, existing_stations, column_name) {
@@ -104,6 +111,11 @@ matchStationTypes <- function() {
     db_path <- "../temiz-hava.sqlite"
     mydb <- initializeDatabase(db_path)
     tryCatch({
+        dbExecute(mydb, "ALTER TABLE location ADD COLUMN station_type TEXT")
+    }, error = function(e) {
+        cat("Note: station_type column might already exist\n")
+    })
+    tryCatch({
         dbExecute(mydb, "ALTER TABLE location ADD COLUMN PM10ISTASYON TEXT")
     }, error = function(e) {
         cat("Note: PM10ISTASYON column might already exist\n")
@@ -156,6 +168,27 @@ matchStationTypes <- function() {
             unmatched_stations <- c(unmatched_stations, station_name)
         }
     }
+
+    turkey_csv_file <- file.path(script_dir, "Turkey_Stations.csv")
+    if (file.exists(turkey_csv_file) && length(unmatched_stations) > 0) {
+        turkey_stations <- read.csv(turkey_csv_file, stringsAsFactors = FALSE)
+        for (station_name in unmatched_stations) {
+            best_match_csv <- find_best_match(station_name, turkey_stations, "Air Quality Station Name")
+            if (!is.na(best_match_csv)) {
+                station_type_csv <- turkey_stations[turkey_stations$`Air Quality Station Name` == best_match_csv, 
+                                                    "Air Quality Station Type"]
+                if (!is.na(station_type_csv[1])) {
+                    dbExecute(mydb,
+                        "UPDATE location SET station_type = ? 
+                         WHERE lower(Istasyonlar_modified) = lower(?)",
+                        params = list(station_type_csv[1], best_match_csv))
+                    matched_stations <- c(matched_stations, station_name)
+                }
+            }
+        }
+        unmatched_stations <- setdiff(unmatched_stations, matched_stations)
+    }
+
     sqlite_only <- character(0)
     excel_only <- character(0)
     na_station_types <- character(0)
