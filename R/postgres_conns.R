@@ -1,6 +1,10 @@
+#' @title PostgreSQL Database Connection Functions
+#' @description Functions to manage PostgreSQL database connections
+#' @name postgres_conns
 #' @import DBI
 #' @import dplyr
 #' @importFrom dotenv load_dot_env
+NULL
 
 if (file.exists(".env")) {
   load_dot_env()
@@ -54,6 +58,7 @@ get_postgres_tables <- function(conn) {
 #' Disconnect from PostgreSQL database
 #' @param conn The database connection object
 #' @return Boolean indicating success
+#' @export
 disconnect_postgres <- function(conn) {
   tryCatch({
     if (dbIsValid(conn)) {
@@ -70,6 +75,7 @@ disconnect_postgres <- function(conn) {
 #' Check if database connection is valid
 #' @param conn The database connection object
 #' @return Boolean indicating if connection is valid
+#' @export
 is_postgres_connected <- function(conn) {
   tryCatch({
     return(dbIsValid(conn))
@@ -81,6 +87,7 @@ is_postgres_connected <- function(conn) {
 #' Reconnect to PostgreSQL database if connection is lost
 #' @param conn The database connection object
 #' @return A new connection object or NULL if reconnection fails
+#' @export
 reconnect_postgres <- function(conn) {
   if (!is_postgres_connected(conn)) {
     message("Connection lost. Attempting to reconnect...")

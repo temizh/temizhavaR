@@ -2,9 +2,9 @@ library(RSelenium)
 library(netstat)
 library(wdman)
 library(uuid)
-library(RSQLite)
 library(temizhavaR)
 library(stringr)
+library(DBI)
 
 
 
@@ -35,13 +35,16 @@ download_temizhava_data <- function(mode = "default",
     dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
-
-  mydb <- dbConnect(RSQLite::SQLite(), "./temiz-hava.sqlite")
-  location <- dbReadTable(mydb, "location")
+  conn <- create_postgres_conn()
+  if (is.null(conn)) {
+    stop("Failed to connect to PostgreSQL database")
+  }
+  
+  location <- dbReadTable(conn, "location")
 
   if (nrow(location) == 0) {
     print("There are no stations to download data from.")
-    dbDisconnect(mydb)
+    disconnect_postgres(conn)
     return()
   }
 
@@ -52,7 +55,6 @@ download_temizhava_data <- function(mode = "default",
     "safebrowsing.enabled" = TRUE
   )))
 
-  # Server setup
  
   remote_driver <- rsDriver(browser = "chrome", port = 4445L, chromever = "latest", verbose = FALSE
                             , extraCapabilities = eCaps)
@@ -145,15 +147,11 @@ if (length(all_missing_files) > 0) {
   }
 }
 
-remDr$close()
-remote_driver$server$stop()
-
-dbDisconnect(mydb)
+disconnect_postgres(conn)
 cat("\nDatabase connection closed.\n")
 
 }
 
-# Default mode with specific start and end dates
 
 download_temizhava_data(startdate = "01.01.2014", enddate = "01.01.2024")
 
