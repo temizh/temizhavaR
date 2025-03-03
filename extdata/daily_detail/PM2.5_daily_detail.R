@@ -5,14 +5,14 @@ library(writexl)
 library(rlang)
 
 total_days <- 365
-parameter_name <- "\"PM2.5\""
+parameter_name <- "PM25"
 
 init.temizhavaR()
 
 if (0) {
   station_name <- "Mersin - Akdeniz"
   station_name <- "Erzurum - Palandöken"
-  parameters <- c("PM2.5")
+  parameters <- c("PM25")
   daily_detail_data <- daily_detail_load_from_database(station_name)
   calculate_parameter_mean(daily_detail_data , parameter_name, threshold = 0.9, total_days, verbose = TRUE)
   all_daily_detail_data <- all_daily_detail_load_from_database()

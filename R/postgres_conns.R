@@ -1,37 +1,34 @@
-#' @title PostgreSQL Database Connection Functions
-#' @description Functions to manage PostgreSQL database connections
-#' @name postgres_conns
-#' @import DBI
-#' @import dplyr
-#' @importFrom dotenv load_dot_env
-NULL
-
-if (file.exists(".env")) {
-  load_dot_env()
-} else {
-  cat(".env file not found. Please make sure 
-  it exists in the root directory.\n")
-}
-
-db_host <- Sys.getenv("POSTGRES_HOST")
-db_name <- Sys.getenv("TEMIZHAVA_DB")
-db_user <- Sys.getenv("POSTGRES_TUSER")
-db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
-db_port <- Sys.getenv("POSTGRES_PORT")
-
 #' Create a PostgreSQL database connection
 #' @return A PostgreSQL connection object
 #' @importFrom RPostgres Postgres
 #' @export
 create_postgres_conn <- function() {
   tryCatch({
-    con <- dbConnect(RPostgres::Postgres(),
+
+      raw_dir <- getOption("temizhavaR.raw_dir")
+
+      env_file <- file.path(raw_dir, ".env")
+
+      if (file.exists(env_file)) {
+        dotenv::load_dot_env(file = env_file)
+        cat(".env file loaded successfully.\n")
+      } else {
+        stop(".env file not found at: ", env_file)
+      }
+
+      db_host <- Sys.getenv("POSTGRES_HOST")
+      db_name <- Sys.getenv("TEMIZHAVA_DB")
+      db_user <- Sys.getenv("POSTGRES_TUSER")
+      db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
+      db_port <- Sys.getenv("POSTGRES_PORT")
+
+      con <- dbConnect(RPostgres::Postgres(),
                      dbname = db_name,
                      host = db_host,
                      port = db_port,
                      user = db_user,
                      password = db_password)
-    return(con)
+      return(con)
   }, error = function(e) {
     message("Failed to connect to database: ", e$message)
     return(NULL)

@@ -2,9 +2,16 @@ library(dplyr)
 library(temizhavaR)
 library(writexl)
 library(lubridate)
+library(DBI)
+library(openxlsx)
 
 total_days <- 365
 parameter_name <- "PM10"
+
+raw_dir <- getOption("temizhavaR.raw_dir")
+output_dir <- file.path(raw_dir, "__results")  
+
+result_pm10_daily_excel_file <- file.path(output_dir, "results_PM10_daily.xlsx")
 
 init.temizhavaR()
 
@@ -36,16 +43,16 @@ output <- list(PM10_1 = list(),
                PM10_14 = list())
 
 output$PM10_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan istasyon listesi" ))
-output$PM10_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
+output$PM10_1$data <- daily_list_stations_with_parameter(parameter_name)
 
-output$PM10_2$result_message <- print(paste0(parameter_name, "_2 : Veri alınan istasyon sayısı" ))
-output$PM10_2$data <- daily_list_stations_with_parameter_count(parameter_name)
+output$PM10_2$result_message <- print(paste0(parameter_name, "_2 : Veri alınan istasyon sayısı (yıllara göre)" ))
+output$PM10_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
 
 output$PM10_3$result_message <- print(paste0(parameter_name, "_3 : %90 veri alınan istasyon listesi" ))
-output$PM10_3$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
+output$PM10_3$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 output$PM10_4$result_message <- print(paste0(parameter_name, "_4 : %90 Veri alınan istasyon sayısı" ))
-output$PM10_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$PM10_4$data <- count_stations_with_parameter_threshold(parameter_name, threshold = 90, data_type = "daily")
 
 output$PM10_5$result_message <- print(paste0(parameter_name, "_5 : için istasyon ortalamaları"))
 output$PM10_5$data <- daily_station_average(parameter_name, threshold = 90)
