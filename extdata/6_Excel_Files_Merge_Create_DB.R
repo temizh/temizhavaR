@@ -20,6 +20,14 @@ convert_to_24h <- function(hour, meridiem) {
   return(hour)
 }
 
+
+
+track_data_loss <- function(data_frame, stage_name, parameter) {
+  non_na_count <- sum(!is.na(data_frame[[parameter]]))
+  cat(sprintf("%s - %s count: %d\n", stage_name, parameter, non_na_count))
+  return(data_frame)
+}
+
 read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data_dict = NULL, 
                                start_hour = 0, end_hour = 23,
                                start_meridiem = NULL, end_meridiem = NULL,
@@ -201,18 +209,34 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       df <- df %>%
         mutate(across(all_of(intersect(names(.), measurement_cols)), 
                      ~{
-                       values <- ifelse(. %in% c("", "-", "NULL", "NA", "NaN", "*", "N/A", "<") | 
-                                      is.na(.), NA_character_, .)
-                       values <- trimws(values)  
-                       values <- gsub(",", ".", values)  
-                       values <- gsub("[^0-9.]", "", values) 
-                      
-                       num_values <- suppressWarnings(as.numeric(values))
-                       ifelse(!is.na(num_values) & num_values >= 0, num_values, NA_real_)
+                       values <- .
+                       orig_values <- values
+                       
+                       values <- trimws(as.character(values))
+                       values <- ifelse(values %in% c("", "-", "NULL", "NA", "NaN", "*", "N/A"), NA_character_, values)
+                       
+                       num_values <- suppressWarnings({
+                         clean_vals <- gsub(" ", "", values)
+                         clean_vals <- gsub("(\\d+),(\\d+)$", "\\1.\\2", clean_vals)
+                         clean_vals <- gsub("\\.", "", clean_vals)
+                         as.numeric(clean_vals)
+                       })
+                       
+                       problem_idx <- which(!is.na(values) & is.na(num_values))
+                       if(length(problem_idx) > 0) {
+                         cat(sprintf("Warning: Could not convert values in %s: %s\n",
+                                   deparse(substitute(.)),
+                                   paste(orig_values[problem_idx], collapse=", ")))
+                       }
+                       
+                       ifelse(!is.na(num_values) & num_values >= 0 & num_values < 10000,
+                             num_values, NA_real_)
                      }))
-      
+
       cat("\nSample of raw values before conversion:\n")
       print(head(df[intersect(names(df), measurement_cols)]))
+      
+      df <- track_data_loss(df, "After first cleaning", "PM10")
       
       df
     }, error = function(e) {
@@ -383,6 +407,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       ) %>%
       select(all_of(expected_cols))
 
+    processed_data <- track_data_loss(processed_data, "Before insertion", "PM10")
 
     cat("\nFirst few rows of processed data before insertion:\n")
     print(head(processed_data))
@@ -397,11 +422,44 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
           paste(names(has_data)[has_data], collapse=", "), "\n")
     }
     
+    processed_data <- processed_data %>%
+      group_by(Istasyon_modified, Tarih) %>%
+      slice(1) %>%  
+      ungroup()
+
+    cat(sprintf("\nData summary for %s:\n", basename(file)))
+    cat("Number of rows:", nrow(processed_data), "\n")
+    cat("Non-NA count per column:\n")
+    print(colSums(!is.na(processed_data[measurement_cols])))
+
     if (nrow(processed_data) > 0 && !all(is.na(processed_data$Tarih))) {
       tryCatch({
-        copy_to(db, processed_data, target_table, temporary = FALSE, append = TRUE)
+        constraint_name <- paste0(target_table, "_station_date_unique")
+        constraint_query <- sprintf(
+          "DO $$ 
+           BEGIN 
+             IF NOT EXISTS (
+               SELECT 1 FROM pg_constraint WHERE conname = '%s'
+             ) THEN 
+               ALTER TABLE %s ADD CONSTRAINT %s 
+               UNIQUE (Istasyon_modified, Tarih); 
+             END IF; 
+           END $$;",
+          constraint_name, target_table, constraint_name
+        )
+        dbExecute(db, constraint_query)
+        
+        copy_to(
+          db, processed_data, target_table,
+          temporary = FALSE, append = TRUE,
+          analyze = TRUE,
+          indexes = list(
+            c("Istasyon_modified", "Tarih")
+          )
+        )
+        
         rows_written <- rows_written + nrow(processed_data)
-        cat("Processed file:", basename(file), "\n")
+        cat("Successfully inserted data from:", basename(file), "\n")
       }, error = function(e) {
         cat("Error inserting data for file:", basename(file), "\n")
         cat("Error message:", conditionMessage(e), "\n")

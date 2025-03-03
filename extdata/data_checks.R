@@ -9,8 +9,15 @@ library(readxl)
 library(writexl)
 library(dotenv)
 
-# Load environment variables from the .env file
-dotenv::load_dot_env()
+base_dir <- getOption("temizhavaR.base_dir")
+
+env_file <- file.path(base_dir, ".env")
+if (file.exists(env_file)) {
+  dotenv::load_dot_env(file = env_file)
+  cat(".env file loaded successfully.\n")
+} else {
+  stop(".env file not found at: ", env_file)
+}
 
 # Read the environment variables
 db_host <- Sys.getenv("POSTGRES_HOST")
@@ -254,7 +261,7 @@ for (i in seq_len(as.integer(locations_count))) {
       for (parameter in parameters) {
         # get the daily data for the parameter
         daily_data_for_parameter <- daily_detail_for_location %>%
-          select(parameter) %>%
+          select(all_of(parameter)) %>%
           na.omit() %>%
           collect() %>%
           as.data.frame()
