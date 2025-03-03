@@ -6,7 +6,13 @@ library(stringr)
 library(dplyr)
 library(dbplyr)
 
-read_and_write_data <- function(delete_previous = FALSE) {
+# Update if new station is selected, zaman aralığı da seçsin, overwrite, veri varsa o zaman aralığındaki her şeyi sil.
+# excelleri servera at, serverda çalıştır
+# home/basak
+# checkleri çalıştır
+
+
+read_and_write_data <- function(delete_previous = FALSE, pattern) {
   db <- create_postgres_conn()
   
    if (delete_previous) {
@@ -23,7 +29,10 @@ read_and_write_data <- function(delete_previous = FALSE) {
   hourly_tbl <- tbl(db, "hourly_detail")
   
   data_dir <- "./TemizHava_raw_data"
-  files <- list.files(data_dir, pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
+  if (is.null(pattern)){
+    pattern = "\\.xlsx$"
+  }
+  files <- list.files(data_dir, pattern = pattern, full.names = TRUE, recursive = TRUE)
   
   rows_written <- 0
   batch_size <- 5000  
@@ -153,5 +162,11 @@ read_and_write_data <- function(delete_previous = FALSE) {
   return(rows_written)
 }
 
-rows_written <- read_and_write_data()
+# rows_written <- read_and_write_data()
+data_dir <- "./TemizHava_raw_data/Adana/"
+# rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
+rows_written <- read_and_write_data(pattern = "\\.xlsx$")
+
+# add to readme
+
 cat("Total rows written:", rows_written, "\n")
