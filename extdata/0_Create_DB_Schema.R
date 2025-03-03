@@ -24,45 +24,45 @@ create_location_table <- function(mydb) {
 
 create_detail_tables <- function(mydb) {
   tryCatch({
-    dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
-    dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
+    dbExecute(mydb, 'DROP TABLE IF EXISTS "hourly_detail"')
+    dbExecute(mydb, 'DROP TABLE IF EXISTS "daily_detail"')
   }, error = function(e) {
     message("Error dropping tables: ", e$message)
   })
   
-  hourly_detail_sql <- "
-    CREATE TABLE hourly_detail (
-      Id SERIAL PRIMARY KEY,
-      Istasyon TEXT,
-      location_id TEXT,
-      Tarih TIMESTAMPTZ,
-      PM10 DOUBLE PRECISION,
-      PM25 DOUBLE PRECISION,
-      SO2 DOUBLE PRECISION,
-      CO DOUBLE PRECISION,
-      NO2 DOUBLE PRECISION,
-      NOX DOUBLE PRECISION,
-      NO DOUBLE PRECISION,
-      O3 DOUBLE PRECISION,
-      Istasyon_modified TEXT
-    );"
+  hourly_detail_sql <- '
+    CREATE TABLE "hourly_detail" (
+      "Id" SERIAL PRIMARY KEY,
+      "Istasyon" TEXT,
+      "location_id" TEXT,
+      "Tarih" TIMESTAMPTZ,
+      "PM10" DOUBLE PRECISION,
+      "PM25" DOUBLE PRECISION,
+      "SO2" DOUBLE PRECISION,
+      "CO" DOUBLE PRECISION,
+      "NO2" DOUBLE PRECISION,
+      "NOX" DOUBLE PRECISION,
+      "NO" DOUBLE PRECISION,
+      "O3" DOUBLE PRECISION,
+      "Istasyon_modified" TEXT
+    );'
     
-  daily_detail_sql <- "
-    CREATE TABLE daily_detail (
-      Id SERIAL PRIMARY KEY,
-      Istasyon TEXT,
-      location_id TEXT,
-      Tarih TIMESTAMPTZ,
-      PM10 DOUBLE PRECISION,
-      PM25 DOUBLE PRECISION,
-      SO2 DOUBLE PRECISION,
-      CO DOUBLE PRECISION,
-      NO2 DOUBLE PRECISION,
-      NOX DOUBLE PRECISION,
-      NO DOUBLE PRECISION,
-      O3 DOUBLE PRECISION,
-      Istasyon_modified TEXT
-    );"
+  daily_detail_sql <- '
+    CREATE TABLE "daily_detail" (
+      "Id" SERIAL PRIMARY KEY,
+      "Istasyon" TEXT,
+      "location_id" TEXT,
+      "Tarih" TIMESTAMPTZ,
+      "PM10" DOUBLE PRECISION,
+      "PM25" DOUBLE PRECISION,
+      "SO2" DOUBLE PRECISION,
+      "CO" DOUBLE PRECISION,
+      "NO2" DOUBLE PRECISION,
+      "NOX" DOUBLE PRECISION,
+      "NO" DOUBLE PRECISION,
+      "O3" DOUBLE PRECISION,
+      "Istasyon_modified" TEXT
+    );'
   
   tryCatch({
     dbExecute(mydb, hourly_detail_sql)
