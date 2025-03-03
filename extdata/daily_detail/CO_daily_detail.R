@@ -6,8 +6,8 @@ library(lubridate)
 total_days <- 365
 parameter_name <- "CO"
 
-raw_dir <- getOption("temizhavaR.raw_dir")
-output_dir <- file.path(raw_dir, "__results")  
+base_dir <- getOption("temizhavaR.base_dir")
+output_dir <- file.path(base_dir, "__results")  
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
   print(paste("Created output directory:", output_dir))
