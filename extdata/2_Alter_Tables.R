@@ -15,7 +15,7 @@ alter_tables <- function() {
     "Air_Quality_Station_Area TEXT"
   )
   
-  tables <- c("daily_detail", "hourly_detail", "location")
+  tables <- c("location")
   
   for (table in tables) {
     for (col in new_columns) {
