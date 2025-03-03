@@ -1,0 +1,22 @@
+Package: temizhavaR
+Title: Clean Air Data Analysis Tools
+Version: 0.1.0
+Authors@R: 
+    person("Author", "Name", , "author@example.com", role = c("aut", "cre"))
+Description: Tools for analyzing and processing clean air data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: 
+    R (>= 3.5.0)
+Imports: 
+    dplyr,
+    dygraphs,
+    writexl,
+    rlang,
+    dotenv,
+    DBI,
+    dbplyr,
+    RPostgres,
+    tidyr
