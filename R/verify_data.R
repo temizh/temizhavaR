@@ -177,16 +177,17 @@ summarize_data_quality <- function(data) {
   ))
 }
 
-data <- check_station_data(
-  station_name = "Adana-Seyhan",
-  start_date = "2021-02-20",
-  end_date = "2021-02-21",
-  start_hour = 4,
-  start_meridiem = "AM",
-  end_hour = 1,
-  end_meridiem = "PM",
-  time_format = "AMPM",
-  table_type = "hourly"
-)
+# data <- check_station_data(
+#   station_name = "Adana-Seyhan",
+#   start_date = "2021-02-20",
+#   end_date = "2021-02-21",
+#   start_hour = 4,
+#   start_meridiem = "AM",
+#   end_hour = 1,
+#   end_meridiem = "PM",
+#   time_format = "AMPM",
+#   table_type = "hourly"
+# )
 
-summarize_data_quality(data)
+# summarize_data_quality(data)
+
