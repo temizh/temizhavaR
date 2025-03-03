@@ -1,6 +1,5 @@
 library(DBI)
 library(dplyr)
-library(temizhavaR)
 
 #' Convert 12-hour time to 24-hour format
 #' @param hour Numeric hour (1-12)

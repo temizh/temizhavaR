@@ -1,3 +1,4 @@
+#' @keywords internal
 #' Create a PostgreSQL database connection
 #' @return A PostgreSQL connection object
 #' @importFrom RPostgres Postgres
@@ -35,6 +36,7 @@ create_postgres_conn <- function() {
   })
 }
 
+#' @keywords internal
 #' Get the list of tables in the PostgreSQL database
 #' @param conn The database connection object
 #' @return A character vector of table names
@@ -51,7 +53,7 @@ get_postgres_tables <- function(conn) {
   })
 }
 
-
+#' @keywords internal
 #' Disconnect from PostgreSQL database
 #' @param conn The database connection object
 #' @return Boolean indicating success
@@ -69,6 +71,7 @@ disconnect_postgres <- function(conn) {
   })
 }
 
+#' @keywords internal
 #' Check if database connection is valid
 #' @param conn The database connection object
 #' @return Boolean indicating if connection is valid
@@ -81,6 +84,7 @@ is_postgres_connected <- function(conn) {
   })
 }
 
+#' @keywords internal
 #' Reconnect to PostgreSQL database if connection is lost
 #' @param conn The database connection object
 #' @return A new connection object or NULL if reconnection fails
@@ -95,7 +99,7 @@ reconnect_postgres <- function(conn) {
 }
 
 
-
+#' @keywords internal
 #' Check how many rows are in a table
 #' @param conn The database connection object
 #' @param table_name The name of the table
