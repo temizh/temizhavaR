@@ -30,7 +30,9 @@ download_temizhava_data <- function(mode = "default",
     startdate <- paste0("01.01.", start_year)
     enddate <- paste0("01.01.", start_year + 10)
   }
-  result_dir <- file.path(getwd(), "TemizHava_raw_data")
+
+  result_dir <- getOption("temizhavaR.base_dir")
+    
   if (!dir.exists(result_dir)) {
     dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
   }

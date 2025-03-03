@@ -28,7 +28,10 @@ read_and_write_data <- function(delete_previous = FALSE, pattern) {
   daily_tbl <- tbl(db, "daily_detail")
   hourly_tbl <- tbl(db, "hourly_detail")
   
-  data_dir <- "./TemizHava_raw_data"
+  data_dir <-  getOption("temizhavaR.base_dir")
+
+  
+
   if (is.null(pattern)){
     pattern = "\\.xlsx$"
   }
@@ -163,9 +166,8 @@ read_and_write_data <- function(delete_previous = FALSE, pattern) {
 }
 
 # rows_written <- read_and_write_data()
-data_dir <- "./TemizHava_raw_data/Adana/"
-# rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
-rows_written <- read_and_write_data(pattern = "\\.xlsx$")
+rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
+# rows_written <- read_and_write_data(pattern = "\\.xlsx$")
 
 # add to readme
 

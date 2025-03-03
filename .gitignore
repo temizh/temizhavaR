@@ -6,13 +6,6 @@ renv/library/
 renv
 
 
-
-TemizHava_raw_data/
-TemizHava_raw_data (copy)/
-
-temizhavaR/TemizHava_raw_data/
-temizhavaR/TemizHava_raw_data (copy)/
-
 .Rprofile 
 .RBuildignore
 
