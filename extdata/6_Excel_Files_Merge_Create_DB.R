@@ -200,10 +200,20 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")
       df <- df %>%
         mutate(across(all_of(intersect(names(.), measurement_cols)), 
-                     ~ifelse(. %in% c("", "-", "NULL", "NA", "NaN", "*", "N/A") | 
-                            is.na(.) | suppressWarnings(as.numeric(.)) < 0, 
-                            NA_real_,
-                            suppressWarnings(as.numeric(.)))))
+                     ~{
+                       values <- ifelse(. %in% c("", "-", "NULL", "NA", "NaN", "*", "N/A", "<") | 
+                                      is.na(.), NA_character_, .)
+                       values <- trimws(values)  
+                       values <- gsub(",", ".", values)  
+                       values <- gsub("[^0-9.]", "", values) 
+                      
+                       num_values <- suppressWarnings(as.numeric(values))
+                       ifelse(!is.na(num_values) & num_values >= 0, num_values, NA_real_)
+                     }))
+      
+      cat("\nSample of raw values before conversion:\n")
+      print(head(df[intersect(names(df), measurement_cols)]))
+      
       df
     }, error = function(e) {
       cat("Error processing file:", file, "\n", e$message, "\n")
@@ -355,16 +365,27 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     processed_data <- raw_data %>%
       mutate(
         across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"), 
-               ~case_when(
-                 . %in% c("", "-", "NULL", "NA", "NaN") ~ NA_character_,
-                 as.numeric(.) < 0 ~ NA_character_,  
-                 TRUE ~ as.character(.)
-               )),
-        across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"),
-               ~as.numeric(.)),
+               ~{
+                 values <- case_when(
+                   is.na(.) ~ NA_real_,
+                   is.numeric(.) ~ as.numeric(.),
+                   TRUE ~ {
+                     clean_val <- trimws(as.character(.))
+                     clean_val <- gsub(",", ".", clean_val)
+                     clean_val <- gsub("[^0-9.]", "", clean_val)
+                     num_val <- suppressWarnings(as.numeric(clean_val))
+                     ifelse(!is.na(num_val) & num_val >= 0, num_val, NA_real_)
+                   }
+                 )
+                 values
+               }),
         Tarih = format(as.POSIXct(Tarih, tz = "UTC"), "%Y-%m-%d %H:%M:%S")
       ) %>%
       select(all_of(expected_cols))
+
+
+    cat("\nFirst few rows of processed data before insertion:\n")
+    print(head(processed_data))
     
     cat("\nColumn types in processed data:\n")
     print(sapply(processed_data, class))
