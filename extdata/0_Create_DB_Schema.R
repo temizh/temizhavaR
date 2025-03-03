@@ -26,8 +26,10 @@ create_detail_tables <- function(mydb) {
   dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
   dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
   
+  #id auto increment daily and hourly
   detail_table_sql <- "
     CREATE TABLE %s (
+      Id SERIAL PRIMARY KEY,
       Istasyon TEXT,
       location_id TEXT,
       Tarih TIMESTAMPTZ,
