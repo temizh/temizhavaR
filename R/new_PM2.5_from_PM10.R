@@ -1,3 +1,4 @@
+library(DBI)
 
 #' Calculate PM2.5 Values from PM10 Yearly Averages for Stations with Less Than 75% Data
 #'
@@ -9,11 +10,14 @@
 
 new_pm25_from_pm10_yearly_average <- function() {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- create_postgres_conn()
+  if (is.null(mydb)) {
+    stop("Unable to connect to database")
+  }
 
   threshold <- 75
 
-  threshold_query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", threshold)
+  threshold_query <- paste0("SELECT Istasyon FROM (SELECT Istasyon, (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", threshold)
 
   threshold_stations <- dbGetQuery(mydb, threshold_query)$Istasyon
 
@@ -31,7 +35,7 @@ new_pm25_from_pm10_yearly_average <- function() {
   #45               Hatay - Antakya              97
   #46            Hatay - İskenderun              94
 
-  all_stations_query <- "SELECT Istasyon, AVG(\"PM2.5\") AS PM25 FROM daily_detail GROUP BY Istasyon"
+  all_stations_query <- "SELECT Istasyon, AVG(PM25) AS PM25 FROM daily_detail GROUP BY Istasyon"
   all_stations_data <- dbGetQuery(mydb, all_stations_query)
 
   #all_stations_data$Yeni_PM25 <- NA

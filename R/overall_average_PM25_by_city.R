@@ -13,23 +13,23 @@ calculate_overall_PM25_average_by_city <- function() {
 
   YEAR <- options()$temizhavaR.YEAR
 
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir, "temiz-hava.sqlite"))
+  conn <- create_postgres_conn()
 
-  city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
+  city_query <- dbGetQuery(conn, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
 
   overall_avgs <- lapply(cities, function(city_name) {
-    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
+    station_query <- dbGetQuery(conn, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- station_query$Istasyonlar
 
     station_data <- lapply(stations, function(station) {
-      pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"PM2.5\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
-      pm25_data_percentage <- dbGetQuery(mydb, pm25_data_percentage_query)$data_percentage
+      pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
+      pm25_data_percentage <- dbGetQuery(conn, pm25_data_percentage_query)$data_percentage
 
       if (!is.na(pm25_data_percentage) && pm25_data_percentage >= 75) {
         #Take the PM2.5 measurement
-        pm25_query <- paste0("SELECT AVG(\"PM2.5\") AS Yillik_Ortalama FROM daily_detail WHERE Istasyon='", station, "'")
-        pm25 <- dbGetQuery(mydb, pm25_query)
+        pm25_query <- paste0("SELECT AVG(PM25) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon='", station, "'")
+        pm25 <- dbGetQuery(conn, pm25_query)
 
         pm25_values <- data.frame(Istasyon = station, PM25 = pm25$Yillik_Ortalama,
                                   pm25_veri_mevcudiyet_yuzdesi = pm25_data_percentage,
@@ -56,7 +56,7 @@ calculate_overall_PM25_average_by_city <- function() {
     station_data
   })
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   result <- do.call("rbind", overall_avgs) %>%
     #arrange(desc(PM25)) %>%

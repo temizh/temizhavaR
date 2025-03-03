@@ -25,9 +25,9 @@ calculate_above_exceedance_days_all_stations <- function(parameter, pollutant_th
   valid_station_names <- valid_stations$Istasyon[valid_stations$threshold_status == "Üstünde"]
 
   # Connect to the database and load the daily data
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-  daily_data <- dbReadTable(mydb, "daily_detail")
-  dbDisconnect(mydb)
+  conn <- create_postgres_conn()
+  daily_data <- dbGetQuery(conn, "SELECT * FROM daily_detail")
+  disconnect_postgres(conn)
 
   # Clean column names and parameter name
   names(daily_data) <- gsub("^\"|\"$", "", names(daily_data))

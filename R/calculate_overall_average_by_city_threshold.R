@@ -13,22 +13,22 @@ calculate_overall_average_by_city_threshold <- function(parameter) {
   init.temizhavaR()
   YEAR <- options()$temizhavaR.YEAR
 
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir, "temiz-hava.sqlite"))
+  conn <- create_postgres_conn()
 
-  city_query <- dbGetQuery(mydb, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
+  city_query <- dbGetQuery(conn, paste0("SELECT DISTINCT Sehir FROM location_", YEAR))
   cities <- city_query$Sehir
 
   overall_avgs <- sapply(cities, function(city_name) {
-    station_query <- dbGetQuery(mydb, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
+    station_query <- dbGetQuery(conn, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
     stations <- unlist(strsplit(station_query$Istasyonlar, ","))
 
     station_avgs <- sapply(stations, function(station) {
       data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"", parameter, "\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
-      data_percentage <- dbGetQuery(mydb, data_percentage_query)$data_percentage
+      data_percentage <- dbGetQuery(conn, data_percentage_query)$data_percentage
 
       if (!is.na(data_percentage) && data_percentage >= 90) {
         parameter_query <- paste0("SELECT \"", parameter, "\" FROM daily_detail WHERE Istasyon='", station, "'")
-        parameter_values <- dbGetQuery(mydb, parameter_query)[[parameter]]
+        parameter_values <- dbGetQuery(conn, parameter_query)[[parameter]]
         return(parameter_values)
       } else {
         return(NA)
@@ -47,7 +47,7 @@ calculate_overall_average_by_city_threshold <- function(parameter) {
     return(overall_avg)
   })
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   result <- data.frame(Sehir = cities, Ortalama = overall_avgs)
 

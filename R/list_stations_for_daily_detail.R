@@ -1,17 +1,25 @@
 #' List Stations for specified parameter from daily_detail
 #'
-#' @param data A pair of numbers.
+#' @param parameter_name The name of the parameter to check
+#' @return A dataframe of distinct station names
 #' @export
-
 daily_list_stations_with_parameter <- function(parameter_name) {
-
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
-
-  query <- paste0("SELECT DISTINCT Istasyon FROM daily_detail WHERE ", parameter_name, " IS NOT NULL")
-
-  query_result <- dbGetQuery(mydb, query)
-
-  dbDisconnect(mydb)
-
-  return(query_result)
+  tryCatch({
+    conn <- create_postgres_conn()
+    if (is.null(conn)) {
+      stop("Could not establish database connection")
+    }
+    
+    stations <- tbl(conn, "daily_detail") %>%
+      filter(!is.na(.data[[parameter_name]])) %>%
+      distinct(Istasyon) %>%
+      collect()
+    
+    disconnect_postgres(conn)
+    
+    return(stations)
+  }, error = function(e) {
+    message("Error in daily_list_stations_with_parameter: ", e$message)
+    return(NULL)
+  })
 }

@@ -29,19 +29,19 @@ output <- list(O3_1 = list(),
                )
 
 output$O3_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-output$O3_1$data <- daily_list_stations_with_parameter(parameter_name)
+output$O3_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
 
 output$O3_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
-output$O3_2$data <- daily_list_stations_with_parameter_count(parameter_name)
+output$O3_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
 
 output$O3_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-output$O3_3$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$O3_3$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
 
 output$O3_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
 output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
 output$O3_3_2$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
-output$O3_3_2$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 75)
+output$O3_3_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 75)
 
 output$O3_4_2$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
 output$O3_4_2$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75)

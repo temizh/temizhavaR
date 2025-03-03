@@ -13,7 +13,8 @@
 #' calculate_aot40_hourly_threshold(c("2021-04-01", "2021-07-01"), c("2021-06-30", "2021-09-30"),threshold = 90)
 
 hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) {
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  
+  conn <- create_postgres_conn()
 
   # Her döneme ait sonuçları depolamak için boş bir liste başlatır
   all_results <- list()
@@ -30,7 +31,7 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
                      WHERE Tarih BETWEEN '", start_date, "' AND '", end_date,
                      "' AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
 
-    data <- dbGetQuery(mydb, query)
+    data <- dbGetQuery(conn, query)
 
     # Saatlik AOT40'ı hesaplamak için verileri işler
     data <- data %>%
@@ -68,7 +69,7 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
   # Tüm dönem sonuçlarını tek bir data.frame'de birleştirir
   final_result <- do.call(rbind, all_results)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(as.data.frame(final_result))
 }

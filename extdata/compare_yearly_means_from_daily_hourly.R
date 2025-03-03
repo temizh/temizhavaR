@@ -7,20 +7,18 @@ options(temizhavaR.basedir = "/home/acizmeli/Documents/KaraRaporu/HamVeriler_")
 compare_yearly_means_from_daily_hourly <- function(YEAR) {
   init.temizhavaR()
 
-  #Get location data
-  #stopifnot(grepl(YEAR, raw_dir))
 
-  datadir <- paste0(options()$temizhavaR.basedir, YEAR)
+  datadir <- paste0(options()$temizhavaR.base_dir, YEAR)
   stopifnot(dir.exists(datadir))
 
-  mydb <- dbConnect(RSQLite::SQLite(), file.path(datadir,"temiz-hava.sqlite"))
+  conn <- create_postgres_conn()
   #Get location table
-  full_stations <- dbGetQuery(mydb, paste0("SELECT * FROM location_", YEAR))
+  full_stations <- dbGetQuery(conn, paste0("SELECT * FROM location", YEAR))
 
-  all_daily <- dbGetQuery(mydb, "SELECT * FROM daily_detail")
-  all_hourly <- dbGetQuery(mydb, "SELECT * FROM hourly_detail")
+  all_daily <- dbGetQuery(conn, "SELECT * FROM daily_detail")
+  all_hourly <- dbGetQuery(conn, "SELECT * FROM hourly_detail")
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   all_stations <- sort(unique(full_stations$Istasyonlar))
   all_stations <- tibble(Istasyon=all_stations)
@@ -29,22 +27,22 @@ compare_yearly_means_from_daily_hourly <- function(YEAR) {
   u_stations_hourly <- sort(unique(all_hourly$Istasyon))
 
   daily_summary <- all_daily %>%
-    select(Istasyon, PM10, PM2.5, SO2, CO, NO2, NOX, NO, O3) %>%
+    select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
     group_by(Istasyon) %>%
     summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
-    rename(PM10_daily=PM10, PM2.5_daily=PM2.5, SO2_daily=SO2, CO_daily=CO, NO2_daily=NO2, NOX_daily=NOX, NO_daily=NO, O3_daily=O3)
+    rename(PM10_daily=PM10, PM25_daily=PM25, SO2_daily=SO2, CO_daily=CO, NO2_daily=NO2, NOX_daily=NOX, NO_daily=NO, O3_daily=O3)
 
   hourly_summary <- all_hourly %>%
-    select(Istasyon, PM10, PM2.5, SO2, CO, NO2, NOX, NO, O3) %>%
+    select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
     group_by(Istasyon) %>%
     summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
-    rename(PM10_hourly=PM10, PM2.5_hourly=PM2.5, SO2_hourly=SO2, CO_hourly=CO, NO2_hourly=NO2, NOX_hourly=NOX, NO_hourly=NO, O3_hourly=O3)
+    rename(PM10_hourly=PM10, PM25_hourly=PM25, SO2_hourly=SO2, CO_hourly=CO, NO2_hourly=NO2, NOX_hourly=NOX, NO_hourly=NO, O3_hourly=O3)
 
   all_summary <- left_join(all_stations, daily_summary, by = join_by(Istasyon))
 
   all_summary <- left_join(all_summary, hourly_summary, by = join_by(Istasyon)) %>%
     relocate(PM10_hourly, .after=PM10_daily) %>%
-    relocate(PM2.5_hourly, .after=PM2.5_daily) %>%
+    relocate(PM25_hourly, .after=PM25_daily) %>%
     relocate(SO2_hourly, .after=SO2_daily) %>%
     relocate(CO_hourly, .after=CO_daily) %>%
     relocate(NO2_hourly, .after=NO2_daily) %>%
@@ -52,7 +50,7 @@ compare_yearly_means_from_daily_hourly <- function(YEAR) {
     relocate(NO_hourly, .after=NO_daily) %>%
     relocate(O3_hourly, .after=O3_daily)
 
-  analiz_output_file <- file.path(raw_dir, "__results", "compare_yearly_means_from_daily_hourly.xlsx")
+  analiz_output_file <- file.path(base_dir, "__results", "compare_yearly_means_from_daily_hourly.xlsx")
 
   write_xlsx(
     all_summary,
@@ -66,7 +64,7 @@ compare_yearly_means_from_daily_hourly <- function(YEAR) {
   library(ggplot2)
   library(lattice)
   p1 <- ggplot(data=all_summary,aes(x=PM10_hourly, y=PM10_daily)) + geom_point()
-  p2 <- ggplot(data=all_summary,aes(x=PM2.5_hourly, y=PM2.5_daily)) + geom_point()
+  p2 <- ggplot(data=all_summary,aes(x=PM25_hourly, y=PM25_daily)) + geom_point()
   p3 <- ggplot(data=all_summary,aes(x=SO2_hourly, y=SO2_daily)) + geom_point()
   p4 <- ggplot(data=all_summary,aes(x=CO_hourly, y=CO_daily)) + geom_point()
   p5 <- ggplot(data=all_summary,aes(x=NO2_hourly, y=NO2_daily)) + geom_point()
@@ -84,7 +82,7 @@ compare_yearly_means_from_daily_hourly("2023")
 # allstations_2023 <- gsub("\\/", " ", allstations_2023)
 # allstations_2023 <- tibble(Istasyon=allstations_2023)
 # #Get 2023 station saatlik/gunluk list
-# setwd(raw_dir)
+# setwd(base_dir)
 # gunlukler_2023 <- list.files(pattern = "_gunluk_detay_", recursive = TRUE)
 # gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "/"), function(x) x[[2]])
 # gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "_gunluk"), function(x) x[[1]])

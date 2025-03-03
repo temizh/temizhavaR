@@ -11,8 +11,7 @@
 
 count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 90) {
 
-
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   all_results <- data.frame(period = character(), high_availability_stations = integer())
 
@@ -27,7 +26,7 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
                      WHERE Tarih BETWEEN '", start_date, "' AND '", end_date, "'
                      AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
 
-    data <- dbGetQuery(mydb, query)
+    data <- dbGetQuery(conn, query)
 
     #Veri kullanılabilirliğini hesaplamak için verileri işler
     data <- data %>%
@@ -52,7 +51,7 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
   }
 
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(all_results)
 }

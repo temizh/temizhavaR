@@ -13,5 +13,5 @@ new_pm25_for_city_based_mean(station, verbose = FALSE)
 A data frame containing the calculated PM2.5 values for stations with less than 75\% data availability.
 }
 \description{
-This function calculates the PM2.5 values from the PM10 yearly averages for stations with less than 75\% data availability.
+This function calculates the PM2.5 values from the PM10 yearly averages for a given station with less than 75\% data availability.
 }

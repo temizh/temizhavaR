@@ -6,12 +6,10 @@ library(DBI)
 library(stringr)
 
 
-# Download Selenium Driver
 wdman::selenium(port = 4445L, retcommand = TRUE)
 
 
 
-# Retry mechanism for finding elements
 findElementWithRetry <- function(driver, using, value, max_retries = 5) {
   for (attempt in 1:max_retries) {
     tryCatch({
@@ -26,7 +24,6 @@ findElementWithRetry <- function(driver, using, value, max_retries = 5) {
   stop(sprintf("Failed to find element after %d retries: %s", max_retries, value))
 }
 
-# Wait for an element to appear
 waitForElement <- function(driver, by, identifier, timeout = 10) {
   endTime <- Sys.time() + timeout
   while (Sys.time() < endTime) {
@@ -39,7 +36,6 @@ waitForElement <- function(driver, by, identifier, timeout = 10) {
   stop(sprintf("Element not found: %s", identifier))
 }
 
-# Safe click with retries
 safeClick <- function(driver, element) {
   tryCatch({
     element$clickElement()
@@ -49,27 +45,23 @@ safeClick <- function(driver, element) {
 }
 
 
-# Database setup
-initializeDatabase <- function(db_path) {
-  mydb <- dbConnect(RSQLite::SQLite(), db_path)
+initializeDatabase <- function() {
+  mydb <- create_postgres_conn()
   dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Istasyonlar_modified TEXT, Id TEXT)")
-  dbExecute(mydb, "DELETE FROM location") 
+  dbExecute(mydb, "DELETE FROM location")
   return(mydb)
 }
 
-# Insert data into the database
 insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified, id) {
   tryCatch({
     if (!dbIsValid(db)) stop("Database connection is invalid.")
     print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
-    # Start transaction
     dbExecute(db, "BEGIN TRANSACTION")
     
     dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Istasyonlar_modified, Id) VALUES (?, ?, ?, ?, ?, ?)",
               params = list(bolge, sehir, plaka, istasyon, istasyon_modified, id))
     
-    # Commit transaction
     dbExecute(db, "COMMIT")
   }, error = function(e) {
     dbExecute(db, "ROLLBACK")
@@ -77,7 +69,6 @@ insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified,
   })
 }
 
-# Clear the dropdown selection
 clickClearButton <- function(driver, parent_div_id, button_title) {
   tryCatch({
     xpath <- sprintf("//div[@id='%s']//span[@title='%s']", parent_div_id, button_title)
@@ -97,14 +88,12 @@ clickClearButton <- function(driver, parent_div_id, button_title) {
 fetchRegionListWithRetry <- function(driver, dropdown_id, item_selector, max_retries = 5) {
   for (attempt in 1:max_retries) {
     tryCatch({
-      # Locate the region dropdown
       dropdown <- findElementWithRetry(driver, 'id', dropdown_id)
       print("Found region dropdown")
       safeClick(driver, dropdown)
       print("Clicked region dropdown")
       Sys.sleep(2)
       
-      # Fetch region items
       items <- driver$findElements(using = "css", value = item_selector)
       print("Found region items")
       region_list <- sapply(items, function(item) item$getElementText()[[1]])
@@ -114,7 +103,6 @@ fetchRegionListWithRetry <- function(driver, dropdown_id, item_selector, max_ret
       
       print(paste("Fetched region list with", length(region_list), "items"))
       
-      # Ensure the list is not empty
       if (length(region_list) > 0) {
         return(region_list)
       } else {
@@ -132,20 +120,16 @@ fetchRegionListWithRetry <- function(driver, dropdown_id, item_selector, max_ret
 fetchStationListWithRetry <- function(driver, dropdown_id, item_selector, max_retries = 5) {
   for (attempt in 1:max_retries) {
     tryCatch({
-      # Log the attempt
       message(sprintf("Fetching station list, attempt %d/%d", attempt, max_retries))
       
-      # Locate the station dropdown
       dropdown <- findElementWithRetry(driver, 'css', dropdown_id)
       message("Found station dropdown")
       safeClick(driver, dropdown)
       message("Clicked station dropdown")
       
-      # Fetch station items
       items <- driver$findElements(using = "css", value = item_selector)
       message("Found station items")
       
-      # Extract and clean station names
       station_list <- sapply(items, function(item) item$getElementText()[[1]])
       station_list <- station_list[station_list != ""]
       station_list <- station_list[!grepl("İstasyon Seçiniz|OPEN", station_list)]
@@ -153,7 +137,6 @@ fetchStationListWithRetry <- function(driver, dropdown_id, item_selector, max_re
       message(sprintf("Cleaned station list with %d items: %s", 
                       length(station_list), paste(station_list, collapse = ", ")))
       
-      # Ensure the list is not empty
       if (length(station_list) > 0) {
         return(station_list)
       } else {
@@ -209,21 +192,17 @@ retrieveStationInfo <- function() {
     driver$maxWindowSize()
     print("Remote driver opened successfully")
 
-    # Navigate to the URL
     url <- "https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew"
     driver$navigate(url)
     print("Navigation successful")
 
-    # Database setup
-    DBDIR <- "./"
-    mydb <- initializeDatabase(paste0(DBDIR, "temiz-hava.sqlite"))
+    mydb <- initializeDatabase()
 
-    # Load plaka list
-    source("extdata/plaka_list.R")
+
+    source("../extdata/plaka_list.R")
     all_cities <- names(plaka_list)
     processed_cities <- c()
 
-    # Fetch region list
     bolge_list <- fetchRegionListWithRetry(driver, 'dropdown12-contentDataDowloadNew', ".k-reset li")
 
     for (bolge in bolge_list) {

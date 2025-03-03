@@ -31,10 +31,10 @@ output <- list(SO2_1 = list(),
                SO2_11 = list())
 
 output$SO2_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan istasyon listesi" ))
-output$SO2_1$data <- daily_list_stations_with_parameter(parameter_name)
+output$SO2_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
 
 output$SO2_2$result_message <- print(paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi" ))
-output$SO2_2$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$SO2_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
 
 output$SO2_3$result_message <- print(paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı" ))
 output$SO2_3$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)

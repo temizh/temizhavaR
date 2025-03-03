@@ -1,3 +1,5 @@
+library(DBI)
+
 #' Calculate Exceedance Days for specified parameter from daily_detail for all stations
 #'
 #' This function calculates the number of days exceeding a specified threshold for a given parameter from daily_detail data for all stations.
@@ -10,7 +12,10 @@
 
 calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  mydb <- create_postgres_conn()
+  if (is.null(mydb)) {
+    stop("Unable to connect to database")
+  }
 
   stations_query <- paste0("SELECT Istasyon
                             FROM daily_detail
@@ -29,7 +34,7 @@ calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
   query_result <- dbGetQuery(mydb, query)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(mydb)
 
   exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
 
