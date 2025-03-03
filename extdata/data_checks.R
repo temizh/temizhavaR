@@ -38,7 +38,7 @@ parameters <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3") # nolint
 raw_data_dir <- options()$temizhavaR.base_dir
 
 # Import log directory from options
-log_dir <- options()$temizhavaR.log_dir
+log_dir <- file.path(raw_data_dir, "logs")
 
 # Define log file name (daily timestamped log file), contains logs (info, warning, error) # nolint
 log_file <- file.path(log_dir, paste0("data_check_", Sys.time(), ".log")) # nolint
