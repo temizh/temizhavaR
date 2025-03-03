@@ -5,9 +5,9 @@
 create_postgres_conn <- function() {
   tryCatch({
 
-      raw_dir <- getOption("temizhavaR.raw_dir")
+      base_dir <- getOption("temizhavaR.base_dir")
 
-      env_file <- file.path(raw_dir, ".env")
+      env_file <- file.path(base_dir, ".env")
 
       if (file.exists(env_file)) {
         dotenv::load_dot_env(file = env_file)

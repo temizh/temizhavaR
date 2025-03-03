@@ -52,8 +52,8 @@ output$PM10_3$data <- list_stations_with_parameter(parameter_name, data_type = "
 # output$PM10_5$result_message <- print(paste0(parameter_name,"_5: Her bir istasyonun yıllık PM10 ortalaması " ))
 # output$PM10_5$data <- hourly_station_average(parameter_name, threshold = 90)
 
-raw_dir <- getOption("temizhavaR.raw_dir")
-output_dir <- file.path(raw_dir, "__results")
+base_dir <- getOption("temizhavaR.base_dir")
+output_dir <- file.path(base_dir, "__results")
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
   print(paste("Created output directory:", output_dir))

@@ -7,10 +7,8 @@ options(temizhavaR.basedir = "/home/acizmeli/Documents/KaraRaporu/HamVeriler_")
 compare_yearly_means_from_daily_hourly <- function(YEAR) {
   init.temizhavaR()
 
-  #Get location data
-  #stopifnot(grepl(YEAR, raw_dir))
 
-  datadir <- paste0(options()$temizhavaR.basedir, YEAR)
+  datadir <- paste0(options()$temizhavaR.base_dir, YEAR)
   stopifnot(dir.exists(datadir))
 
   conn <- create_postgres_conn()
@@ -52,7 +50,7 @@ compare_yearly_means_from_daily_hourly <- function(YEAR) {
     relocate(NO_hourly, .after=NO_daily) %>%
     relocate(O3_hourly, .after=O3_daily)
 
-  analiz_output_file <- file.path(raw_dir, "__results", "compare_yearly_means_from_daily_hourly.xlsx")
+  analiz_output_file <- file.path(base_dir, "__results", "compare_yearly_means_from_daily_hourly.xlsx")
 
   write_xlsx(
     all_summary,
@@ -84,7 +82,7 @@ compare_yearly_means_from_daily_hourly("2023")
 # allstations_2023 <- gsub("\\/", " ", allstations_2023)
 # allstations_2023 <- tibble(Istasyon=allstations_2023)
 # #Get 2023 station saatlik/gunluk list
-# setwd(raw_dir)
+# setwd(base_dir)
 # gunlukler_2023 <- list.files(pattern = "_gunluk_detay_", recursive = TRUE)
 # gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "/"), function(x) x[[2]])
 # gunlukler_2023 <- sapply(strsplit(gunlukler_2023, "_gunluk"), function(x) x[[1]])

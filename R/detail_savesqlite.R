@@ -11,7 +11,7 @@ detail_save_to_database <- function(processed_data, table_name, verbose = FALSE)
   param_names <- processed_data$param_names
   station_name <- processed_data$station_name
 
-  mydb <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_dir, "temiz-hava.sqlite"), encoding = "UTF-8")
+  mydb <- dbConnect(RSQLite::SQLite(), dbname = file.path(base_dir, "temiz-hava.sqlite"), encoding = "UTF-8")
 
   # data$Tarih <- format(data$Tarih, "%Y-%m-%d")
   data$Tarih <- format(data$Tarih, "%Y-%m-%d %H:%M:%S")

@@ -4,8 +4,8 @@ library(dplyr)
 
 init.temizhavaR()
 
-stopifnot(grepl("2022", raw_dir))
-setwd(raw_dir)
+stopifnot(grepl("2022", base_dir))
+setwd(base_dir)
 
 cities <- list.dirs()
 cities <- gsub("\\.\\/", "", cities)

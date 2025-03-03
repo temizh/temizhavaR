@@ -4,12 +4,12 @@ library(stringdist)
 library(temizhavaR)
 
 initializeDatabase <- function() {
-    raw_dir <- getOption("temizhavaR.raw_dir")
+    base_dir <- getOption("temizhavaR.base_dir")
     
-    if (!is.null(raw_dir)) {
-        setwd(raw_dir)
+    if (!is.null(base_dir)) {
+        setwd(base_dir)
     } else {
-        cat("Warning: temizhavaR.raw_dir option is not set. Using current directory.\n")
+        cat("Warning: temizhavaR.base_dir option is not set. Using current directory.\n")
     }
     
     mydb <- create_postgres_conn()

@@ -8,8 +8,8 @@ library(openxlsx)
 total_days <- 365
 parameter_name <- "PM10"
 
-raw_dir <- getOption("temizhavaR.raw_dir")
-output_dir <- file.path(raw_dir, "__results")  
+base_dir <- getOption("temizhavaR.base_dir")
+output_dir <- file.path(base_dir, "__results")  
 
 result_pm10_daily_excel_file <- file.path(output_dir, "results_PM10_daily.xlsx")
 

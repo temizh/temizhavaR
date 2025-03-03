@@ -1,4 +1,4 @@
-mydir <- options()$temizhavaR.raw_dir
+mydir <- options()$temizhavaR.base_dir
 
 setwd(mydir)
 
