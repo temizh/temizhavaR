@@ -308,13 +308,13 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       if (is.null(overwrite_data_dict)) {
         gaps_query <- sprintf(
           'SELECT COUNT(*) as gap_count FROM 
-           (SELECT Tarih FROM generate_series(
+           (SELECT "Tarih" FROM generate_series(
              \'%s\'::timestamptz, 
              \'%s\'::timestamptz, 
              INTERVAL \'1 day\'
-           ) AS Tarih) as dates 
+           ) AS "Tarih") as dates 
            LEFT JOIN %s ON 
-           date_trunc(\'day\', dates.Tarih) = date_trunc(\'day\', %s."Tarih") AND 
+           date_trunc(\'day\', dates."Tarih") = date_trunc(\'day\', %s."Tarih") AND 
            %s."Istasyon_modified" = \'%s\'
            WHERE %s."Tarih" IS NULL',
           min_date, max_date,
@@ -451,7 +451,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                SELECT 1 FROM pg_constraint WHERE conname = '%s'
              ) THEN 
                ALTER TABLE %s ADD CONSTRAINT %s 
-               UNIQUE (Istasyon_modified, Tarih); 
+               UNIQUE (\"Istasyon_modified\", \"Tarih\"); 
              END IF; 
            END $$;",
           constraint_name, target_table, constraint_name
@@ -468,7 +468,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                     overwrite = FALSE)
         
         index_query <- sprintf(
-          "CREATE INDEX IF NOT EXISTS %s_idx ON %s (Istasyon_modified, Tarih)",
+          "CREATE INDEX IF NOT EXISTS %s_idx ON %s (\"Istasyon_modified\", \"Tarih\")",
           target_table, target_table
         )
         dbExecute(db, index_query)
