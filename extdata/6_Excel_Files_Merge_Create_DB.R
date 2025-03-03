@@ -216,9 +216,8 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                        values <- ifelse(values %in% c("", "-", "NULL", "NA", "NaN", "*", "N/A"), NA_character_, values)
                        
                        num_values <- suppressWarnings({
-                         clean_vals <- gsub(" ", "", values)
-                         clean_vals <- gsub("(\\d+),(\\d+)$", "\\1.\\2", clean_vals)
-                         clean_vals <- gsub("\\.", "", clean_vals)
+                         clean_vals <- gsub("\\.", "", values)
+                         clean_vals <- gsub(",", ".", clean_vals)
                          as.numeric(clean_vals)
                        })
                        
@@ -229,7 +228,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                                    paste(orig_values[problem_idx], collapse=", ")))
                        }
                        
-                       ifelse(!is.na(num_values) & num_values >= 0 & num_values < 10000,
+                       ifelse(!is.na(num_values) & num_values > -10000 & num_values < 10000,
                              num_values, NA_real_)
                      }))
 
@@ -412,7 +411,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     cat("\nFirst few rows of processed data before insertion:\n")
     print(head(processed_data))
     
-    cat("\nColumn types in processed data:\n")
+    cat("\nColumn types in processed_data:\n")
     print(sapply(processed_data, class))
     
     has_data <- sapply(processed_data[c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")],
@@ -434,6 +433,16 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 
     if (nrow(processed_data) > 0 && !all(is.na(processed_data$Tarih))) {
       tryCatch({
+        table_check_query <- sprintf(
+          "SELECT column_name, data_type 
+           FROM information_schema.columns 
+           WHERE table_name = '%s'",
+          target_table
+        )
+        columns <- dbGetQuery(db, table_check_query)
+        cat("Table schema:", "\n")
+        print(columns)
+        
         constraint_name <- paste0(target_table, "_station_date_unique")
         constraint_query <- sprintf(
           "DO $$ 
@@ -449,20 +458,30 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
         )
         dbExecute(db, constraint_query)
         
-        copy_to(
-          db, processed_data, target_table,
-          temporary = FALSE, append = TRUE,
-          analyze = TRUE,
-          indexes = list(
-            c("Istasyon_modified", "Tarih")
-          )
+        processed_data <- processed_data %>%
+          mutate(across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"), 
+                       ~as.numeric(.)))
+        
+        dbWriteTable(db, target_table, processed_data, 
+                    append = TRUE,
+                    row.names = FALSE, 
+                    overwrite = FALSE)
+        
+        index_query <- sprintf(
+          "CREATE INDEX IF NOT EXISTS %s_idx ON %s (Istasyon_modified, Tarih)",
+          target_table, target_table
         )
+        dbExecute(db, index_query)
         
         rows_written <- rows_written + nrow(processed_data)
         cat("Successfully inserted data from:", basename(file), "\n")
       }, error = function(e) {
         cat("Error inserting data for file:", basename(file), "\n")
         cat("Error message:", conditionMessage(e), "\n")
+        cat("Data sample:\n")
+        print(head(processed_data))
+        cat("\nColumn types:\n")
+        print(sapply(processed_data, class))
       })
     } else {
       cat("Skipping file due to invalid data:", basename(file), "\n")
