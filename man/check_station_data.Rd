@@ -4,7 +4,17 @@
 \alias{check_station_data}
 \title{Check data for a specific station and date range}
 \usage{
-check_station_data(station_name, start_date, end_date, table_type = "hourly")
+check_station_data(
+  station_name,
+  start_date,
+  end_date,
+  start_hour = 0,
+  end_hour = 23,
+  start_meridiem = NULL,
+  end_meridiem = NULL,
+  time_format = "24h",
+  table_type = "hourly"
+)
 }
 \arguments{
 \item{station_name}{Station name}
@@ -12,6 +22,16 @@ check_station_data(station_name, start_date, end_date, table_type = "hourly")
 \item{start_date}{Start date (YYYY-MM-DD)}
 
 \item{end_date}{End date (YYYY-MM-DD)}
+
+\item{start_hour}{Hour (1-12 for AMPM format, 0-23 for 24h format)}
+
+\item{end_hour}{Hour (1-12 for AMPM format, 0-23 for 24h format)}
+
+\item{start_meridiem}{"AM" or "PM" (only for AMPM format)}
+
+\item{end_meridiem}{"AM" or "PM" (only for AMPM format)}
+
+\item{time_format}{"24h" or "AMPM"}
 
 \item{table_type}{"hourly" or "daily"}
 }
