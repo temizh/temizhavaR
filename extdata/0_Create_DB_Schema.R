@@ -23,12 +23,32 @@ create_location_table <- function(mydb) {
 }
 
 create_detail_tables <- function(mydb) {
-  dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
-  dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
+  tryCatch({
+    dbExecute(mydb, "DROP TABLE IF EXISTS hourly_detail")
+    dbExecute(mydb, "DROP TABLE IF EXISTS daily_detail")
+  }, error = function(e) {
+    message("Error dropping tables: ", e$message)
+  })
   
-  #id auto increment daily and hourly
-  detail_table_sql <- "
-    CREATE TABLE %s (
+  hourly_detail_sql <- "
+    CREATE TABLE hourly_detail (
+      Id SERIAL PRIMARY KEY,
+      Istasyon TEXT,
+      location_id TEXT,
+      Tarih TIMESTAMPTZ,
+      PM10 DOUBLE PRECISION,
+      PM25 DOUBLE PRECISION,
+      SO2 DOUBLE PRECISION,
+      CO DOUBLE PRECISION,
+      NO2 DOUBLE PRECISION,
+      NOX DOUBLE PRECISION,
+      NO DOUBLE PRECISION,
+      O3 DOUBLE PRECISION,
+      Istasyon_modified TEXT
+    );"
+    
+  daily_detail_sql <- "
+    CREATE TABLE daily_detail (
       Id SERIAL PRIMARY KEY,
       Istasyon TEXT,
       location_id TEXT,
@@ -44,14 +64,29 @@ create_detail_tables <- function(mydb) {
       Istasyon_modified TEXT
     );"
   
-  dbExecute(mydb, sprintf(detail_table_sql, "hourly_detail"))
-  dbExecute(mydb, sprintf(detail_table_sql, "daily_detail"))
+  tryCatch({
+    dbExecute(mydb, hourly_detail_sql)
+    message("hourly_detail table created successfully")
+  }, error = function(e) {
+    message("Error creating hourly_detail table: ", e$message)
+  })
+  
+  tryCatch({
+    dbExecute(mydb, daily_detail_sql)
+    message("daily_detail table created successfully")
+  }, error = function(e) {
+    message("Error creating daily_detail table: ", e$message)
+  })
 }
 
 create_SQL_schema <- function() {
   init.temizhavaR()
   
   mydb <- create_postgres_conn()
+  if(is.null(mydb) || !dbIsValid(mydb)) {
+    stop("Could not create database connection.")
+  }
+  
   on.exit({
     if (!is.null(mydb) && dbIsValid(mydb)) dbDisconnect(mydb)
   })
@@ -59,7 +94,7 @@ create_SQL_schema <- function() {
   create_location_table(mydb)
   create_detail_tables(mydb)
   
-  message("Schema created successfully")
+  message("Schema creation process completed")
 }
 
 create_SQL_schema()
