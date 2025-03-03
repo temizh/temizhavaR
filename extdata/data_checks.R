@@ -1,10 +1,23 @@
 # import required libraries
 library(dplyr)
+library(dbplyr)
 library(DBI)
+library(RPostgres)
 library(logger)
 library(stringdist)
 library(readxl)
 library(writexl)
+library(dotenv)
+
+# Load environment variables from the .env file
+dotenv::load_dot_env()
+
+# Read the environment variables
+db_host <- Sys.getenv("POSTGRES_HOST")
+db_name <- Sys.getenv("TEMIZHAVA_DB")
+db_user <- Sys.getenv("POSTGRES_TUSER")
+db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
+db_port <- Sys.getenv("POSTGRES_PORT")
 
 # function to find the closest file in a directory (fuzzy search) (only for warning) # nolint
 find_closest_file <- function(target_file, search_dir, threshold = 5) {
@@ -32,7 +45,7 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
 }
 
 # define parameters to ckeck
-parameters <- c("PM10", "PM2.5", "SO2", "CO", "NO2", "NOX", "NO", "O3") # nolint
+parameters <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3") # nolint
 
 # import raw data path from options
 raw_data_dir <- options()$temizhavaR.raw_dir
@@ -54,19 +67,20 @@ log_layout(layout_glue_generator(format = "{time} | {level} | {msg}"))
 
 # connect to the database
 message("Connecting to the database...")
-con <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_data_dir, "temiz-hava.sqlite")) # nolint
+# con <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_data_dir, "temiz-hava.sqlite")) # nolint
+con <- dbConnect(RPostgres::Postgres(), dbname = db_name, host = db_host, port = db_port, user = db_user, password = db_password) # nolint
 
 # get daily data table
 message("Reading daily data table...")
-daily_detail <- dbGetQuery(con, "SELECT * FROM daily_detail")
+daily_detail <- tbl(con, "daily_detail")
 
 # get hourly data table
 message("Reading hourly data table...")
-hourly_detail <- dbGetQuery(con, "SELECT * FROM hourly_detail")
+hourly_detail <- tbl(con, "hourly_detail")
 
 # get the location table
 message("Reading location table...")
-locations <- dbGetQuery(con, "SELECT * FROM location")
+locations <- tbl(con, "location")
 
 # instantiate report data frame
 report <- locations %>%
@@ -85,7 +99,9 @@ report <- locations %>%
     hourly_summary_file_station_name_match = 0,
     daily_data_file_row_count_match = 0,
     hourly_data_file_row_count_match = 0
-  )
+  ) %>%
+  collect() %>%
+  as.data.frame()
 
 # add data count match columns for each parameter to report
 for (parameter in parameters) {
@@ -100,8 +116,11 @@ message("Checking for missing locations...")
 missing_locations <- locations %>%
   filter(is.na(Bolge) | is.na(Sehir) | is.na(Plaka) | is.na(Istasyonlar_modified) | is.na(Id)) # nolint
 
+# check if missing locations is empty
+missing_locations_is_empty <- missing_locations %>% tally() %>% pull(n) == 0
+
 # log missing locations
-if (nrow(missing_locations) > 0) {
+if (!missing_locations_is_empty) {
   log_error(paste0("Missing locations found in the location table: ", missing_locations)) # nolint
 } else {
   log_info("No missing locations found in the location table") # nolint
@@ -111,9 +130,19 @@ if (nrow(missing_locations) > 0) {
 locations <- locations %>%
   filter(!is.na(Bolge) & !is.na(Sehir) & !is.na(Plaka) & !is.na(Istasyonlar_modified) & !is.na(Id)) # nolint
 
+# get the number of locations
+locations_count <- locations %>% tally() %>% pull(n)
+
 # loop through the locations
-for (i in seq_len(nrow(locations))) { # nolint
-  location <- locations[i, ]
+for (i in seq_len(as.integer(locations_count))) {
+
+  # get the location
+  location <- locations %>%
+    mutate(row_num = row_number()) %>%
+    filter(row_num == i) %>%
+    collect() %>%
+    as.data.frame()
+
   message(paste0("Processing location: ", location$Istasyonlar_modified)) # nolint
 
   # get the file paths
@@ -126,6 +155,7 @@ for (i in seq_len(nrow(locations))) { # nolint
 
   # DAILY SUMMARY --------------------------------------------------------------
   if (!file.exists(daily_summary_file)) {
+    # log the error
     log_error(paste0(location$Istasyonlar_modified, " | ", "Daily summary file does not exist: ", daily_summary_file)) # nolint
 
     # fuzzy search in directory for the file
@@ -134,6 +164,7 @@ for (i in seq_len(nrow(locations))) { # nolint
       log_warn(paste0(location$Istasyonlar_modified, " | ", "Closest daily summary file found: ", closest_file)) # nolint
     }
   } else {
+    # update the report with the daily summary file path
     report[report$station == location$Istasyonlar_modified, "daily_summary_file"] <- daily_summary_file # nolint
 
     # read the daily summary file
@@ -160,7 +191,9 @@ for (i in seq_len(nrow(locations))) { # nolint
         filter(!is.na(Parametre)) %>%
         select("Parametre", "Veri Adeti") %>%
         # remove spaces from parameter names
-        mutate(Parametre = gsub(" ", "", Parametre)) 
+        mutate(Parametre = gsub(" ", "", Parametre)) %>%
+        # remove dots from parameter names
+        mutate(Parametre = gsub("\\.", "", Parametre))
     }
   }
 
@@ -197,8 +230,21 @@ for (i in seq_len(nrow(locations))) { # nolint
       daily_detail_for_location <- daily_detail %>%
         filter(location_id == location$Id)
 
+      # check if there are duplicate data
+      daily_detail_for_location_duplicates <- daily_detail_for_location %>%
+        collect() %>%
+        as.data.frame() %>%
+        filter(duplicated(Tarih))
+
+      # log if there are duplicate data
+      if (nrow(daily_detail_for_location_duplicates) > 0) {
+        log_warn(paste0(location$Istasyonlar_modified, " | ", "Daily data file contains duplicate data.")) # nolint
+      }
+
+      daily_detail_for_location_count <- daily_detail_for_location %>% tally() %>% pull(n) # nolint
+
       # check if the number of rows in the daily data file is the same as the daily detail table # nolint
-      if (nrow(daily_data) != nrow(daily_detail_for_location) && (nrow(daily_data) != total_daily_data_count)) { # nolint
+      if (nrow(daily_data) != daily_detail_for_location_count && (nrow(daily_data) != total_daily_data_count)) { # nolint
         log_error(paste0(location$Istasyonlar_modified, " | ", "Daily data file row count mismatch.")) # nolint
       } else {
         report[report$station == location$Istasyonlar_modified, "daily_data_file_row_count_match"] <- 1 # nolint
@@ -209,7 +255,9 @@ for (i in seq_len(nrow(locations))) { # nolint
         # get the daily data for the parameter
         daily_data_for_parameter <- daily_detail_for_location %>%
           select(parameter) %>%
-          na.omit()
+          na.omit() %>%
+          collect() %>%
+          as.data.frame()
 
         parameter_data_count <- daily_summary_metrics %>%
           filter(Parametre == parameter) %>%
@@ -269,7 +317,9 @@ for (i in seq_len(nrow(locations))) { # nolint
         filter(!is.na(Parametre)) %>%
         select("Parametre", "Veri Adeti") %>%
         # remove spaces from parameter names
-        mutate(Parametre = gsub(" ", "", Parametre))
+        mutate(Parametre = gsub(" ", "", Parametre)) %>%
+        # remove dots from parameter names
+        mutate(Parametre = gsub("\\.", "", Parametre))
     }
   }
 
@@ -306,6 +356,17 @@ for (i in seq_len(nrow(locations))) { # nolint
       hourly_detail_for_location <- hourly_detail %>%
         filter(location_id == location$Id)
 
+      # check if there are duplicate data
+      hourly_detail_for_location_duplicates <- hourly_detail_for_location %>%
+        collect() %>%
+        as.data.frame() %>%
+        filter(duplicated(Tarih))
+
+      # log if there are duplicate data
+      if (nrow(hourly_detail_for_location_duplicates) > 0) {
+        log_warn(paste0(location$Istasyonlar_modified, " | ", "Daily data file contains duplicate data.")) # nolint
+      }
+
       # check if the number of rows in the hourly data file is the same as the hourly detail table # nolint
       if (nrow(hourly_data) != nrow(hourly_detail_for_location) && (nrow(hourly_data) != total_hourly_data_count)) { # nolint
         log_error(paste0(location$Istasyonlar_modified, " | ", "Hourly data file row count mismatch.")) # nolint
@@ -318,7 +379,9 @@ for (i in seq_len(nrow(locations))) { # nolint
         # get the hourly data for the parameter
         hourly_data_for_parameter <- hourly_detail_for_location %>%
           select(parameter) %>%
-          na.omit()
+          na.omit() %>%
+          collect() %>%
+          as.data.frame()
 
         parameter_data_count <- hourly_summary_metrics %>%
           filter(Parametre == parameter) %>%
