@@ -2,12 +2,12 @@
 library(dplyr)
 library(dbplyr)
 library(DBI)
-library(RPostgres)
 library(logger)
 library(stringdist)
 library(readxl)
 library(writexl)
 library(dotenv)
+library(temizhavaR)
 
 base_dir <- getOption("temizhavaR.base_dir")
 
@@ -19,16 +19,10 @@ if (file.exists(env_file)) {
   stop(".env file not found at: ", env_file)
 }
 
-# Read the environment variables
-db_host <- Sys.getenv("POSTGRES_HOST")
-db_name <- Sys.getenv("TEMIZHAVA_DB")
-db_user <- Sys.getenv("POSTGRES_TUSER")
-db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
-db_port <- Sys.getenv("POSTGRES_PORT")
+
 
 # function to find the closest file in a directory (fuzzy search) (only for warning) # nolint
 find_closest_file <- function(target_file, search_dir, threshold = 5) {
-  # List all files in the directory
   files <- list.files(search_dir, full.names = TRUE)
 
   if (length(files) == 0) {
@@ -75,7 +69,7 @@ log_layout(layout_glue_generator(format = "{time} | {level} | {msg}"))
 # connect to the database
 message("Connecting to the database...")
 # con <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_data_dir, "temiz-hava.sqlite")) # nolint
-con <- dbConnect(RPostgres::Postgres(), dbname = db_name, host = db_host, port = db_port, user = db_user, password = db_password) # nolint
+con <- create_postgres_conn()
 
 # get daily data table
 message("Reading daily data table...")
@@ -190,7 +184,7 @@ for (i in seq_len(as.integer(locations_count))) {
       # get the total data count for the location
       total_daily_data_count <- daily_summary %>%
         filter(Parametre == parameters[1]) %>%
-        select("Olması Gereken Veri") %>%
+        select("Veri Adeti") %>%
         pull()
 
       # get the daily summary metrics
@@ -259,28 +253,20 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # for each parameter, check not NA data count
       for (parameter in parameters) {
-        # get the daily data for the parameter
+        # get the daily data for the parameter - count non-NA values in database
         daily_data_for_parameter <- daily_detail_for_location %>%
-          select(all_of(parameter)) %>%
-          na.omit() %>%
+          summarise(count = sql(sprintf('COUNT(CASE WHEN "%s" IS NOT NULL THEN 1 END)', parameter))) %>%
           collect() %>%
-          as.data.frame()
+          pull(count)
 
         parameter_data_count <- daily_summary_metrics %>%
           filter(Parametre == parameter) %>%
           select("Veri Adeti") %>%
           pull()
 
-        # get the number of not NA data for the parameter
-        if (nrow(daily_data_for_parameter) == 0) {
-          avaliable_parameters <- 0
-        } else {
-          avaliable_parameters <- nrow(daily_data_for_parameter)
-        }
-
-        # check if the number of not NA data for the parameter is the same as the daily summary metrics # nolint
-        if (avaliable_parameters != parameter_data_count) {
-          log_warn(paste0(location$Istasyonlar_modified, " | ", "Daily data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', avaliable_parameters)) # nolint
+        # check if the number of not NA data for the parameter matches summary
+        if (daily_data_for_parameter != parameter_data_count) {
+          log_warn(paste0(location$Istasyonlar_modified, " | ", "Daily data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', daily_data_for_parameter)) # nolint
         } else {
           report[report$station == location$Istasyonlar_modified, paste0("daily_data_file_", parameter, "_data_count_match")] <- 1 # nolint
         }
@@ -316,7 +302,7 @@ for (i in seq_len(as.integer(locations_count))) {
       # get the hourly data count for the location
       total_hourly_data_count <- hourly_summary %>%
         filter(Parametre == parameters[1]) %>%
-        select("Olması Gereken Veri") %>%
+        select("Veri Adeti") %>%
         pull()
 
       # get the hourly summary metrics
@@ -363,6 +349,10 @@ for (i in seq_len(as.integer(locations_count))) {
       hourly_detail_for_location <- hourly_detail %>%
         filter(location_id == location$Id)
 
+      hourly_detail_for_location_count <- hourly_detail_for_location %>% 
+        tally() %>% 
+        pull(n)
+
       # check if there are duplicate data
       hourly_detail_for_location_duplicates <- hourly_detail_for_location %>%
         collect() %>%
@@ -375,7 +365,7 @@ for (i in seq_len(as.integer(locations_count))) {
       }
 
       # check if the number of rows in the hourly data file is the same as the hourly detail table # nolint
-      if (nrow(hourly_data) != nrow(hourly_detail_for_location) && (nrow(hourly_data) != total_hourly_data_count)) { # nolint
+      if (nrow(hourly_data) != hourly_detail_for_location_count && (nrow(hourly_data) != total_hourly_data_count)) { # nolint
         log_error(paste0(location$Istasyonlar_modified, " | ", "Hourly data file row count mismatch.")) # nolint
       } else {
         report[report$station == location$Istasyonlar_modified, "hourly_data_file_row_count_match"] <- 1 # nolint
@@ -383,28 +373,20 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # for each parameter, check not NA data count
       for (parameter in parameters) {
-        # get the hourly data for the parameter
+        # get the hourly data for the parameter - count non-NA values in database
         hourly_data_for_parameter <- hourly_detail_for_location %>%
-          select(parameter) %>%
-          na.omit() %>%
+          summarise(count = sql(sprintf('COUNT(CASE WHEN "%s" IS NOT NULL THEN 1 END)', parameter))) %>%
           collect() %>%
-          as.data.frame()
+          pull(count)
 
         parameter_data_count <- hourly_summary_metrics %>%
           filter(Parametre == parameter) %>%
           select("Veri Adeti") %>%
           pull()
 
-        # get the number of not NA data for the parameter
-        if (nrow(hourly_data_for_parameter) == 0) {
-          avaliable_parameters <- 0
-        } else {
-          avaliable_parameters <- nrow(hourly_data_for_parameter)
-        }
-
-        # check if the number of not NA data for the parameter is the same as the hourly summary metrics # nolint
-        if (avaliable_parameters != parameter_data_count) {
-          log_warn(paste0(location$Istasyonlar_modified, " | ", "Hourly data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', avaliable_parameters)) # nolint
+        # check if the number of not NA data for the parameter matches summary
+        if (hourly_data_for_parameter != parameter_data_count) {
+          log_warn(paste0(location$Istasyonlar_modified, " | ", "Hourly data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', hourly_data_for_parameter)) # nolint
         } else {
           report[report$station == location$Istasyonlar_modified, paste0("hourly_data_file_", parameter, "_data_count_match")] <- 1 # nolint
         }
