@@ -3,8 +3,7 @@ library(dplyr)
 library(DBI)
 library(dotenv)
 
-setwd("/home/temizhava/temizhavaR/extdata/DB")
-
+setwd(options()$temizhavaR.raw_dir)
 # Load environment variables from the .env file
 dotenv::load_dot_env()
 
@@ -38,20 +37,24 @@ summary <- hrly %>%
 dim(summary)
 #COMMENT : there are 329 distinct stations here. But the location table is 330 rows!
 
-result <- location %>%
+location %>%
   distinct(Istasyonlar) %>%
   anti_join(
     hrly %>% distinct(Istasyon),
     by = c("Istasyonlar" = "Istasyon")
   )
 
-  
 # Number of data rows per station
-summary <- hrly %>% 
+summary <- hrly %>%
   group_by(Istasyon) %>%
   summarise(n = n()) %>%
-  arrange(desc(n)) %>%
-  collect()
+  arrange(desc(n))
+
+# You can see the actual SQL query
+summary %>% show_query()
+
+summary <- summary %>% collect()
+
 #COMMENT : Why these stations have more data?
 #1 Çorum                   87808
 #2 Adana - Doğankent       87653
@@ -60,9 +63,6 @@ summary %>% dim()
 # 329 stations
 
 summary %>% print(n = 500)
-
-# You can see the actual SQL query 
-summary %>% show_query()
 
 # Tarih value are not clear
 hrly %>% select(Tarih)
