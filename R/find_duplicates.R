@@ -4,10 +4,17 @@ library(progress)
 library(stringr)
 library(openxlsx)
 
-find_station_duplicates <- function(pattern = "\\.xlsx$") {
-  data_dir <- getOption("temizhavaR.base_dir")
-  logs_dir <- file.path(data_dir, "logs")
-  if (!dir.exists(logs_dir)) dir.create(logs_dir)
+find_station_duplicates <- function(pattern = "\\.xlsx$", data_dir) {
+  
+    if(missing(data_dir)) {
+        stop("data_dir argument is required!")
+    }
+    logs_dir <- file.path(data_dir, "logs")
+    if(!dir.exists(logs_dir)) {
+        dir.create(logs_dir)
+    }
+    
+
   
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   excel_output <- file.path(logs_dir, sprintf("duplicate_analysis_%s.xlsx", timestamp))
@@ -339,6 +346,6 @@ find_station_duplicates <- function(pattern = "\\.xlsx$") {
   invisible(results)
 }
 
-find_station_duplicates()
+# find_station_duplicates()
 #  specific pattern:
 # find_station_duplicates(pattern = "saatlik_detay.*\\.xlsx$")
