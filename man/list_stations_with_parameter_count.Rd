@@ -4,7 +4,11 @@
 \alias{list_stations_with_parameter_count}
 \title{Count Stations for specified parameter from daily or hourly detail, grouped by year}
 \usage{
-list_stations_with_parameter_count(parameter_name, data_type = "daily")
+list_stations_with_parameter_count(
+  parameter_name,
+  data_type = "daily",
+  until_year = 2023
+)
 }
 \arguments{
 \item{parameter_name}{Name of the parameter to count stations for}

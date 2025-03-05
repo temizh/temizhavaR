@@ -9,7 +9,8 @@ count_stations_with_parameter_threshold(
   data_type = "daily",
   threshold = 90,
   verbose = FALSE,
-  season = NULL
+  season = NULL,
+  until_year = 2023
 )
 }
 \arguments{
