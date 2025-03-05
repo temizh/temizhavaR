@@ -6,6 +6,11 @@ library(lubridate)
 total_days <- 365
 parameter_name <- "O3"
 
+base_dir <- getOption("temizhavaR.base_dir")
+output_dir <- file.path(base_dir, "__results")  
+
+result_o3_daily_excel_file <- file.path(output_dir, "results_O3_daily.xlsx")
+
 init.temizhavaR()
 
 if (0) {
@@ -28,35 +33,35 @@ output <- list(O3_1 = list(),
                O3_8 = list()
                )
 
-output$O3_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
-output$O3_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
+# output$O3_1$result_message <- print(paste(parameter_name,": Veri alınan istasyon listesi" ))
+# output$O3_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
 
-output$O3_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
-output$O3_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
+# output$O3_2$result_message <- print(paste(parameter_name,": Veri alınan istasyon sayısı" ))
+# output$O3_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
 
-output$O3_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
-output$O3_3$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
+# output$O3_3$result_message <- print(paste(parameter_name,": %90 veri alınan istasyon listesi" ))
+# output$O3_3$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
 
-output$O3_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
-output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+# output$O3_4$result_message <- print(paste(parameter_name," : %90 Veri alınan istasyon sayısı" ))
+# output$O3_4$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
 
-output$O3_3_2$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
-output$O3_3_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 75)
+# output$O3_3_2$result_message <- print(paste(parameter_name,": %75 veri alınan istasyon listesi" ))
+# output$O3_3_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 75)
 
-output$O3_4_2$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
-output$O3_4_2$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
+# output$O3_4_2$result_message <- print(paste(parameter_name," : %75 Veri alınan istasyon sayısı" ))
+# output$O3_4_2$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75)
 
 output$O3_5$result_message <- print(paste(parameter_name,": Yaz boyunca %90 veri alınan istasyon listesi" ))
-output$O3_5$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
+output$O3_5$data <- list_stations_with_parameter(parameter_name, "daily", threshold = 90,season = "summer")
 
 output$O3_6$result_message <- print(paste(parameter_name," : Yaz boyunca %90 Veri alınan istasyon sayısı" ))
-output$O3_6$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
+output$O3_6$data <- count_stations_with_parameter_threshold(parameter_name, threshold = 90,season = "summer")
 
 output$O3_7$result_message <- print(paste(parameter_name,": Kış boyunca %75 veri alınan istasyon listesi" ))
-output$O3_7$data <- daily_list_stations_with_parameter_threshold(parameter_name, threshold = 75,season = "winter")
+output$O3_7$data <- list_stations_with_parameter(parameter_name, "daily", threshold = 75,season = "winter")
 
 output$O3_8$result_message <- print(paste(parameter_name," : Kış boyunca %75 Veri alınan istasyon sayısı" ))
-output$O3_8$data <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 75,season = "winter")
+output$O3_8$data <- count_stations_with_parameter_threshold(parameter_name, threshold = 75,season = "winter")
 
 
 write_output_to_excel(output, result_o3_daily_excel_file)

@@ -9,6 +9,7 @@ calculate_above_exceedance_all_stations(
   data_type,
   pollutant_threshold,
   data_threshold = 90,
+  exceedance_count = 1,
   until_year = 2023
 )
 }

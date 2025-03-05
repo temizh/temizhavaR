@@ -17,7 +17,7 @@
 #' result <- calculate_above_exceedance_days_all_stations("PM10", 40)
 #' print(result)
 
-calculate_above_exceedance_all_stations <- function(parameter, data_type, pollutant_threshold, data_threshold = 90, until_year = 2023) {
+calculate_above_exceedance_all_stations <- function(parameter, data_type, pollutant_threshold, data_threshold = 90, exceedance_count = 1, until_year = 2023) {
   # Get stations with sufficient data availability
   # valid_stations <- daily_list_stations_with_parameter_threshold(parameter_name = parameter, availability_threshold = data_threshold)
 
@@ -74,6 +74,7 @@ calculate_above_exceedance_all_stations <- function(parameter, data_type, pollut
     filtered_data <- data_summary %>%
       filter(percentage >= data_threshold) %>%  # Apply threshold
       filter(average > pollutant_threshold) %>%  # Filter by pollutant threshold
+      filter(exceedance_days >= exceedance_count) %>%  # Filter by exceedance days
       mutate(Value = paste0(as.character(exceedance_days))) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 
