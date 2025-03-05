@@ -28,6 +28,27 @@ track_data_loss <- function(data_frame, stage_name, parameter) {
   return(data_frame)
 }
 
+remove_duplicates <- function(df) {
+  before_count <- nrow(df)
+  
+  df <- df %>%
+    group_by(Istasyon_modified, Tarih) %>%
+    arrange(desc(Tarih)) %>%  
+    slice(1) %>%  
+    ungroup()
+  
+  after_count <- nrow(df)
+  removed_count <- before_count - after_count
+  
+  if (removed_count > 0) {
+    cat(sprintf("Removed %d duplicate records for station %s\n", 
+                removed_count, 
+                unique(df$Istasyon_modified)))
+  }
+  
+  return(df)
+}
+
 read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data_dict = NULL, 
                                start_hour = 0, end_hour = 23,
                                start_meridiem = NULL, end_meridiem = NULL,
@@ -421,10 +442,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
           paste(names(has_data)[has_data], collapse=", "), "\n")
     }
     
-    processed_data <- processed_data %>%
-      group_by(Istasyon_modified, Tarih) %>%
-      slice(1) %>%  
-      ungroup()
+    processed_data <- remove_duplicates(processed_data)
 
     cat(sprintf("\nData summary for %s:\n", basename(file)))
     cat("Number of rows:", nrow(processed_data), "\n")
