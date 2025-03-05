@@ -18,34 +18,6 @@
 #' print(result)
 
 calculate_above_exceedance_all_stations <- function(parameter, data_type, pollutant_threshold, data_threshold = 90, exceedance_count = 1, until_year = 2023) {
-  # Get stations with sufficient data availability
-  # valid_stations <- daily_list_stations_with_parameter_threshold(parameter_name = parameter, availability_threshold = data_threshold)
-
-  # # Filter stations with data availability above the threshold
-  # valid_station_names <- valid_stations$Istasyon[valid_stations$threshold_status == "Üstünde"]
-
-  # # Connect to the database and load the daily data
-  # conn <- create_postgres_conn()
-  # daily_data <- dbGetQuery(conn, "SELECT * FROM daily_detail")
-  # disconnect_postgres(conn)
-
-  # # Clean column names and parameter name
-  # names(daily_data) <- gsub("^\"|\"$", "", names(daily_data))
-  # names(daily_data) <- trimws(names(daily_data))
-  # parameter <- gsub("^\"|\"$", "", parameter)
-  # parameter <- trimws(parameter)
-
-  # # Calculate annual averages and exceedance days
-  # result <- daily_data %>%
-  #   filter(Istasyon %in% valid_station_names) %>%
-  #   filter(!is.na(.data[[parameter]])) %>%
-  #   group_by(Istasyon) %>%
-  #   summarise(
-  #     annual_average = mean(.data[[parameter]], na.rm = TRUE),
-  #     exceedance_days = sum(.data[[parameter]] > pollutant_threshold, na.rm = TRUE)
-  #   ) %>%
-  #   filter(annual_average > pollutant_threshold) %>%
-  #   arrange(desc(annual_average))
 
   process_data <- function(data, total_amount) {
     if (nrow(data) == 0) {
@@ -75,12 +47,12 @@ calculate_above_exceedance_all_stations <- function(parameter, data_type, pollut
       filter(percentage >= data_threshold) %>%  # Apply threshold
       filter(average > pollutant_threshold) %>%  # Filter by pollutant threshold
       filter(exceedance_days >= exceedance_count) %>%  # Filter by exceedance days
-      mutate(Value = paste0(as.character(exceedance_days))) %>%  # Mark presence
+      mutate(Value = exceedance_days) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 
     # Convert to wide format
     wide <- filtered_data %>%
-      pivot_wider(names_from = Year, values_from = Value, values_fill = "-") %>%
+      pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
       select(Istasyon, sort(names(.)[-1]))  # Order columns
 
     return(wide)

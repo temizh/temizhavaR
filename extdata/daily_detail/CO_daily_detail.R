@@ -8,10 +8,7 @@ parameter_name <- "CO"
 
 base_dir <- getOption("temizhavaR.base_dir")
 output_dir <- file.path(base_dir, "__results")  
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-  print(paste("Created output directory:", output_dir))
-}
+
 result_co_daily_excel_file <- file.path(output_dir, "results_CO_daily.xlsx")
 
 init.temizhavaR()
@@ -36,19 +33,6 @@ output$CO_2$result_message <- paste0(parameter_name, "_2 : %90 veri alınan ista
 output$CO_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
 
 output$CO_3$result_message <- paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı")
-count_result <- daily_count_stations_with_parameter_threshold(parameter_name, threshold = 90, verbose = TRUE)
-output$CO_3$data <- if(is.null(count_result)) {
-  data.frame(count = 0, message = "No valid data")
-} else {
-  as.data.frame(count_result)
-}
+output$CO_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90)
 
-print("Debug: CO_3 data structure:")
-str(output$CO_3$data)
-
-tryCatch({
-  write_output_to_excel(output, result_co_daily_excel_file)
-  print(paste("Successfully wrote to:", result_co_daily_excel_file))
-}, error = function(e) {
-  stop(paste("Failed to write excel file:", e$message))
-})
+write_output_to_excel(output, result_co_daily_excel_file)
