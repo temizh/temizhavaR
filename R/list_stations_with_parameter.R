@@ -7,7 +7,7 @@
 #' @import tidyr
 #' @export
 
-list_stations_with_parameter <- function(parameter_name, data_type = "daily", threshold = 0, season = NULL, until_year = 2023) {
+list_stations_with_parameter <- function(parameter_name, data_type = "daily", threshold = 0, data_threshold = 0, season = NULL, until_year = 2023) {
   process_data <- function(data, data_type) {
     if (nrow(data) == 0) {
       warning("No data found for the given parameter")
@@ -46,13 +46,15 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
       summarise(
         total_entries = data_count_in_season,  # Total entries
         available_entries = sum(!is.na(.data[[parameter_name]])),  # Count non-NA values
-        percentage = (available_entries / total_entries) * 100  # Calculate percentage
+        percentage = (available_entries / total_entries) * 100,  # Calculate percentage
+        average = mean(.data[[parameter_name]], na.rm = TRUE)
       ) %>%
       ungroup()
 
     # Filter stations based on threshold
     filtered_data <- data_summary %>%
       filter(percentage >= threshold) %>%  # Apply threshold
+      filter(average >= data_threshold) %>%  # Filter by data threshold
       mutate(Value = floor(percentage)) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 

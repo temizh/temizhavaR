@@ -30,7 +30,8 @@ if (0) {
 
 output <- list(PM10_1 = list(),
                PM10_2 = list(),
-               PM10_3 = list(),
+               PM10_3.1 = list(),
+               PM10_3.2 = list(),
                PM10_4 = list(),
                PM10_5 = list(),
                PM10_6 = list(),
@@ -38,6 +39,7 @@ output <- list(PM10_1 = list(),
                PM10_8 = list(),
                PM10_9 = list(),
                PM10_10 = list(),
+               PM10_11 = list(),
                PM10_12 = list(),
                PM10_13 = list(),
                PM10_14 = list())
@@ -48,10 +50,11 @@ output$PM10_1$data <- list_stations_with_parameter(parameter_name, "daily")
 output$PM10_2$result_message <- print(paste0(parameter_name, "_2 : Veri alınan istasyon sayısı (yıllara göre)" ))
 output$PM10_2$data <- list_stations_with_parameter_count(parameter_name, "daily")
 
-output$PM10_3$result_message <- print(paste0(parameter_name, "_3 : %90 veri alınan istasyon listesi" ))
-output$PM10_3$data <- list_stations_with_parameter(parameter_name, "daily", threshold = 90)
+output$PM10_3.1$result_message <- print(paste0(parameter_name, "_3.1 : %90 veri alınan istasyon listesi" ))
+output$PM10_3.1$data <- list_stations_with_parameter(parameter_name, "daily", threshold = 90)
 
-# PM10_3_2 %75 eklensin
+output$PM10_3.2$result_message <- print(paste0(parameter_name, "_3.2 : %75 veri alınan istasyon listesi" ))
+output$PM10_3.2$data <- list_stations_with_parameter(parameter_name, "daily", threshold = 75)
 
 output$PM10_4$result_message <- print(paste0(parameter_name, "_4 : %90 Veri alınan istasyon sayısı" ))
 output$PM10_4$data <- count_stations_with_parameter_threshold(parameter_name, threshold = 90, data_type = "daily")
@@ -74,9 +77,8 @@ output$PM10_9$data <- calculate_below_exceedance_all_stations(parameter_name, "d
 output$PM10_10$result_message <- print(paste0(parameter_name, "_10 : Yıllık ortalaması 50 µg/m3'ün üstündeki istasyonların listesi ve aştıkları gun sayisi" ))
 output$PM10_10$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 50)
 
-##### 10 ile ayni. Hata? # 45 olsun
-# output$PM10_11$result_message <- print(paste0(parameter_name, "_11 : Istasyonlar 50 esigini kac gun boyunca astilar" ))
-# output$PM10_11$data <- calculate_above_exceedance_days_all_stations(parameter_name, threshold = 50)
+output$PM10_11$result_message <- print(paste0(parameter_name, "_11 : Yıllık ortalaması 45 µg/m3'ün üstündeki istasyonların listesi ve aştıkları gun sayisi" ))
+output$PM10_11$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 45)
 
 output$PM10_12$result_message <- print(paste0(parameter_name, "_12 : Yıllık ortalaması 45 µg/m3'ün altı istasyonların listesi ve aştıkları gun sayisi" ))
 output$PM10_12$data <- calculate_below_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 45)

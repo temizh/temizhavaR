@@ -8,6 +8,7 @@ list_stations_with_parameter(
   parameter_name,
   data_type = "daily",
   threshold = 0,
+  data_threshold = 0,
   season = NULL,
   until_year = 2023
 )

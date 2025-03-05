@@ -82,12 +82,12 @@ calculate_overall_average_by_city_threshold <- function(parameter, data_type="da
       # Filter stations based on threshold
       filtered_data <- data_summary %>%
         filter(percentage >= threshold) %>%  # Apply threshold
-        mutate(Value = paste0(as.character(average))) %>%  # Mark presence
+        mutate(Value = average) %>%  # Mark presence
         select(Sehir, Year, Value)  # Select relevant columns
 
       # Convert to wide format
       wide <- filtered_data %>%
-        pivot_wider(names_from = Year, values_from = Value, values_fill = "-") %>%
+        pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
         select(Sehir, sort(names(.)[-1]))  # Order columns
 
       return(wide)

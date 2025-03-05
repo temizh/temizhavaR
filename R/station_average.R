@@ -36,20 +36,6 @@ station_average <- function(parameter_name, data_type="daily", threshold = 90, s
       data_count_in_season <- days_in_season * 24
     }
 
-    # days_in_season <- length(unique(data$Tarih))
-
-    # query_result <- data %>%
-    #   group_by(Istasyon) %>%
-    #   summarize(
-    #     total_days = total_days,
-    #     non_na_days = sum(!is.na(.data[[parameter_name]])),
-    #     veri_mevcudiyet_yuzdesi = round(non_na_days / days_in_season * 100, 2),
-    #     average = mean(.data[[parameter_name]], na.rm = TRUE)
-    #   ) %>%
-    #   filter(veri_mevcudiyet_yuzdesi >= threshold) %>%
-    #   arrange(desc(veri_mevcudiyet_yuzdesi), desc(average)) %>%
-    #   as.data.frame()
-
     # Count total and available data per station per year
     data_summary <- data %>%
       group_by(Istasyon, Year) %>%
@@ -64,12 +50,12 @@ station_average <- function(parameter_name, data_type="daily", threshold = 90, s
     # Filter stations based on threshold
     filtered_data <- data_summary %>%
       filter(percentage >= threshold) %>%  # Apply threshold
-      mutate(Value = paste0(as.character(average))) %>%  # Mark presence
+      mutate(Value = average) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 
     # Convert to wide format
     wide <- filtered_data %>%
-      pivot_wider(names_from = Year, values_from = Value, values_fill = "-") %>%
+      pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
       select(Istasyon, sort(names(.)[-1]))  # Order columns
 
     return(wide)
