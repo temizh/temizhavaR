@@ -181,10 +181,12 @@ for (i in seq_len(as.integer(locations_count))) {
     } else {
       report[report$station == location$Istasyonlar_modified, "daily_summary_file_station_name_match"] <- 1 # nolint
 
+
+      
       # get the total data count for the location
       total_daily_data_count <- daily_summary %>%
         filter(Parametre == parameters[1]) %>%
-        select("Veri Adeti") %>%
+        select("Olması Gereken Veri") %>%
         pull()
 
       # get the daily summary metrics
@@ -259,6 +261,7 @@ for (i in seq_len(as.integer(locations_count))) {
           collect() %>%
           pull(count)
 
+          
         parameter_data_count <- daily_summary_metrics %>%
           filter(Parametre == parameter) %>%
           select("Veri Adeti") %>%
@@ -302,7 +305,7 @@ for (i in seq_len(as.integer(locations_count))) {
       # get the hourly data count for the location
       total_hourly_data_count <- hourly_summary %>%
         filter(Parametre == parameters[1]) %>%
-        select("Veri Adeti") %>%
+        select("Olması Gereken Veri") %>%
         pull()
 
       # get the hourly summary metrics
