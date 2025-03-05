@@ -53,12 +53,12 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
     # Filter stations based on threshold
     filtered_data <- data_summary %>%
       filter(percentage >= threshold) %>%  # Apply threshold
-      mutate(Value = paste0("% ", as.character(floor(percentage)))) %>%  # Mark presence
+      mutate(Value = floor(percentage)) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 
     # Convert to wide format
     wide <- filtered_data %>%
-      pivot_wider(names_from = Year, values_from = Value, values_fill = "-") %>%
+      pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
       select(Istasyon, sort(names(.)[-1]))  # Order columns
 
     return(wide)
