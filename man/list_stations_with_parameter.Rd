@@ -7,7 +7,8 @@
 list_stations_with_parameter(
   parameter_name,
   data_type = "daily",
-  threshold = 0
+  threshold = 0,
+  until_year = 2023
 )
 }
 \arguments{
