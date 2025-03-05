@@ -58,27 +58,54 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
       mutate(Value = floor(percentage)) %>%  # Mark presence
       select(Istasyon, Year, Value)  # Select relevant columns
 
-    # Convert to wide format
+    # Calculate overall statistics per station
+    station_stats <- data_summary %>%
+      group_by(Istasyon) %>%
+      summarise(
+        `Genel Veri Mevcudiyeti (Yüzde)` = format(sum(available_entries) / sum(total_entries) * 100, digits = 2, nsmall = 2),
+        `Veri Eşiği Geçen Yıl Sayısı` = sum(percentage >= threshold)
+      )
+
     wide <- filtered_data %>%
       pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
-      select(Istasyon, sort(names(.)[-1]))  # Order columns
+      left_join(station_stats, by = "Istasyon") %>%
+      select(Istasyon, 
+             `Genel Veri Mevcudiyeti (Yüzde)`, 
+             `Veri Eşiği Geçen Yıl Sayısı`,
+             sort(names(.)[!(names(.) %in% c("Istasyon", "Genel Veri Mevcudiyeti (Yüzde)", "Veri Eşiği Geçen Yıl Sayısı"))])) %>%
+      arrange(desc(`Veri Eşiği Geçen Yıl Sayısı`))
 
     return(wide)
   }
 
   if (data_type == 'daily') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT * FROM daily_detail WHERE "%s" IS NOT NULL', parameter_name)
+    query <- sprintf('SELECT DISTINCT d."Istasyon", d."Tarih", d."%s", l."Id" as location_id 
+                     FROM daily_detail d 
+                     LEFT JOIN location l ON d."Istasyon" = l."Istasyonlar" 
+                     WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
     result <- process_data(data, data_type)
   } else if (data_type == 'hourly') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT * FROM hourly_detail WHERE "%s" IS NOT NULL', parameter_name)
+    query <- sprintf('SELECT DISTINCT d."Istasyon", d."Tarih", d."%s", l."Id" as location_id 
+                     FROM hourly_detail d 
+                     LEFT JOIN location l ON d."Istasyon" = l."Istasyonlar" 
+                     WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
     result <- process_data(data, data_type)
   }
+
+  result <- result %>%
+    left_join(
+      data %>% 
+        select(Istasyon, location_id) %>% 
+        distinct(),
+      by = "Istasyon"
+    ) %>%
+    select(Istasyon, location_id, everything())
 
   return(result)
 }
