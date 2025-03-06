@@ -4,14 +4,14 @@
 \alias{create_daily_time_series_graph}
 \title{Create Daily Dygraphs}
 \usage{
-create_daily_time_series_graph(data, station_name, parameters)
+create_daily_time_series_graph(data, file_path, parameters)
 }
 \arguments{
 \item{data}{Dataframe containing data to be graphed}
 
-\item{station_name}{specified station name}
-
 \item{parameters}{parameters to be graphed}
+
+\item{station_name}{specified station name}
 }
 \description{
 Create Daily Dygraphs
