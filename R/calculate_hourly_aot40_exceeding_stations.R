@@ -17,10 +17,10 @@
 
 calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_window = 1, months = c(4, 5, 6, 7, 8, 9), threshold = 180, aggregation_period = "daily") {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   query <- paste0("SELECT Istasyon, Tarih, ", parameter_name, " FROM hourly_detail")
-  data <- dbGetQuery(mydb, query)
+  data <- dbGetQuery(conn, query)
 
   data <- data %>%
     mutate(TarihSaat = as.POSIXct(Tarih, format="%Y-%m-%d %H:%M:%S"),
@@ -67,7 +67,7 @@ calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_windo
 
   result_df <- data.frame(num_exceeding_stations = num_exceeding_stations)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(result_df)
 }

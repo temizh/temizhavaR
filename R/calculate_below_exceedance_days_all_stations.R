@@ -10,30 +10,26 @@
 
 calculate_below_exceedance_days_all_stations <- function(parameter, threshold) {
 
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  conn <- create_postgres_conn()
 
   stations_query <- paste0("SELECT Istasyon
                             FROM daily_detail
                             GROUP BY Istasyon
                             HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) >= 90")
 
-  stations <- dbGetQuery(mydb, stations_query)
+  stations <- dbGetQuery(conn, stations_query)
 
   query <- paste0("SELECT Istasyon, ", parameter, " < ", threshold, " AS ExceedsThreshold
                    FROM daily_detail
                    WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
 
+  query_result <- dbGetQuery(conn, query)
 
+  
 
-  # query <- paste0("SELECT Istasyon, ", parameter, " < ", threshold, " AS ExceedsThreshold FROM daily_detail")
-
-  query_result <- dbGetQuery(mydb, query)
-
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
-
-  #high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
 
   exceedance_days %>%
     arrange(desc(ExceedsThreshold))

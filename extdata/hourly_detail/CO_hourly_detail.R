@@ -27,13 +27,13 @@ output <- list(CO_1 = list(),
 
 
 output$CO_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan istasyon listesi" ))
-output$CO_1$data <- hourly_list_stations_with_parameter(parameter_name)
+output$CO_1$data <- list_stations_with_parameter(parameter_name, data_type = "hourly")
 
 output$CO_2$result_message <- print(paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi" ))
-output$CO_2$data <- hourly_list_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$CO_2$data <- list_stations_with_parameter(parameter_name, data_type = "hourly", threshold = 90)
 
 output$CO_3$result_message <- print(paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı" ))
-output$CO_3$data <- hourly_count_stations_with_parameter_threshold(parameter_name, threshold = 90)
+output$CO_3$data <- count_stations_with_parameter_threshold(parameter_name, data_type = "hourly", threshold = 90)
 
 output$CO_4$result_message <- print(paste0(parameter_name, "_4 : Maksimum gunluk 8 saatlik ortalaması 10 mg/m3'u (miligram/m3) asan istasyonlar"))
 output$CO_4$data <- calculate_co_exceeding_stations()

@@ -7,11 +7,11 @@
 
 
 calculate_rolling_8hour_avg <- function() {
-  # Connect to the SQLite database
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  # Connect to the database
+  conn <- create_postgres_conn()
 
   # Query hourly_detail table for the relevant data
-  hourly_data <- dbGetQuery(mydb,
+  hourly_data <- dbGetQuery(conn,
                             "SELECT Istasyon, Tarih, O3
                              FROM hourly_detail
                              WHERE Tarih BETWEEN '2023-01-01 00:00:56' AND '2024-01-01 00:00:56'
@@ -38,7 +38,7 @@ calculate_rolling_8hour_avg <- function() {
     select(Istasyon, Tarih, O3_8hour_avg)
 
   # Disconnect from the database
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(result)
 }

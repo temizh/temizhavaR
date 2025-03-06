@@ -4,7 +4,12 @@
 \alias{calculate_overall_average_by_city_threshold}
 \title{Calculate Overall Average for specified parameter from daily_detail for all stations in a city}
 \usage{
-calculate_overall_average_by_city_threshold(parameter)
+calculate_overall_average_by_city_threshold(
+  parameter,
+  data_type = "daily",
+  threshold = 0,
+  until_year = 2023
+)
 }
 \arguments{
 \item{parameter}{The parameter for which the overall average is calculated.}

@@ -13,7 +13,7 @@ get_data_handler <- function(.req, .res) {
   if (!is.null(.req$parameters_query[["parameters"]])) {
     parameters <- .req$parameters_query[["parameters"]]
   } else {
-    parameters <- c("PM10", "PM2.5", "NO2", "SO2", "CO", "O3")
+    parameters <- c("PM10", "PM25", "NO2", "SO2", "CO", "O3")
   }
 
   if (!is.null(.req$parameters_query[["start_date"]])) {
@@ -59,7 +59,7 @@ get_data_by_config_handler <- function(.req, .res) {
   if (!is.null(request_data$parameters)) {
     parameters <- request_data$parameters
   } else {
-    parameters <- c("PM10", "PM2.5", "NO2", "SO2", "CO", "O3")
+    parameters <- c("PM10", "PM25", "NO2", "SO2", "CO", "O3")
   }
 
   if (!is.null(request_data$start_date)) {
@@ -76,6 +76,7 @@ get_data_by_config_handler <- function(.req, .res) {
 
   region <- request_data$region
   station <- request_data$station
+  station_type <- request_data$station_type
 
   data <- get_data(frequency, parameters, start_date, end_date, region, station, station_type) # nolint
 

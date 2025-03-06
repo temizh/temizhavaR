@@ -3,9 +3,6 @@
 \name{list_stations_below_data_threshold}
 \alias{list_stations_below_data_threshold}
 \title{Returns the list of stations with yearly average below a specified threshold for a given parameter.}
-\usage{
-list_stations_below_data_threshold(parameter_name, threshold = 40)
-}
 \arguments{
 \item{parameter_name}{The name of the parameter for stations.}
 

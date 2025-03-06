@@ -71,12 +71,13 @@ Ensure that you have the following installed:
 
 | Parameter      | Type     | Description                                      |
 | -------------- | -------- | ------------------------------------------------ |
-| `frequency`  | String   | `daily`or `hourly`(default:`daily`)        |
-| `parameters` | String[] | List of pollutants (e.g.,`PM10`,`NO2`, etc.) |
-| `start_date` | String   | Start date (`YYYY-MM-DD`)                      |
-| `end_date`   | String   | End date (`YYYY-MM-DD`)                        |
-| `region`     | String   | Region name (optional)                           |
-| `station`    | String   | Station name (optional)                          |
+| `frequency`    | String   | `daily`or `hourly`(default:`daily`)              |
+| `parameters`   | String[] | List of pollutants (e.g.,`PM10`,`NO2`, etc.)     |
+| `start_date`   | String   | Start date (`YYYY-MM-DD`)                        |
+| `end_date`     | String   | End date (`YYYY-MM-DD`)                          |
+| `region`       | String   | Region name (optional)                           |
+| `station`      | String   | Station name (optional)                          |
+| `station_type` | String   | Station type (optional)                          |                        
 
 **Example Request (cURL):**
 
@@ -93,7 +94,7 @@ curl -X GET "http://localhost:8080/get_data?frequency=daily&start_date=2024-01-0
 
 **Body:**
 
-JSON object with parameters: frequency, parameters, start_date, end_date, region (optional), station (optional). Parameters have the same functionality as in `/get_data` endpoint.
+JSON object with parameters: frequency, parameters, start_date, end_date, region (optional), station (optional), station_type (optional). Parameters have the same functionality as in `/get_data` endpoint.
 
 **Example Request (cURL):**
 

@@ -7,7 +7,10 @@
 daily_list_stations_with_parameter(parameter_name)
 }
 \arguments{
-\item{data}{A pair of numbers.}
+\item{parameter_name}{The name of the parameter to check}
+}
+\value{
+A dataframe of distinct station names
 }
 \description{
 List Stations for specified parameter from daily_detail

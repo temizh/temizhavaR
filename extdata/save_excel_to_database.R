@@ -22,7 +22,7 @@ if (YEAR == "2022") {
 error_log <- list()
 
 # create a connection to database
-mydb <- dbConnect(RSQLite::SQLite(), file.path(raw_dir,"temiz-hava.sqlite"))
+mydb <- dbConnect(RSQLite::SQLite(), file.path(base_dir, "temiz-hava.sqlite"))
 locationT <- dbReadTable(mydb, paste0("location_", YEAR))
 dbDisconnect(mydb)
 

@@ -6,7 +6,8 @@
 
 
 hourly_station_average <- function(parameter_name, threshold = 90) {
-  mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
+  
+  conn <- create_postgres_conn()
 
   query <- paste0("SELECT Istasyon, AVG(", parameter_name, ") AS average FROM hourly_detail WHERE Istasyon IN
                   (SELECT Istasyon FROM (SELECT Istasyon,
@@ -15,9 +16,9 @@ hourly_station_average <- function(parameter_name, threshold = 90) {
                   WHERE non_null_count >= 8761 * ", threshold / 100, ")
                   GROUP BY Istasyon")
 
-  query_result <- dbGetQuery(mydb, query)
+  query_result <- dbGetQuery(conn, query)
 
-  dbDisconnect(mydb)
+  disconnect_postgres(conn)
 
   return(query_result)
 }

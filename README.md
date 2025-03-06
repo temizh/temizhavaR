@@ -7,7 +7,7 @@ adresinden indirilmektedir.
 Yeni DB yaratmak için : 
 .Rprofile dosyasına ham verilerin bulunduğu dizin ismini belirtin
 
-`options(temizhavaR.raw_dir = "..../HamVeriler_2022")`
+`options(temizhavaR.base_dir = "..../HamVeriler_2022")`
 
 Bu dizinin içine `init.temizhavaR_data.R` adlı dosya yaratın. Örnek dosya :
 `extdata/init.temizhavaR_data.R.sample`
