@@ -15,7 +15,6 @@ if (file.exists(env_file)) {
   stop(".env file not found at: ", env_file)
 }
 
-
 # Read the environment variables
 db_host <- "dev.pranageo.com"
 db_name <- Sys.getenv("TEMIZHAVA_DB")
@@ -36,6 +35,7 @@ postgres_con <- dbConnect(RPostgres::Postgres(),
 
 # Create a tbl (new data.frame) object that keeps data in the DB server
 hrly <- tbl(postgres_con, "hourly_detail")
+dly <- tbl(postgres_con, "daily_detail")
 location <- tbl(postgres_con, "location")
 
 # Number of stations
@@ -46,20 +46,24 @@ summary <- hrly %>%
 dim(summary)
 #COMMENT : there are 329 distinct stations here. But the location table is 330 rows!
 
-result <- location %>%
+location %>%
   distinct(Istasyonlar) %>%
   anti_join(
     hrly %>% distinct(Istasyon),
     by = c("Istasyonlar" = "Istasyon")
   )
 
-  
 # Number of data rows per station
-summary <- hrly %>% 
+summary <- hrly %>%
   group_by(Istasyon) %>%
   summarise(n = n()) %>%
-  arrange(desc(n)) %>%
-  collect()
+  arrange(desc(n))
+
+# You can see the actual SQL query
+summary %>% show_query()
+
+summary <- summary %>% collect()
+
 #COMMENT : Why these stations have more data?
 #1 Çorum                   87808
 #2 Adana - Doğankent       87653
@@ -68,9 +72,6 @@ summary %>% dim()
 # 329 stations
 
 summary %>% print(n = 500)
-
-# You can see the actual SQL query 
-# summary %>% show_query()
 
 # Tarih value are not clear
 hrly %>% select(Tarih)
