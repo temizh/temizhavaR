@@ -3,7 +3,8 @@ library(dplyr)
 library(DBI)
 library(dotenv)
 
-setwd(options()$temizhavaR.raw_dir)
+setwd(options()$temizhavaR.base_dir)
+
 # Load environment variables from the .env file
 dotenv::load_dot_env()
 
@@ -27,6 +28,7 @@ postgres_con <- dbConnect(RPostgres::Postgres(),
 
 # Create a tbl (new data.frame) object that keeps data in the DB server
 hrly <- tbl(postgres_con, "hourly_detail")
+dly <- tbl(postgres_con, "daily_detail")
 location <- tbl(postgres_con, "location")
 
 # Number of stations
