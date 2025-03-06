@@ -2,7 +2,7 @@
 % Please edit documentation in R/Dygraphs_function.R
 \name{create_hourly_time_series_graph}
 \alias{create_hourly_time_series_graph}
-\title{Create Dygraphs}
+\title{Create Hourly Dygraphs}
 \usage{
 create_hourly_time_series_graph(data, station_name, parameters)
 }
@@ -14,5 +14,5 @@ create_hourly_time_series_graph(data, station_name, parameters)
 \item{parameters}{parameters to be graphed}
 }
 \description{
-Create Dygraphs
+Create Hourly Dygraphs
 }
