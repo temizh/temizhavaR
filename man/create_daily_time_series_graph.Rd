@@ -4,7 +4,7 @@
 \alias{create_daily_time_series_graph}
 \title{Create Daily Dygraphs}
 \usage{
-create_daily_time_series_graph(data, file_path, parameters)
+create_daily_time_series_graph(data, file_path, parameters, is_panel = FALSE)
 }
 \arguments{
 \item{data}{Dataframe containing data to be graphed}

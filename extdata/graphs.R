@@ -17,11 +17,14 @@ file_path <- options()$temizhavaR.base_dir
 # Generate timestamp for file name
 timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
 
-start_date <- as.Date("2020-01-01")
+start_date <- as.Date("2014-01-01")
 end_date <- as.Date("2020-01-31")
 
-frequency <- "hourly"
-# frequency <- "daily"
+# frequency <- "hourly"
+frequency <- "daily"
+
+# is_panel <- FALSE
+is_panel <- TRUE
 
 # Create the file path
 file_full_path <- paste0(file_path, "/graph/", station_name, "_", timestamp, ".png")
@@ -37,7 +40,7 @@ data <- tbl(conn, paste0(frequency, "_detail")) %>%
   as.data.frame()
 
 # Create the graph
-create_daily_time_series_graph(data, file_full_path, parameters)
+create_daily_time_series_graph(data, file_full_path, parameters, is_panel)
 
 # Close the connection
 disconnect_postgres(conn)
