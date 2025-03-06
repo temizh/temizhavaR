@@ -39,7 +39,8 @@ create_daily_time_series_graph <- function(data, file_path, parameters) {
     geom_line(size = 0.2) +
     geom_point(size = 0.4) +
     labs(title = "Multi-Parameter Time Series Plot", x = "Date", y = "Value", color = "Series") +
-    theme_light()
+    theme_light() +
+    facet_wrap(~ Series, scales = "free_y", ncol = 1)
 
   # Save the plot as a PNG file
   ggsave(file_path, plot = p, width = 16, height = 6, dpi = 300)

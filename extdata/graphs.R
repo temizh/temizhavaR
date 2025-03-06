@@ -6,13 +6,13 @@ library(dygraphs)
 library(ggplot2)
 
 # Parameters to be graphed
-parameters <- c("PM10", "PM25")
+parameters <- c("PM10", "SO2")
 
 # Station to be graphed
 station_name <- "Sinop"
 
 # File name for the graph
-file_path <- "/home/nadir/graphs/"
+file_path <- options()$temizhavaR.base_dir
 
 # Generate timestamp for file name
 timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
@@ -24,7 +24,7 @@ frequency <- "hourly"
 # frequency <- "daily"
 
 # Create the file path
-file_full_path <- paste0(file_path, station_name, "_", timestamp, ".png")
+file_full_path <- paste0(file_path, "/graph/", station_name, "_", timestamp, ".png")
 
 print(file_full_path)
 
