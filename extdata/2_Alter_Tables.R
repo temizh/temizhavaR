@@ -13,8 +13,19 @@ alter_tables <- function() {
     '"LONGTD" REAL',
     '"LATTD" REAL',
     '"Air_Quality_Station_Area" TEXT',
-    '"PM10ISTASYON" TEXT'
+    '"PM10ISTASYON" TEXT',
+    '"Tarih" TIMESTAMP WITH TIME ZONE'  # Changed to proper timestamp type
   )
+  
+  # First, attempt to alter column type if it exists
+  tryCatch({
+    sql <- 'ALTER TABLE location ALTER COLUMN "Tarih" TYPE TIMESTAMP WITH TIME ZONE 
+            USING "Tarih"::TIMESTAMP WITH TIME ZONE'
+    dbExecute(db, sql)
+    cat("Modified Tarih column type to TIMESTAMP WITH TIME ZONE\n")
+  }, error = function(e) {
+    cat("Note: Could not modify Tarih column type\n")
+  })
   
   tables <- c("location")
   

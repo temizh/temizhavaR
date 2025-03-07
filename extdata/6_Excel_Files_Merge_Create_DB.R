@@ -270,59 +270,38 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     min_date <- format(min(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
     max_date <- format(max(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
     
-    if (!is.null(overwrite_data_dict) && station_extracted %in% names(overwrite_data_dict)) {
-      date_range <- overwrite_data_dict[[station_extracted]]
-      
-      overwrite_start <- as.POSIXct(
-        paste(date_range[1], sprintf("%02d:00:00", start_hour)), 
-        format="%Y-%m-%d %H:%M:%S", 
-        tz="UTC"
-      )
-      
-      end_date_adjusted <- as.Date(date_range[2])
-      if (time_format == "AMPM" && end_meridiem == "AM" && end_hour < 12) {
-        end_date_adjusted <- end_date_adjusted + 1
-      }
-      
-      overwrite_end <- as.POSIXct(
-        paste(end_date_adjusted, sprintf("%02d:59:59", end_hour)), 
-        format="%Y-%m-%d %H:%M:%S", 
-        tz="UTC"
-      )
-      
-      cat(sprintf("Filtering data between %s and %s\n", 
-                 format(overwrite_start, "%Y-%m-%d %H:%M:%S"),
-                 format(overwrite_end, "%Y-%m-%d %H:%M:%S")))
-      
-      raw_data <- raw_data %>%
-        filter(
-          Tarih >= overwrite_start,
-          Tarih <= overwrite_end
-        )
-      
-      if (nrow(raw_data) == 0) {
-        cat(sprintf("No data found in specified date range (%s to %s) for station: %s\n",
-                   format(overwrite_start, "%Y-%m-%d %H:%M:%S"), 
-                   format(overwrite_end, "%Y-%m-%d %H:%M:%S"),
-                   station_extracted))
-        next
-      }
-      
-      min_date <- format(min(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
-      max_date <- format(max(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
-      cat(sprintf("Found %d records between %s and %s\n", 
-                 nrow(raw_data), min_date, max_date))
-    }
+    # Check if table exists and get column type for Tarih
+    tarih_type_query <- sprintf(
+      "SELECT data_type FROM information_schema.columns 
+       WHERE table_name = '%s' AND column_name = 'Tarih'",
+      target_table
+    )
+    tarih_type <- tryCatch({
+      dbGetQuery(db, tarih_type_query)$data_type[1]
+    }, error = function(e) {
+      cat("Could not determine Tarih column type:", conditionMessage(e), "\n")
+      return(NULL)
+    })
     
-    existing_count <- target_ref %>%
-      filter(
-        Istasyon_modified == station_extracted,
-        Tarih >= sql(paste0("'", min_date, "'::timestamptz")),
-        Tarih <= sql(paste0("'", max_date, "'::timestamptz"))
-      ) %>%
-      count() %>%
-      collect() %>%
-      pull(n)
+    cat("Tarih column data type:", tarih_type, "\n")
+    
+    # Skip timestamp comparison for existing data if table doesn't exist yet
+    existing_count <- 0
+    tryCatch({
+        existing_query <- sprintf('
+        SELECT COUNT(*) 
+        FROM %s 
+        WHERE "Istasyon_modified" = \'%s\' 
+        AND "Tarih"::text >= \'%s\' 
+        AND "Tarih"::text <= \'%s\'', 
+        target_table, station_extracted, min_date, max_date)
+      
+      existing_count <- dbGetQuery(db, existing_query)$count
+      cat("Found", existing_count, "existing records\n")
+    }, error = function(e) {
+      cat("Error checking existing data:", conditionMessage(e), "\n")
+      return(0)
+    })
     
     should_process <- TRUE
     if (existing_count > 0) {
@@ -330,12 +309,13 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
         gaps_query <- sprintf(
           'SELECT COUNT(*) as gap_count FROM 
            (SELECT "Tarih" FROM generate_series(
-             \'%s\'::timestamptz, 
-             \'%s\'::timestamptz, 
+             \'%s\'::timestamp, 
+             \'%s\'::timestamp, 
              INTERVAL \'1 day\'
            ) AS "Tarih") as dates 
            LEFT JOIN %s ON 
-           date_trunc(\'day\', dates."Tarih") = date_trunc(\'day\', %s."Tarih") AND 
+           date_trunc(\'day\', dates."Tarih") = 
+           date_trunc(\'day\', %s."Tarih"::timestamp) AND 
            %s."Istasyon_modified" = \'%s\'
            WHERE %s."Tarih" IS NULL',
           min_date, max_date,
@@ -394,21 +374,12 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     raw_data <- raw_data %>%
       mutate(
         Istasyon_modified = station_extracted,
-        Istasyon_original = location_match$Istasyon_original[1],
         location_id = location_match$Id[1]
-       
       )
-    
-    expected_cols <- c("Istasyon", "location_id", "Tarih", "PM10", "PM25", "SO2", 
-                      "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
-    
-    for (col in setdiff(expected_cols, names(raw_data))) {
-      raw_data[[col]] <- NA
-    }
     
     processed_data <- raw_data %>%
       mutate(
-        across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"), 
+        across(intersect(names(.), c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")), 
                ~{
                  values <- case_when(
                    is.na(.) ~ NA_real_,
@@ -425,7 +396,14 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                }),
         Tarih = format(as.POSIXct(Tarih, tz = "UTC"), "%Y-%m-%d %H:%M:%S")
       ) %>%
-      select(all_of(expected_cols))
+      select(any_of(c("location_id", "Tarih", "PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")))
+
+    expected_cols <- c("location_id", "Tarih", "PM10", "PM25", "SO2", 
+                      "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
+    
+    for (col in setdiff(expected_cols, names(processed_data))) {
+      processed_data[[col]] <- NA
+    }
 
     processed_data <- track_data_loss(processed_data, "Before insertion", "PM10")
 
@@ -477,7 +455,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
         dbExecute(db, constraint_query)
         
         processed_data <- processed_data %>%
-          mutate(across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"), 
+          mutate(across(intersect(names(.), c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")), 
                        ~as.numeric(.)))
         
         dbWriteTable(db, target_table, processed_data, 

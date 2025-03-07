@@ -7,7 +7,7 @@ convert_timestamp_format <- function(force_tables = NULL) {
   db <- create_postgres_conn()
   on.exit(dbDisconnect(db))
   
-  tables <- c("daily_detail", "hourly_detail")
+  tables <- c("daily_detail", "hourly_detail", "location")
   
   for (table in tables) {
     tryCatch({
