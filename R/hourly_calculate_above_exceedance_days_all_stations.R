@@ -12,18 +12,18 @@ hourly_calculate_above_exceedance_days_all_stations <- function(parameter_name, 
 
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
-  query <- paste0("SELECT Istasyon,
+  query <- paste0("SELECT Istasyon_modified,
                           COUNT(*) AS exceed_days,
                           SUM(CASE WHEN hourly_count > ", exceed_limit, " THEN 1 ELSE 0 END) AS exceed_count
                    FROM (
-                         SELECT Istasyon,
+                         SELECT Istasyon_modified,
                                 DATE(tarih) AS tarih,
                                 COUNT(*) AS hourly_count
                          FROM hourly_detail
                          WHERE ", parameter_name, " > ", threshold, "
-                         GROUP BY Istasyon, DATE(tarih)
+                         GROUP BY Istasyon_modified, DATE(tarih)
                         ) AS daily_counts
-                   GROUP BY Istasyon")
+                   GROUP BY Istasyon_modified")
 
   query_result <- dbGetQuery(mydb, query)
 

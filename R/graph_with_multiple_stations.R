@@ -11,7 +11,7 @@
 
 create_hourly_time_series_graph_multiple_stations <- function(data, station_names, parameters) {
 
-  data <- data[data$Istasyon %in% station_names, c("Tarih", parameters)]
+  data <- data[data$Istasyon_modified %in% station_names, c("Tarih", parameters)]
 
 
   if (!inherits(data$Tarih, "POSIXct")) {

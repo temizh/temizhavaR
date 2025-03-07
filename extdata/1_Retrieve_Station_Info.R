@@ -1,7 +1,6 @@
 library(RSelenium)
 library(netstat)
 library(wdman)
-library(uuid)
 library(DBI)
 library(stringr)
 
@@ -47,20 +46,27 @@ safeClick <- function(driver, element) {
 
 initializeDatabase <- function() {
   mydb <- create_postgres_conn()
-  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (Bolge TEXT, Sehir TEXT, Plaka TEXT, Istasyonlar TEXT, Istasyonlar_modified TEXT, Id TEXT)")
-  dbExecute(mydb, "DELETE FROM location")
+  dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (
+    \"Id\" SERIAL PRIMARY KEY,
+    \"Bolge\" TEXT,
+    \"Sehir\" TEXT,
+    \"Plaka\" TEXT,
+    \"Istasyon_original\" TEXT,
+    \"Istasyon_modified\" TEXT UNIQUE
+  )")
   return(mydb)
 }
 
-insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified, id) {
+insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified) {
   tryCatch({
     if (!dbIsValid(db)) stop("Database connection is invalid.")
-    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, istasyon_modified, id))
+    print(paste("Inserting into database:", bolge, sehir, plaka, istasyon, istasyon_modified))
     
     dbExecute(db, "BEGIN TRANSACTION")
     
-    dbExecute(db, "INSERT INTO location (Bolge, Sehir, Plaka, Istasyonlar, Istasyonlar_modified, Id) VALUES (?, ?, ?, ?, ?, ?)",
-              params = list(bolge, sehir, plaka, istasyon, istasyon_modified, id))
+    dbExecute(db, "INSERT INTO location (\"Bolge\", \"Sehir\", \"Plaka\", \"Istasyon_original\", \"Istasyon_modified\") 
+              VALUES (?, ?, ?, ?, ?)",
+              params = list(bolge, sehir, plaka, istasyon, istasyon_modified))
     
     dbExecute(db, "COMMIT")
   }, error = function(e) {
@@ -246,13 +252,10 @@ retrieveStationInfo <- function() {
 
         for (istasyon in istasyon_list) {
           print(paste("Processing istasyon:", istasyon))
-          id <- UUIDgenerate()
           plaka <- plaka_list[[sehir]]
           istasyon_modified  <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
-
           
-
-          insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified, id)
+          insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified)
         }
         clickClearButton(driver, "dropdown1-contentDataDowloadNew", "Temizle")
       }

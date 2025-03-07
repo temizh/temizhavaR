@@ -1,7 +1,6 @@
 #library(tidyverse)
 library(readxl)
 library(temizhavaR)
-library(uuid)
 
 data_dir <- "C:/Hourly_detail/"
 excel_files <- list.files(path = data_dir, pattern = "\\.xlsx$", full.names = TRUE)

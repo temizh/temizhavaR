@@ -21,7 +21,7 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
     end_date <- as.Date(end_dates[i])
 
     #Belirtilen dönem ve zaman aralığı için O3 verilerini almak için sorgular
-    query <- paste0("SELECT Istasyon, Tarih, O3
+    query <- paste0("SELECT Istasyon_modified, Tarih, O3
                      FROM hourly_detail
                      WHERE Tarih BETWEEN '", start_date, "' AND '", end_date, "'
                      AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
@@ -36,11 +36,11 @@ count_stations_aot40_threshold <- function(start_dates, end_dates, threshold = 9
     # İstasyon başına veri kullanılabilirliğini hesaplar
     total_hours <- length(seq(start_date, end_date, by = "day")) * 13
     data_availability <- data %>%
-      group_by(Istasyon) %>%
+      group_by(Istasyon_modified) %>%
       summarise(available_hours = sum(!is.na(O3)),
                 data_availability = (available_hours / total_hours) * 100)
 
-    # Veri kullanılabilirliği %90 eşiğini aşan istasyonları filtreler
+    # Veri kullanılabilirliği %90 eşiğini aşan Istasyon_modifiedları filtreler
     high_availability_stations <- data_availability %>%
       filter(data_availability >= threshold) %>%
       nrow()

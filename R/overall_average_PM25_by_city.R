@@ -19,8 +19,8 @@ calculate_overall_PM25_average_by_city <- function(parameter, data_type="daily",
   # cities <- city_query$Sehir
 
   # overall_avgs <- lapply(cities, function(city_name) {
-  #   station_query <- dbGetQuery(conn, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
-  #   stations <- station_query$Istasyonlar
+  #   station_query <- dbGetQuery(conn, paste0("SELECT Istasyon_modified FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
+  #   stations <- station_query$Istasyon_modified
 
   #   station_data <- lapply(stations, function(station) {
   #     pm25_data_percentage_query <- paste0("SELECT (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
@@ -67,7 +67,7 @@ calculate_overall_PM25_average_by_city <- function(parameter, data_type="daily",
 
     # join data with locations and keep city name
     data <- data %>%
-      left_join(locations %>% select(Istasyonlar, Sehir), by = c("Istasyon" = "Istasyonlar"))
+      left_join(locations %>% select(Istasyon_modified, Sehir), by = c("Istasyon" = "Istasyon_modified"))
 
     data <- data %>% 
     mutate(Tarih = as.POSIXct(Tarih, format = "%Y-%m-%d %H:%M:%S")) %>%

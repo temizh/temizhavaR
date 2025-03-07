@@ -1,6 +1,5 @@
 library(dplyr)
 library(temizhavaR)
-library(uuid)
 library(dygraphs)
 
 total_hours <- 8761

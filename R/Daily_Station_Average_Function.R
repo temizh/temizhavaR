@@ -23,7 +23,7 @@ daily_station_average <- function(parameter_name, threshold = 90, season = NULL)
   days_in_season <- length(unique(data$Tarih))
 
   query_result <- data %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     summarize(
       total_days = n(),
       non_na_days = sum(!is.na(.data[[parameter_name]])),

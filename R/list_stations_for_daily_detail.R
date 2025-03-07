@@ -12,7 +12,7 @@ daily_list_stations_with_parameter <- function(parameter_name) {
 
     stations <- tbl(conn, "daily_detail") %>%
       filter(!is.na(.data[[parameter_name]])) %>%
-      distinct(Istasyon) %>%
+      distinct(Istasyon_modified) %>%
       collect()
 
     disconnect_postgres(conn)

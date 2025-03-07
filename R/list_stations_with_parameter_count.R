@@ -16,7 +16,7 @@ list_stations_with_parameter_count <- function(parameter_name, data_type = "dail
       mutate(Year = format(Year, "%Y")) %>% # Extract year
       filter(Year <= until_year) %>%  # Filter data until specified year
       group_by(Year) %>%
-      summarise(station_count = n_distinct(Istasyon)) %>%
+      summarise(station_count = n_distinct(Istasyon_modified)) %>%
       select(Year, sort(names(.)[-1]))  # Order columns
   }
 

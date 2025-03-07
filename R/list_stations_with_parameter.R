@@ -11,7 +11,7 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
   process_data <- function(data, data_type) {
     if (nrow(data) == 0) {
       warning("No data found for the given parameter")
-      return(data.frame(Istasyon = character(0), Year = character(0)))
+      return(data.frame(Istasyon_modified = character(0), Year = character(0)))
     }
 
     data <- data %>%
@@ -42,7 +42,7 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
     # Count total and available data per station per year
     data_summary <- data %>%
-      group_by(Istasyon, Year) %>%
+      group_by(Istasyon_modified, Year) %>%
       summarise(
         total_entries = data_count_in_season,  # Total entries
         available_entries = sum(!is.na(.data[[parameter_name]])),  # Count non-NA values
@@ -56,11 +56,11 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
       filter(percentage >= threshold) %>%  # Apply threshold
       filter(average >= data_threshold) %>%  # Filter by data threshold
       mutate(Value = floor(percentage)) %>%  # Mark presence
-      select(Istasyon, Year, Value)  # Select relevant columns
+      select(Istasyon_modified, Year, Value)  # Select relevant columns
 
     # Calculate overall statistics per station
     station_stats <- data_summary %>%
-      group_by(Istasyon) %>%
+      group_by(Istasyon_modified) %>%
       summarise(
         `Genel Veri Mevcudiyeti (Yüzde)` = format(sum(available_entries) / sum(total_entries) * 100, digits = 2, nsmall = 2),
         `Veri Eşiği Geçen Yıl Sayısı` = sum(percentage >= threshold)
@@ -68,11 +68,11 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
     wide <- filtered_data %>%
       pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
-      left_join(station_stats, by = "Istasyon") %>%
-      select(Istasyon, 
+      left_join(station_stats, by = "Istasyon_modified") %>%
+      select(Istasyon_modified, 
              `Genel Veri Mevcudiyeti (Yüzde)`, 
              `Veri Eşiği Geçen Yıl Sayısı`,
-             sort(names(.)[!(names(.) %in% c("Istasyon", "Genel Veri Mevcudiyeti (Yüzde)", "Veri Eşiği Geçen Yıl Sayısı"))])) %>%
+             sort(names(.)[!(names(.) %in% c("Istasyon_modified", "Genel Veri Mevcudiyeti (Yüzde)", "Veri Eşiği Geçen Yıl Sayısı"))])) %>%
       arrange(desc(`Veri Eşiği Geçen Yıl Sayısı`))
 
     return(wide)
@@ -80,18 +80,18 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
   if (data_type == 'daily') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT DISTINCT d."Istasyon", d."Tarih", d."%s", l."Id" as location_id 
+    query <- sprintf('SELECT DISTINCT d."Istasyon_modified", d."Tarih", d."%s", l."Id" as location_id 
                      FROM daily_detail d 
-                     LEFT JOIN location l ON d."Istasyon" = l."Istasyonlar" 
+                     LEFT JOIN location l ON d."Istasyon_modified" = l."Istasyon_modifiedlar" 
                      WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
     result <- process_data(data, data_type)
   } else if (data_type == 'hourly') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT DISTINCT d."Istasyon", d."Tarih", d."%s", l."Id" as location_id 
+    query <- sprintf('SELECT DISTINCT d."Istasyon_modified", d."Tarih", d."%s", l."Id" as location_id 
                      FROM hourly_detail d 
-                     LEFT JOIN location l ON d."Istasyon" = l."Istasyonlar" 
+                     LEFT JOIN location l ON d."Istasyon_modified" = l."Istasyon_modifiedlar" 
                      WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
@@ -101,11 +101,11 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
   result <- result %>%
     left_join(
       data %>% 
-        select(Istasyon, location_id) %>% 
+        select(Istasyon_modified, location_id) %>% 
         distinct(),
-      by = "Istasyon"
+      by = "Istasyon_modified"
     ) %>%
-    select(Istasyon, location_id, everything())
+    select(Istasyon_modified, location_id, everything())
 
   return(result)
 }

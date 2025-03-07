@@ -8,7 +8,7 @@
 #' @param end_month The ending month (e.g., "09" for September) for the calculation.
 #' @param thresholds A vector of threshold values to check for exceedance (e.g., c(6000, 18000, 20000)).
 #' @param period A label for the period (e.g., "May-Jul" or "Apr-Sep") to distinguish the results.
-#' @return A data frame with columns: Istasyon, period, total_AOT40, exceeds_thresholds.
+#' @return A data frame with columns: Istasyon_modified, period, total_AOT40, exceeds_thresholds.
 #' @export
 
 calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, start_month, end_month, thresholds, period) {
@@ -16,7 +16,7 @@ calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, sta
   conn <- create_postgres_conn()
 
   # Verilen parametre ve ay aralığı için verileri saatlik detay tablosundan almak için sorgulama işlemi
-  query <- paste0("SELECT Istasyon, Tarih, ", parameter_name, " FROM hourly_detail WHERE strftime('%m', Tarih) BETWEEN '", start_month, "' AND '", end_month, "'")
+  query <- paste0("SELECT Istasyon_modified, Tarih, ", parameter_name, " FROM hourly_detail WHERE strftime('%m', Tarih) BETWEEN '", start_month, "' AND '", end_month, "'")
 
   data <- dbGetQuery(conn, query)
 
@@ -24,7 +24,7 @@ calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, sta
   data <- data %>%
     mutate(TarihSaat = as.POSIXct(Tarih, format="%Y-%m-%d %H:%M:%S"),
            hour = as.numeric(format(TarihSaat, "%H"))) %>%
-    arrange(Istasyon, TarihSaat)
+    arrange(Istasyon_modified, TarihSaat)
 
   # AOT40 değerlerinin hesaplanması (08:00 - 20:00 saatleri arası)
   data <- data %>%
@@ -33,7 +33,7 @@ calculate_aot40_vegetation_and_forest_protection <- function(parameter_name, sta
 
   # İstasyonlar bazında toplam AOT40 değerinin hesaplanması
   total_AOT40 <- data %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     summarise(total_AOT40 = sum(AOT40, na.rm = TRUE)) %>%
     ungroup()
 

@@ -19,8 +19,8 @@ calculate_overall_average_by_city_threshold <- function(parameter, data_type="da
   # cities <- city_query$Sehir
 
   # overall_avgs <- sapply(cities, function(city_name) {
-  #   station_query <- dbGetQuery(conn, paste0("SELECT Istasyonlar FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
-  #   stations <- unlist(strsplit(station_query$Istasyonlar, ","))
+  #   station_query <- dbGetQuery(conn, paste0("SELECT Istasyon_modified FROM location_", YEAR, " WHERE Sehir='", city_name, "'"))
+  #   stations <- unlist(strsplit(station_query$Istasyon_modified, ","))
 
   #   station_avgs <- sapply(stations, function(station) {
   #     data_percentage_query <- paste0("SELECT (SUM(CASE WHEN \"", parameter, "\" IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail WHERE Istasyon='", station, "'")
@@ -60,7 +60,7 @@ calculate_overall_average_by_city_threshold <- function(parameter, data_type="da
 
     # join data with locations and keep city name
     data <- data %>%
-      left_join(locations %>% select(Istasyonlar, Sehir), by = c("Istasyon" = "Istasyonlar"))
+      left_join(locations %>% select(Istasyon_modified, Sehir), by = c("Istasyon" = "Istasyon_modified"))
 
     data <- data %>% 
     mutate(Tarih = as.POSIXct(Tarih, format = "%Y-%m-%d %H:%M:%S")) %>%

@@ -37,7 +37,7 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
   }
 
   query_result <- data %>%
-    group_by(Istasyon) %>%
+    group_by(istasyon_modified) %>%
     summarise(
       total_days = n(),
       non_na_days = sum(!is.na(.data[[parameter_name]])),
@@ -47,7 +47,7 @@ daily_list_stations_with_parameter_threshold <- function(parameter_name, thresho
     mutate(
       threshold_status = ifelse(veri_mevcudiyet_yuzdesi >= threshold, "Üstünde", "Altında")
     ) %>%
-    arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon)
+    arrange(desc(veri_mevcudiyet_yuzdesi), Istasyon_modified)
 
   if (verbose) {
     print("İstasyon sayımı sonuçları:")

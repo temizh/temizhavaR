@@ -44,7 +44,7 @@ location %>%
   distinct(Istasyonlar) %>%
   anti_join(
     hrly %>% distinct(Istasyon),
-    by = c("Istasyonlar" = "Istasyon")
+    by = c("Istasyon_modified" = "Istasyon_modified")
   )
 
 # Number of data rows per station

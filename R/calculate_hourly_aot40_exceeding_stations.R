@@ -19,7 +19,7 @@ calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_windo
 
   conn <- create_postgres_conn()
 
-  query <- paste0("SELECT Istasyon, Tarih, ", parameter_name, " FROM hourly_detail")
+  query <- paste0("SELECT Istasyon_modified, Tarih, ", parameter_name, " FROM hourly_detail")
   data <- dbGetQuery(conn, query)
 
   data <- data %>%
@@ -33,8 +33,8 @@ calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_windo
 
   if (hour_window > 1) {
     data <- data %>%
-      arrange(Istasyon, TarihSaat) %>%
-      group_by(Istasyon) %>%
+      arrange(Istasyon_modified, TarihSaat) %>%
+      group_by(Istasyon_modified) %>%
       mutate(rolling_avg = zoo::rollapplyr(.data[[parameter_name]], width = hour_window, FUN = mean, fill = NA, align = "right")) %>%
       ungroup()
   } else {
@@ -45,13 +45,13 @@ calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_windo
   if (aggregation_period == "daily") {
     aggregated_data <- data %>%
       mutate(date = as.Date(TarihSaat)) %>%
-      group_by(Istasyon, date) %>%
+      group_by(Istasyon_modified, date) %>%
       summarise(max_avg = if(all(is.na(rolling_avg))) NA else max(rolling_avg, na.rm = TRUE)) %>%
       ungroup()
   } else if (aggregation_period == "monthly") {
     aggregated_data <- data %>%
       mutate(year_month = format(TarihSaat, "%Y-%m")) %>%
-      group_by(Istasyon, year_month) %>%
+      group_by(Istasyon_modified, year_month) %>%
       summarise(max_avg = if(all(is.na(rolling_avg))) NA else max(rolling_avg, na.rm = TRUE)) %>%
       ungroup()
   } else {
@@ -60,7 +60,7 @@ calculate_hourly_aot40_exceeding_stations <- function(parameter_name, hour_windo
 
   exceed_stations <- aggregated_data %>%
     filter(!is.na(max_avg) & max_avg > threshold) %>%
-    select(Istasyon) %>%
+    select(Istasyon_modified) %>%
     distinct()
 
   num_exceeding_stations <- nrow(exceed_stations)

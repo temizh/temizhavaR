@@ -1,6 +1,5 @@
 library(readxl)
 library(temizhavaR)
-library(uuid)
 
 ##BUNLARI GUNLUK DETAY VERiLERiNE UYGULA
 

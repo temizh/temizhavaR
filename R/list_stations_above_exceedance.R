@@ -17,28 +17,28 @@ calculate_above_exceedance_days_all_stations <- function(parameter, threshold) {
     stop("Unable to connect to database")
   }
 
-  stations_query <- paste0("SELECT Istasyon
+  stations_query <- paste0("SELECT Istasyon_modified
                             FROM daily_detail
-                            GROUP BY Istasyon
+                            GROUP BY Istasyon_modified
                             HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) >= 90")
 
   stations <- dbGetQuery(mydb, stations_query)
 
-  query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold
+  query <- paste0("SELECT Istasyon_modified, ", parameter, " > ", threshold, " AS ExceedsThreshold
                    FROM daily_detail
-                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
+                   WHERE Istasyon_modified IN ('", paste(stations$Istasyon_modified, collapse = "','"), "')")
 
 
 
-  # query <- paste0("SELECT Istasyon, ", parameter, " > ", threshold, " AS ExceedsThreshold FROM daily_detail")
+  # query <- paste0("SELECT Istasyon_modified, ", parameter, " > ", threshold, " AS ExceedsThreshold FROM daily_detail")
 
   query_result <- dbGetQuery(mydb, query)
 
   disconnect_postgres(mydb)
 
-  exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon, query_result, sum)
+  exceedance_days <- aggregate(ExceedsThreshold ~ Istasyon_modified, query_result, sum)
 
-  #high_exceedance_stations <- exceedance_days$Istasyon[exceedance_days$ExceedsThreshold >= consecutive_threshold]
+  #high_exceedance_stations <- exceedance_days$Istasyon_modified[exceedance_days$ExceedsThreshold >= consecutive_threshold]
 
   exceedance_days %>%
     arrange(desc(ExceedsThreshold))

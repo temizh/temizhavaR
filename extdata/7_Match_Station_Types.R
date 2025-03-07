@@ -15,16 +15,17 @@ initializeDatabase <- function() {
     mydb <- create_postgres_conn()
     
     dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (
-                        Istasyonlar_modified TEXT PRIMARY KEY,
-                        station_type TEXT,
-                        Sampling_Point_Id TEXT,
-                        Longitude REAL,
-                        Latitude REAL,
-                        Altitude REAL,
-                        LONGTD REAL,
-                        LATTD REAL,
-                        Air_Quality_Station_Area TEXT,
-                        PM10ISTASYON TEXT)")
+                        \"Istasyon_modified\" TEXT PRIMARY KEY,
+                        \"station_type\" TEXT,
+                        \"Sampling_Point_Id\" TEXT,
+                        \"Longitude\" REAL,
+                        \"Latitude\" REAL,
+                        \"Altitude\" REAL,
+                        \"LONGTD\" REAL,
+                        \"LATTD\" REAL,
+                        \"Air_Quality_Station_Area\" TEXT,
+                        \"PM10ISTASYON\" TEXT)")
+                        
     
     return(mydb)
 }
@@ -122,17 +123,17 @@ matchStationTypes <- function() {
         FROM information_schema.columns 
         WHERE table_name = 'location'")
     column_names <- existing_stations$column_name
-    if ("pm10istasyon" %in% column_names) {
-        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified", "PM10ISTASYON" FROM location')
+    if ("pm10istasyon" %in% tolower(column_names)) {
+        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyon_modified", "PM10ISTASYON" FROM location')
     } else {
-        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified" FROM location')
+        existing_stations <- dbGetQuery(mydb, 'SELECT "Istasyon_modified" FROM location')
         existing_stations$PM10ISTASYON <- NA
     }
     matched_stations <- c()
     unmatched_stations <- c()
     for (i in seq_len(nrow(station_types))) {
         station_name <- station_types$`Air Quality Station Name`[i]
-        best_match <- find_best_match(station_name, existing_stations, "Istasyonlar_modified")
+        best_match <- find_best_match(station_name, existing_stations, "Istasyon_modified")
         if (is.na(best_match) && "PM10ISTASYON" %in% column_names) {
             best_match <- find_best_match(station_name, existing_stations, "PM10ISTASYON")
         }
@@ -148,8 +149,8 @@ matchStationTypes <- function() {
                       "LATTD" = $7, 
                       "Air_Quality_Station_Area" = $8,
                       "PM10ISTASYON" = $9
-                      WHERE lower("Istasyonlar_modified") = lower($10) 
-                        OR ("PM10ISTASYON" IS NOT NULL AND lower("PM10ISTASYON") = lower($10))',
+                      WHERE LOWER("Istasyon_modified") = LOWER($10) 
+                        OR ("PM10ISTASYON" IS NOT NULL AND LOWER("PM10ISTASYON") = LOWER($10))',
                      params = list(
                          station_types$`İstasyon türü`[i],
                          station_types$`Sampling Point Id`[i],
@@ -179,7 +180,7 @@ matchStationTypes <- function() {
                 if (!is.na(station_type_csv[1])) {
                     dbExecute(mydb,
                         'UPDATE location SET "station_type" = $1 
-                         WHERE lower("Istasyonlar_modified") = lower($2)',
+                         WHERE lower("Istasyon_modified") = lower($2)',
                         params = list(station_type_csv[1], best_match_csv))
                     matched_stations <- c(matched_stations, station_name)
                 }
@@ -192,25 +193,25 @@ matchStationTypes <- function() {
     excel_only <- character(0)
     na_station_types <- character(0)
     
-    postgres_stations <- dbGetQuery(mydb, 'SELECT "Istasyonlar_modified", "station_type" FROM location')
+    postgres_stations <- dbGetQuery(mydb, 'SELECT "Istasyon_modified", "station_type" FROM location')
     excel_stations <- station_types$`Air Quality Station Name`
     
-    postgres_stations$Istasyonlar_modified <- as.character(postgres_stations$Istasyonlar_modified)
+    postgres_stations$Istasyon_modified <- as.character(postgres_stations$Istasyon_modified)
     postgres_stations$station_type <- as.character(postgres_stations$station_type)
     
-    postgres_only <- postgres_stations$Istasyonlar_modified[
-        !sapply(postgres_stations$Istasyonlar_modified, function(x) {
+    postgres_only <- postgres_stations$Istasyon_modified[
+        !sapply(postgres_stations$Istasyon_modified, function(x) {
             any(sapply(excel_stations, function(y) station_exists(x, y)))
         })
     ]
     
     excel_only <- excel_stations[
         !sapply(excel_stations, function(x) {
-            any(sapply(postgres_stations$Istasyonlar_modified, function(y) station_exists(x, y)))
+            any(sapply(postgres_stations$Istasyon_modified, function(y) station_exists(x, y)))
         })
     ]
     
-    na_station_types <- postgres_stations$Istasyonlar_modified[
+    na_station_types <- postgres_stations$Istasyon_modified[
         is.na(postgres_stations$station_type)
     ]
 

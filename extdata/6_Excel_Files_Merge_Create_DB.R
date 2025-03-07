@@ -383,7 +383,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     if (!should_process) next
 
     location_match <- location_tbl %>%
-      filter(Istasyonlar_modified == station_extracted) %>%
+      filter(Istasyon_modified == station_extracted) %>%
       collect()
     
     if (nrow(location_match) == 0) {
@@ -394,7 +394,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     raw_data <- raw_data %>%
       mutate(
         Istasyon_modified = station_extracted,
-        Istasyon = location_match$Istasyonlar[1],
+        Istasyon_original = location_match$Istasyon_original[1],
         location_id = location_match$Id[1]
        
       )
