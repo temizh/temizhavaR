@@ -5,6 +5,7 @@ alter_tables <- function() {
   db <- create_postgres_conn()
   
   new_columns <- c(
+    '"Station_original" TEXT',
     '"Station_Type" TEXT',
     '"Sampling_Point_Id" TEXT',
     '"Longitude" REAL',
@@ -14,10 +15,9 @@ alter_tables <- function() {
     '"LATTD" REAL',
     '"Air_Quality_Station_Area" TEXT',
     '"PM10ISTASYON" TEXT',
-    '"Tarih" TIMESTAMP WITH TIME ZONE'  # Changed to proper timestamp type
+    '"Tarih" TIMESTAMP WITH TIME ZONE'  
   )
   
-  # First, attempt to alter column type if it exists
   tryCatch({
     sql <- 'ALTER TABLE location ALTER COLUMN "Tarih" TYPE TIMESTAMP WITH TIME ZONE 
             USING "Tarih"::TIMESTAMP WITH TIME ZONE'

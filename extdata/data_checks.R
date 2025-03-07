@@ -99,7 +99,15 @@ report <- locations %>%
     hourly_data_file_station_name_match = 0,
     hourly_summary_file_station_name_match = 0,
     daily_data_file_row_count_match = 0,
-    hourly_data_file_row_count_match = 0
+    hourly_data_file_row_count_match = 0,
+    # Add new columns for tracking cleaned data
+    daily_negative_values = 0,
+    daily_invalid_pm = 0,
+    daily_invalid_nox = 0,
+    hourly_negative_values = 0,
+    hourly_invalid_pm = 0,
+    hourly_invalid_nox = 0,
+    hourly_wrong_time = 0
   ) %>%
   collect() %>%
   as.data.frame()
@@ -176,7 +184,7 @@ for (i in seq_len(as.integer(locations_count))) {
     second_element <- second_row[2]
 
     # check if the second element of the second row is the same as the station name # nolint
-    if (second_element != location$Istasyon) {
+    if (second_element != location$Istasyon_original) {
       log_error(paste0(location$Istasyon_modified, " | ", "Daily summary file station name mismatch: ", daily_summary_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "daily_summary_file_station_name_match"] <- 1 # nolint
@@ -220,7 +228,7 @@ for (i in seq_len(as.integer(locations_count))) {
     second_column <- columns[2]
 
     # check if the second column name is the same as the station name
-    if (second_column != location$Istasyon) {
+    if (second_column != location$Istasyon_original) {
       log_error(paste0(location$Istasyon_modified, " | ", "Daily data file station name mismatch: ", daily_data_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "daily_data_file_station_name_match"] <- 1 # nolint
@@ -231,7 +239,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # get the daily data from the daily detail table for location
       daily_detail_for_location <- daily_detail %>%
-        filter(location_id == location$Id)
+        filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id)))))
 
       # check if there are duplicate data
       daily_detail_for_location_duplicates <- daily_detail_for_location %>%
@@ -251,6 +259,42 @@ for (i in seq_len(as.integer(locations_count))) {
         log_error(paste0(location$Istasyon_modified, " | ", "Daily data file row count mismatch.")) # nolint
       } else {
         report[report$station == location$Istasyon_modified, "daily_data_file_row_count_match"] <- 1 # nolint
+      }
+
+      # Add data quality checks
+      daily_detail_for_location_count <- daily_detail_for_location %>% tally() %>% pull(n)
+      
+      if (daily_detail_for_location_count == 0) {
+        log_warn(sprintf("%s | No daily data found in database", location$Istasyon_modified))
+      } else {
+        daily_quality_check <- tidy_air_quality_data(daily_detail_for_location, "daily_detail", FALSE, con)
+        
+        # Update report with quality metrics
+        report[report$station == location$Istasyon_modified, "daily_negative_values"] <- daily_quality_check$negative_values
+        report[report$station == location$Istasyon_modified, "daily_invalid_pm"] <- daily_quality_check$invalid_pm
+        report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- daily_quality_check$invalid_nox
+        
+        # Log quality issues with location info
+        log_info(sprintf("%s | Processing %.0f daily records", location$Istasyon_modified, daily_detail_for_location_count))
+        
+        if (daily_quality_check$negative_values > 0) {
+          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with negative values will be nullified", 
+                          location$Istasyon_modified, 
+                          daily_quality_check$negative_values,
+                          100 * daily_quality_check$negative_values / daily_detail_for_location_count))
+        }
+        if (daily_quality_check$invalid_pm > 0) {
+          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
+                          location$Istasyon_modified, 
+                          daily_quality_check$invalid_pm,
+                          100 * daily_quality_check$invalid_pm / daily_detail_for_location_count))
+        }
+        if (daily_quality_check$invalid_nox > 0) {
+          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
+                          location$Istasyon_modified, 
+                          daily_quality_check$invalid_nox,
+                          100 * daily_quality_check$invalid_nox / daily_detail_for_location_count))
+        }
       }
 
       # for each parameter, check not NA data count
@@ -297,7 +341,7 @@ for (i in seq_len(as.integer(locations_count))) {
     second_element <- second_row[2]
 
     # check if the second element of the second row is the same as the station name # nolint
-    if (second_element != location$Istasyon) {
+    if (second_element != location$Istasyon_original) {
       log_error(paste0(location$Istasyon_modified, " | ", "Hourly summary file station name mismatch: ", hourly_summary_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "hourly_summary_file_station_name_match"] <- 1 # nolint
@@ -339,7 +383,7 @@ for (i in seq_len(as.integer(locations_count))) {
     second_column <- columns[2]
 
     # check if the second column name is the same as the station name
-    if (second_column != location$Istasyon) {
+    if (second_column != location$Istasyon_original) {
       log_error(paste0(location$Istasyon_modified, " | ", "Hourly data file station name mismatch: ", hourly_data_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "hourly_data_file_station_name_match"] <- 1 # nolint
@@ -350,7 +394,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # get the hourly data from the hourly detail table for location
       hourly_detail_for_location <- hourly_detail %>%
-        filter(location_id == location$Id)
+        filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id)))))
 
       hourly_detail_for_location_count <- hourly_detail_for_location %>% 
         tally() %>% 
@@ -372,6 +416,49 @@ for (i in seq_len(as.integer(locations_count))) {
         log_error(paste0(location$Istasyon_modified, " | ", "Hourly data file row count mismatch.")) # nolint
       } else {
         report[report$station == location$Istasyon_modified, "hourly_data_file_row_count_match"] <- 1 # nolint
+      }
+
+      # Add data quality checks for hourly data
+      hourly_detail_for_location_count <- hourly_detail_for_location %>% tally() %>% pull(n)
+      
+      if (hourly_detail_for_location_count == 0) {
+        log_warn(sprintf("%s | No hourly data found in database", location$Istasyon_modified))
+      } else {
+        hourly_quality_check <- tidy_air_quality_data(hourly_detail_for_location, "hourly_detail", TRUE, con)
+        
+        # Update report with quality metrics
+        report[report$station == location$Istasyon_modified, "hourly_negative_values"] <- hourly_quality_check$negative_values
+        report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] <- hourly_quality_check$invalid_pm
+        report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- hourly_quality_check$invalid_nox
+        report[report$station == location$Istasyon_modified, "hourly_wrong_time"] <- hourly_quality_check$wrong_time
+        
+        # Log quality issues with location info
+        log_info(sprintf("%s | Processing %.0f hourly records", location$Istasyon_modified, hourly_detail_for_location_count))
+        
+        if (hourly_quality_check$negative_values > 0) {
+          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with negative values will be nullified", 
+                          location$Istasyon_modified, 
+                          hourly_quality_check$negative_values,
+                          100 * hourly_quality_check$negative_values / hourly_detail_for_location_count))
+        }
+        if (hourly_quality_check$invalid_pm > 0) {
+          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
+                          location$Istasyon_modified, 
+                          hourly_quality_check$invalid_pm,
+                          100 * hourly_quality_check$invalid_pm / hourly_detail_for_location_count))
+        }
+        if (hourly_quality_check$invalid_nox > 0) {
+          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
+                          location$Istasyon_modified, 
+                          hourly_quality_check$invalid_nox,
+                          100 * hourly_quality_check$invalid_nox / hourly_detail_for_location_count))
+        }
+        if (hourly_quality_check$wrong_time > 0) {
+          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with incorrect time format will be removed", 
+                          location$Istasyon_modified, 
+                          hourly_quality_check$wrong_time,
+                          100 * hourly_quality_check$wrong_time / hourly_detail_for_location_count))
+        }
       }
 
       # for each parameter, check not NA data count
