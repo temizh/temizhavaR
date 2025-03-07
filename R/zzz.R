@@ -1,5 +1,5 @@
 .onLoad <- function(libname, pkgname) {
-  base_dir <- getOption("temizhavaR.base_dir", default = "/home/byte/Desktop/Work/TemizHava_base_dir")
+  base_dir <- getOption("temizhavaR.base_dir")
 
   if (grepl("^/tmp/", base_dir)) {
     message("Skipping .env loading during package installation...")
