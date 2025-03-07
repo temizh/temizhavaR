@@ -23,6 +23,7 @@ create_postgres_conn <- function() {
       db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
       db_port <- Sys.getenv("POSTGRES_PORT")
 
+
       con <- dbConnect(RPostgres::Postgres(),
                      dbname = db_name,
                      host = db_host,

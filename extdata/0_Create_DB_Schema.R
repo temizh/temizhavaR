@@ -55,7 +55,6 @@ create_detail_tables <- function(mydb) {
   hourly_detail_sql <- '
     CREATE TABLE IF NOT EXISTS "hourly_detail" (
       "Id" SERIAL PRIMARY KEY,
-      "Istasyon_original" TEXT,
       "location_id" TEXT,
       "Tarih" TIMESTAMPTZ,
       "PM10" DOUBLE PRECISION,
@@ -72,7 +71,6 @@ create_detail_tables <- function(mydb) {
   daily_detail_sql <- '
     CREATE TABLE IF NOT EXISTS "daily_detail" (
       "Id" SERIAL PRIMARY KEY,
-      "Istasyon_original" TEXT,
       "location_id" TEXT,
       "Tarih" TIMESTAMPTZ,
       "PM10" DOUBLE PRECISION,
