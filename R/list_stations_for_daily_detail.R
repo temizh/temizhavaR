@@ -9,14 +9,14 @@ daily_list_stations_with_parameter <- function(parameter_name) {
     if (is.null(conn)) {
       stop("Could not establish database connection")
     }
-    
+
     stations <- tbl(conn, "daily_detail") %>%
       filter(!is.na(.data[[parameter_name]])) %>%
       distinct(Istasyon) %>%
       collect()
-    
+
     disconnect_postgres(conn)
-    
+
     return(stations)
   }, error = function(e) {
     message("Error in daily_list_stations_with_parameter: ", e$message)
