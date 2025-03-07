@@ -14,17 +14,17 @@ list_stations_below_data_threshold <- function(parameter_name, threshold = 40) {
     stop("Unable to connect to database")
   }
 
-  query <- paste0("SELECT Istasyon, AVG(", parameter_name, ") AS yearly_average
+  query <- paste0("SELECT Istasyon_modified, AVG(", parameter_name, ") AS yearly_average
                   FROM daily_detail
-                  WHERE Istasyon IN
-                    (SELECT Istasyon
+                  WHERE Istasyon_modified IN
+                    (SELECT Istasyon_modified
                     FROM
-                      (SELECT Istasyon,
+                      (SELECT Istasyon_modified,
                       SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) AS non_null_count
                       FROM daily_detail
-                      GROUP BY Istasyon)
+                      GROUP BY Istasyon_modified)
                     WHERE non_null_count >= 365 * 0.9)
-                  GROUP BY Istasyon
+                  GROUP BY Istasyon_modified
                   HAVING AVG(", parameter_name, ") < ", threshold)
 
   query_result <- dbGetQuery(mydb, query)

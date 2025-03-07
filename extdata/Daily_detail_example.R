@@ -3,7 +3,6 @@ library(readxl)
 library(dplyr)
 library(temizhavaR)
 library(readxl)
-library(uuid)
 library(dygraphs)
 
 station_name <- "Adana - Çukurova"

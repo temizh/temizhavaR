@@ -34,7 +34,7 @@ print(file_full_path)
 # Get the data
 conn <- create_postgres_conn()
 data <- tbl(conn, paste0(frequency, "_detail")) %>%
-  filter(Istasyon == station_name) %>%
+  filter(Istasyon_original == station_name) %>%
   filter(Tarih >= start_date & Tarih <= end_date) %>%
   collect() %>%
   as.data.frame()

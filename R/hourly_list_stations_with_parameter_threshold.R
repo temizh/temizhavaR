@@ -10,7 +10,7 @@ hourly_list_stations_with_parameter_threshold <- function(parameter_name, thresh
   data <- all_hourly_detail_load_from_database()
 
   query_result <- data %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     summarize(
       total_hours = n(),
       non_na_hours = sum(!is.na(.data[[parameter_name]])),

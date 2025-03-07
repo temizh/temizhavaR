@@ -12,8 +12,8 @@ consecutive_hourly_list_stations <- function(parameter_name, threshold) {
 
   conn <- create_postgres_conn()
 
-  query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
-  #query <- paste0("SELECT Istasyon, ", parameter_name, " FROM hourly_detail WHERE Istasyon = 'Adana - Çatalan' AND ", parameter_name, " IS NOT NULL LIMIT 20")
+  query <- paste0("SELECT Istasyon_modified, ", parameter_name, " FROM hourly_detail WHERE ", parameter_name, " IS NOT NULL")
+  #query <- paste0("SELECT Istasyon_modified, ", parameter_name, " FROM hourly_detail WHERE Istasyon_modified = 'Adana - Çatalan' AND ", parameter_name, " IS NOT NULL LIMIT 20")
 
   hourly_stations <- dbGetQuery(conn, query)
 
@@ -24,9 +24,9 @@ consecutive_hourly_list_stations <- function(parameter_name, threshold) {
     mutate(lead1 = lead(threshold_exceeded),
            lead2 = lead(threshold_exceeded, 2)) %>%
     filter(threshold_exceeded == 1 & lead1 == 1 & lead2 == 1) %>%
-    select(Istasyon) %>%
+    select(Istasyon_modified) %>%
     distinct() %>%
-    left_join(data %>% filter(threshold_exceeded == 1) %>% count(Istasyon), by = "Istasyon")
+    left_join(data %>% filter(threshold_exceeded == 1) %>% count(Istasyon_modified), by = "Istasyon_modified")
 
   disconnect_postgres(conn)
 

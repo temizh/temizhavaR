@@ -22,7 +22,7 @@ calculate_above_exceedance_all_stations <- function(parameter, data_type, pollut
   process_data <- function(data, total_amount) {
     if (nrow(data) == 0) {
       warning("No data found for the given parameter")
-      return(data.frame(Istasyon = character(0), Year = character(0)))
+      return(data.frame(Istasyon_modified = character(0), Year = character(0)))
     }
 
     data <- data %>%
@@ -32,7 +32,7 @@ calculate_above_exceedance_all_stations <- function(parameter, data_type, pollut
 
     # Count total and available data per station per year above threshold
     data_summary <- data %>%
-      group_by(Istasyon, Year) %>%
+      group_by(Istasyon_modified, Year) %>%
       summarise(
         available_entries = sum(!is.na(.data[[parameter_name]])),  # Count non-NA values
         non_na_days = sum(!is.na(.data[[parameter_name]])), # Count non-NA values
@@ -48,12 +48,12 @@ calculate_above_exceedance_all_stations <- function(parameter, data_type, pollut
       filter(average > pollutant_threshold) %>%  # Filter by pollutant threshold
       filter(exceedance_days >= exceedance_count) %>%  # Filter by exceedance days
       mutate(Value = exceedance_days) %>%  # Mark presence
-      select(Istasyon, Year, Value)  # Select relevant columns
+      select(Istasyon_modified, Year, Value)  # Select relevant columns
 
     # Convert to wide format
     wide <- filtered_data %>%
       pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
-      select(Istasyon, sort(names(.)[-1]))  # Order columns
+      select(Istasyon_modified, sort(names(.)[-1]))  # Order columns
 
     return(wide)
   }

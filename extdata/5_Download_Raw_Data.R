@@ -1,7 +1,6 @@
 library(RSelenium)
 library(netstat)
 library(wdman)
-library(uuid)
 library(temizhavaR)
 library(stringr)
 library(DBI)
@@ -78,8 +77,8 @@ for (i in 1:nrow(location)) {
   
   bolge <- as.character(current_station$Bolge)
   sehir <- as.character(current_station$Sehir)
-  istasyon_original <- as.character(current_station$Istasyonlar)
-  istasyon_modified <- as.character(current_station$Istasyonlar_modified)
+  istasyon_original <- as.character(current_station$Istasyon_original)
+  istasyon_modified <- as.character(current_station$Istasyon_modified)
     
   cat("Bolge:", bolge, "\n")
   cat("Sehir:", sehir, "\n")

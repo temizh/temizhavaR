@@ -18,13 +18,13 @@ calculate_exceedance_days_daily <- function(data, parameter, threshold) {
   data$Gun <- as.Date(data$Tarih)
 
   exceedance_list <- data %>%
-    group_by(Istasyon, Gun) %>%
+    group_by(Istasyon_modified, Gun) %>%
     summarise(daily_mean = mean(get(parameter), na.rm = TRUE)) %>%
     filter(daily_mean > threshold) %>%
     ungroup() %>%
-    distinct(Istasyon)
+    distinct(Istasyon_modified)
 
-  result_df <- exceedance_list %>% select(Istasyon)
+  result_df <- exceedance_list %>% select(Istasyon_modified)
 
   return(result_df)
 }

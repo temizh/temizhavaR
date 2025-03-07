@@ -10,17 +10,17 @@
 
 hourly_above_exceedance_days_double_threshold <- function(parameter, threshold, exceedance_limit) {
   conn <- create_postgres_conn()
-  stations_query <- paste0("SELECT Istasyon
+  stations_query <- paste0("SELECT Istasyon_modified
                             FROM hourly_detail
-                            GROUP BY Istasyon
+                            GROUP BY Istasyon_modified
                             HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) >= 90")
 
   stations <- dbGetQuery(conn, stations_query)
 
-  query <- paste0("SELECT Istasyon, SUM(CASE WHEN ", parameter, " > ", threshold, " THEN 1 ELSE 0 END) AS ExceedanceDays
+  query <- paste0("SELECT Istasyon_modified, SUM(CASE WHEN ", parameter, " > ", threshold, " THEN 1 ELSE 0 END) AS ExceedanceDays
                    FROM hourly_detail
-                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')
-                   GROUP BY Istasyon")
+                   WHERE Istasyon_modified IN ('", paste(stations$Istasyon_modified, collapse = "','"), "')
+                   GROUP BY Istasyon_modified")
 
   query_result <- dbGetQuery(conn, query)
   disconnect_postgres(conn)

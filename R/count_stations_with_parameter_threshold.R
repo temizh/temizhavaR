@@ -10,9 +10,9 @@ count_stations_with_parameter_threshold <- function(parameter_name, data_type = 
     conn <- create_postgres_conn()
 
     query <- if(data_type == "daily") {
-      sprintf('SELECT "Tarih", "Istasyon", "%s" FROM daily_detail', parameter_name)
+      sprintf('SELECT "Tarih", "Istasyon_modified", "%s" FROM daily_detail', parameter_name)
     } else {
-      sprintf('SELECT "Tarih", "Istasyon", "%s" FROM hourly_detail', parameter_name)
+      sprintf('SELECT "Tarih", "Istasyon_modified", "%s" FROM hourly_detail', parameter_name)
     }
 
     if(verbose) print(paste("Executing query:", query))
@@ -38,7 +38,7 @@ count_stations_with_parameter_threshold <- function(parameter_name, data_type = 
     }
 
     result <- data %>%
-      group_by(year, Istasyon) %>%
+      group_by(year, Istasyon_modified) %>%
       summarise(
         total_records = n(),
         valid_records = sum(!is.na(!!sym(parameter_name))),
@@ -49,7 +49,7 @@ count_stations_with_parameter_threshold <- function(parameter_name, data_type = 
       group_by(year) %>%
       summarise(
         station_count = n(),
-        stations_checked = n_distinct(Istasyon),
+        stations_checked = n_distinct(Istasyon_modified),
         period_count = max(total_records),  
         threshold = threshold,
         message = if(n() > 0) "OK" else "No stations meet threshold",

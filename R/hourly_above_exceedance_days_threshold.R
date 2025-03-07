@@ -12,16 +12,16 @@ hourly_above_exceedance_days_threshold <- function(parameter, threshold) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   # Sadece yeterli veri olan istasyonları seç
-  stations_query <- paste0("SELECT Istasyon
+  stations_query <- paste0("SELECT Istasyon_modified
                             FROM hourly_detail
-                            GROUP BY Istasyon
+                            GROUP BY Istasyon_modified
                             HAVING (SUM(CASE WHEN ", parameter, " IS NOT NULL THEN 1 ELSE 0 END) * 100 / 8761) >= 90")
   stations <- dbGetQuery(mydb, stations_query)
 
   # Eşik değeri aşıp aşmadığını kontrol eden sorgu
-  query <- paste0("SELECT Istasyon, DATE(Tarih) AS Date, ", parameter, " > ", threshold, " AS ExceedsThreshold
+  query <- paste0("SELECT Istasyon_modified, DATE(Tarih) AS Date, ", parameter, " > ", threshold, " AS ExceedsThreshold
                    FROM hourly_detail
-                   WHERE Istasyon IN ('", paste(stations$Istasyon, collapse = "','"), "')")
+                   WHERE Istasyon_modified IN ('", paste(stations$Istasyon_modified, collapse = "','"), "')")
 
   query_result <- dbGetQuery(mydb, query)
 
@@ -29,9 +29,9 @@ hourly_above_exceedance_days_threshold <- function(parameter, threshold) {
 
   # Aşım günlerini hesapla
   exceedance_days <- query_result %>%
-    group_by(Istasyon, Date) %>%
+    group_by(Istasyon_modified, Date) %>%
     summarise(ExceedsThreshold = any(ExceedsThreshold)) %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     summarise(ExceedanceDays = sum(ExceedsThreshold, na.rm = TRUE)) %>%
     as.data.frame()
 

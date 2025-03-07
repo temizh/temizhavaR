@@ -37,7 +37,7 @@ all_daily_detail_load_from_database <- function(parm, verbose = FALSE) {
       }
 
       query_result <- query_result %>%
-        select(Istasyon, Tarih, all_of(parm))
+        select(Istasyon_original, Tarih, all_of(parm))
     }
 
     if (verbose) {

@@ -6,7 +6,7 @@
 #' @param start_dates The start dates of the period in "YYYY-MM-DD" format.
 #' @param end_dates The end dates of the period in "YYYY-MM-DD" format.
 #' @param threshold The threshold percentage for data availability (default is 90).
-#' @return A data frame with columns: Istasyon, aot40_measured, measured_hours, aot40_estimated, period.
+#' @return A data frame with columns: Istasyon_modified, aot40_measured, measured_hours, aot40_estimated, period.
 #' @export
 #'
 #' @examples
@@ -26,7 +26,7 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
     end_date <- as.Date(end_dates[i])
 
     # Belirtilen dönem ve zaman aralığı için O3 verilerini almak için sorgulama işlemi
-    query <- paste0("SELECT Istasyon, Tarih, O3
+    query <- paste0("SELECT Istasyon_modified, Tarih, O3
                      FROM hourly_detail
                      WHERE Tarih BETWEEN '", start_date, "' AND '", end_date,
                      "' AND strftime('%H', Tarih) BETWEEN '08' AND '20'")
@@ -43,19 +43,19 @@ hourly_list_aot40_threshold <- function(start_dates, end_dates, threshold = 90) 
     # İstasyon başına veri kullanılabilirliğini hesaplar
     total_hours <- length(seq(start_date, end_date, by = "day")) * 13
     data_availability <- data %>%
-      group_by(Istasyon) %>%
+      group_by(Istasyon_modified) %>%
       summarise(available_hours = sum(!is.na(O3)),
                 data_availability = (available_hours / total_hours) * 100)
 
-    # Veri kullanılabilirliği %90 eşiğini aşan istasyonları filtreler
+    # Veri kullanılabilirliği %90 eşiğini aşan Istasyon_modifiedları filtreler
     filtered_stations <- data_availability %>%
       filter(data_availability >= threshold) %>%
-      pull(Istasyon)
+      pull(Istasyon_modified)
 
-    # Filtrelenen istasyonlar için AOT40'ı hesaplar
+    # Filtrelenen Istasyon_modifiedlar için AOT40'ı hesaplar
     aot40_data <- data %>%
-      filter(Istasyon %in% filtered_stations) %>%
-      group_by(Istasyon) %>%
+      filter(Istasyon_modified %in% filtered_stations) %>%
+      group_by(Istasyon_modified) %>%
       summarise(aot40_measured = sum(excess, na.rm = TRUE),
                 measured_hours = sum(!is.na(O3)),
                 aot40_estimated = aot40_measured * total_hours / measured_hours) %>%

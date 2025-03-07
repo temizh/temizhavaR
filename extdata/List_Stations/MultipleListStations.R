@@ -1,6 +1,5 @@
 library(readxl)
 library(temizhavaR)
-library(uuid)
 
 
 #LIST STATIONS FOR THE SPECIFIED PARAMETER

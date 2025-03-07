@@ -11,7 +11,7 @@ calculate_aot40_exceeding_stations <- function(parameter_name) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
   # Verilen parametre için verileri saatlik detay tablosundan almak için sorgulama işlemi
-  query <- paste0("SELECT Istasyon, Tarih, ", parameter_name, " FROM hourly_detail")
+  query <- paste0("SELECT Istasyon_modified, Tarih, ", parameter_name, " FROM hourly_detail")
 
   data <- dbGetQuery(mydb, query)
 
@@ -19,27 +19,27 @@ calculate_aot40_exceeding_stations <- function(parameter_name) {
   data <- data %>%
     mutate(TarihSaat = as.POSIXct(Tarih, format="%Y-%m-%d %H:%M:%S"),
            hour = as.numeric(format(TarihSaat, "%H"))) %>%
-    arrange(Istasyon, TarihSaat)
+    arrange(Istasyon_modified, TarihSaat)
 
   # 8 saatlik ortalamaların hesaplanması
   data <- data %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     mutate(rolling_avg = zoo::rollapply(get(parameter_name), width = 8, FUN = mean, fill = NA, align = 'right', partial = TRUE))
 
   # Günlük maksimum 8 saatlik ortalama
   daily_max_8h_avg <- data %>%
     mutate(date = as.Date(TarihSaat)) %>%
-    group_by(Istasyon, date) %>%
+    group_by(Istasyon_modified, date) %>%
     summarise(max_8h_avg = if(all(is.na(rolling_avg))) NA else max(rolling_avg, na.rm = TRUE)) %>%
     ungroup()
 
-  # 120 µg/m³'ü aşan istasyonları belirleme
+  # 120 µg/m³'ü aşan Istasyon_modifiedları belirleme
   exceed_stations <- daily_max_8h_avg %>%
     filter(!is.na(max_8h_avg) & max_8h_avg > 120) %>%
-    select(Istasyon) %>%
+    select(Istasyon_modified) %>%
     distinct()
 
-  # Aşan istasyon sayısını hesaplama
+  # Aşan Istasyon_modified sayısını hesaplama
   num_exceeding_stations <- nrow(exceed_stations)
 
   # Sonuçları data.frame nesnesine dönüştürme

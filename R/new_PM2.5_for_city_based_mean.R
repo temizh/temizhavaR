@@ -18,30 +18,30 @@ new_pm25_for_city_based_mean <- function(station, verbose = FALSE) {
   pm25_threshold <- 75
   pm10_threshold <- 75
 
-  threshold_query <- paste0("SELECT Istasyon, data_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon) WHERE data_percentage < ", pm25_threshold)
+  threshold_query <- paste0("SELECT Istasyon_modified, data_percentage FROM (SELECT Istasyon_modified, (SUM(CASE WHEN PM25 IS NOT NULL THEN 1 ELSE 0 END) * 100 / 365) AS data_percentage FROM daily_detail GROUP BY Istasyon_modified) WHERE data_percentage < ", pm25_threshold)
   threshold_stations <- dbGetQuery(mydb, threshold_query)
 
   # PM10 verilerinin yüzde doksanından fazlasını kontrol et
   #stations_string <- paste0("'", threshold_stations, "'", collapse = ", ")
-  #pm10_threshold_query <- paste0("SELECT Istasyon, pm10_percentage FROM (SELECT Istasyon, (SUM(CASE WHEN PM10 IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(*)) AS pm10_percentage FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon) WHERE pm10_percentage >= 90")
+  #pm10_threshold_query <- paste0("SELECT Istasyon_modified, pm10_percentage FROM (SELECT Istasyon_modified, (SUM(CASE WHEN PM10 IS NOT NULL THEN 1 ELSE 0 END) * 100 / COUNT(*)) AS pm10_percentage FROM daily_detail WHERE Istasyon_modified IN (", stations_string, ") GROUP BY Istasyon_modified) WHERE pm10_percentage >= 90")
   #pm10_threshold_stations <- dbGetQuery(mydb, pm10_threshold_query)
-  #pm10_threshold_stations <- pm10_threshold_stations$Istasyon
+  #pm10_threshold_stations <- pm10_threshold_stations$Istasyon_modified
   pm10_threshold_stations <- daily_list_stations_with_parameter_threshold("PM10", threshold = pm10_threshold, verbose = FALSE)
 
-  #if (!grepl(station, threshold_stations$Istasyon)) {
-  #  threshold_stations$Istasyon <- NA
+  #if (!grepl(station, threshold_stations$Istasyon_modified)) {
+  #  threshold_stations$Istasyon_modified <- NA
   #}
 
   NODATA <- FALSE
 
-  pm25_threshold_stations <- threshold_stations %>% dplyr::filter(Istasyon==station)
-  pm10_threshold_stations <- pm10_threshold_stations %>% dplyr::filter(Istasyon==station)
+  pm25_threshold_stations <- threshold_stations %>% dplyr::filter(Istasyon_modified==station)
+  pm10_threshold_stations <- pm10_threshold_stations %>% dplyr::filter(Istasyon_modified==station)
 
   if (nrow(pm25_threshold_stations)==0) {
-    pm25_threshold_stations <- data.frame(Istasyon = station, data_percentage = 0)
+    pm25_threshold_stations <- data.frame(Istasyon_modified = station, data_percentage = 0)
   }
   if (nrow(pm10_threshold_stations) == 0) {
-    pm10_threshold_stations <- data.frame(Istasyon = station, veri_mevcudiyet_yuzdesi = 0)
+    pm10_threshold_stations <- data.frame(Istasyon_modified = station, veri_mevcudiyet_yuzdesi = 0)
   }
 
   if (nrow(pm25_threshold_stations)==0 & nrow(pm10_threshold_stations) == 0) {
@@ -57,20 +57,20 @@ new_pm25_for_city_based_mean <- function(station, verbose = FALSE) {
     pm10_values <- NA
   } else {
 #browser()
-    pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon = '", station, "'")
+    pm10_query <- paste0("SELECT Istasyon_modified, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon_modified = '", station, "'")
     pm10_query_result <- dbGetQuery(mydb, pm10_query)
-    #pm10_query_result <- pm10_query_result %>% dplyr::filter(grepl(station, Istasyon))
+    #pm10_query_result <- pm10_query_result %>% dplyr::filter(grepl(station, Istasyon_modified))
     pm10_values <- pm10_query_result$Yillik_Ortalama
   }
 
   pm25_values <-pm10_values * 0.6667
-  pm25_result <- data.frame(Istasyon = station, PM25 = pm25_values,
+  pm25_result <- data.frame(Istasyon_modified = station, PM25 = pm25_values,
                             pm25_veri_mevcudiyet_yuzdesi = pm25_threshold_stations$data_percentage,
                             pm10_veri_mevcudiyet_yuzdesi = pm10_threshold_stations$veri_mevcudiyet_yuzdesi,
                             pm10_value = pm10_values)
 
   #stations_string <- paste0("'", pm10_threshold_stations, "'", collapse = ", ")
-  #pm10_query <- paste0("SELECT Istasyon, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon IN (", stations_string, ") GROUP BY Istasyon")
+  #pm10_query <- paste0("SELECT Istasyon_modified, AVG(PM10) AS Yillik_Ortalama FROM daily_detail WHERE Istasyon_modified IN (", stations_string, ") GROUP BY Istasyon_modified")
   #pm10_query_result <- dbGetQuery(mydb, pm10_query)
 
   disconnect_postgres(mydb)

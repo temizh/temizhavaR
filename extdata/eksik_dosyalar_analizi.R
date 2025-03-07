@@ -10,28 +10,28 @@ all_hourly <- dbGetQuery(conn, "SELECT * FROM hourly_detail")
 
 disconnect_postgres(conn)
 
-all_stations <- sort(unique(full_stations$Istasyonlar))
-all_stations <- tibble(Istasyon=all_stations)
+all_stations <- sort(unique(full_stations$Istasyon_originallar))
+all_stations <- tibble(Istasyon_original=all_stations)
 
-u_stations_daily <- sort(unique(all_daily$Istasyon))
-u_stations_hourly <- sort(unique(all_hourly$Istasyon))
+u_stations_daily <- sort(unique(all_daily$Istasyon_original))
+u_stations_hourly <- sort(unique(all_hourly$Istasyon_original))
 
 daily_summary <- all_daily %>%
-  select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
-  group_by(Istasyon) %>%
+  select(Istasyon_original, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
+  group_by(Istasyon_original) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
   rename(PM10_daily=PM10, PM25_daily=PM25, SO2_daily=SO2, CO_daily=CO, NO2_daily=NO2, NOX_daily=NOX, NO_daily=NO, O3_daily=O3)
 
 hourly_summary <- all_hourly %>%
-  select(Istasyon, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
-  group_by(Istasyon) %>%
+  select(Istasyon_original, PM10, PM25, SO2, CO, NO2, NOX, NO, O3) %>%
+  group_by(Istasyon_original) %>%
   summarise(across(everything(), ~ mean(.x, na.rm = TRUE))) %>%
   rename(PM10_hourly=PM10, PM25_hourly=PM25, SO2_hourly=SO2, CO_hourly=CO, NO2_hourly=NO2, NOX_hourly=NOX, NO_hourly=NO, O3_hourly=O3)
 
-all_summary <- left_join(all_stations, daily_summary, by = join_by(Istasyon)) %>%
+all_summary <- left_join(all_stations, daily_summary, by = join_by(Istasyon_original)) %>%
   print(n=332)
 
-all_summary <- left_join(all_summary, hourly_summary, by = join_by(Istasyon)) %>%
+all_summary <- left_join(all_summary, hourly_summary, by = join_by(Istasyon_original)) %>%
   relocate(PM10_hourly, .after=PM10_daily) %>%
   relocate(PM25_hourly, .after=PM25_daily) %>%
   relocate(SO2_hourly, .after=SO2_daily) %>%

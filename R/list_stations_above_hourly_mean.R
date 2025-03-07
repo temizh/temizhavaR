@@ -9,17 +9,17 @@
 list_stations_above_hourly_mean <- function(parameter_name, threshold = 350) {
   mydb <- dbConnect(RSQLite::SQLite(), "temiz-hava.sqlite")
 
- query <- paste0("SELECT Istasyon, AVG(", parameter_name, ") AS hourly_average
+ query <- paste0("SELECT Istasyon_modified, AVG(", parameter_name, ") AS hourly_average
                   FROM hourly_detail
-                  WHERE Istasyon IN
-                    (SELECT Istasyon
+                  WHERE Istasyon_modified IN
+                    (SELECT Istasyon_modified
                     FROM
-                      (SELECT Istasyon,
+                      (SELECT Istasyon_modified,
                       SUM(CASE WHEN ", parameter_name, " IS NOT NULL THEN 1 ELSE 0 END) AS non_null_count
                       FROM hourly_detail
-                      GROUP BY Istasyon)
+                      GROUP BY Istasyon_modified)
                     WHERE non_null_count >= 8761 * 0.9)
-                  GROUP BY Istasyon
+                  GROUP BY Istasyon_modified
                   HAVING AVG(", parameter_name, ") > ", threshold)
 
 

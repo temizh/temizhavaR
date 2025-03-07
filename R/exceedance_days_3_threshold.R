@@ -28,7 +28,7 @@ exceedance_days_3_threshold <- function(parameter_name, threshold = 125, exceeda
   exceedance_days <- daily_data %>%
     filter(!is.na(.data[[parameter_name]])) %>%
     mutate(ExceedsThreshold = .data[[parameter_name]] > threshold) %>%
-    group_by(Istasyon) %>%
+    group_by(Istasyon_modified) %>%
     summarise(ExceedanceCount = sum(ExceedsThreshold, na.rm = TRUE)) %>%
     filter(ExceedanceCount > exceedance_count) %>%
     as.data.frame()

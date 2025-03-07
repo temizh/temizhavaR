@@ -5,22 +5,23 @@ alter_tables <- function() {
   db <- create_postgres_conn()
   
   new_columns <- c(
-    "station_type TEXT",
-    "Sampling_Point_Id TEXT",
-    "Longitude REAL",
-    "Latitude REAL",
-    "Altitude REAL",
-    "LONGTD REAL",
-    "LATTD REAL",
-    "Air_Quality_Station_Area TEXT"
+    '"Station_Type" TEXT',
+    '"Sampling_Point_Id" TEXT',
+    '"Longitude" REAL',
+    '"Latitude" REAL',
+    '"Altitude" REAL',
+    '"LONGTD" REAL',
+    '"LATTD" REAL',
+    '"Air_Quality_Station_Area" TEXT',
+    '"PM10ISTASYON" TEXT'
   )
   
-  tables <- c( "location")
+  tables <- c("location")
   
   for (table in tables) {
     for (col in new_columns) {
       tryCatch({
-        sql <- sprintf("ALTER TABLE %s ADD COLUMN %s", table, col)
+        sql <- sprintf('ALTER TABLE %s ADD COLUMN %s', table, col)
         dbExecute(db, sql)
         cat(sprintf("Added column %s to table %s\n", col, table))
       }, error = function(e) {

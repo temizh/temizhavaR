@@ -22,7 +22,7 @@
 
    conn <- create_postgres_conn()
 
-    query <- paste0("SELECT * FROM hourly_detail WHERE Istasyon = '", station_name, "'")
+    query <- paste0("SELECT * FROM hourly_detail WHERE Istasyon_modified = '", station_name, "'")
     query_result <- dbGetQuery(conn, query)
 
     query_result$Tarih <- as.POSIXct(query_result$Tarih, format = "%Y-%m-%d %H:%M:%S")

@@ -38,7 +38,7 @@ station_average <- function(parameter_name, data_type="daily", threshold = 90, s
 
     # Count total and available data per station per year
     data_summary <- data %>%
-      group_by(Istasyon, Year) %>%
+      group_by(Istasyon_modified, Year) %>%
       summarise(
         available_entries = sum(!is.na(.data[[parameter_name]])),  # Count non-NA values
         non_na_days = sum(!is.na(.data[[parameter_name]])), # Count non-NA values
@@ -51,12 +51,12 @@ station_average <- function(parameter_name, data_type="daily", threshold = 90, s
     filtered_data <- data_summary %>%
       filter(percentage >= threshold) %>%  # Apply threshold
       mutate(Value = average) %>%  # Mark presence
-      select(Istasyon, Year, Value)  # Select relevant columns
+      select(Istasyon_modified, Year, Value)  # Select relevant columns
 
     # Convert to wide format
     wide <- filtered_data %>%
       pivot_wider(names_from = Year, values_from = Value, values_fill = NA) %>%
-      select(Istasyon, sort(names(.)[-1]))  # Order columns
+      select(Istasyon_modified, sort(names(.)[-1]))  # Order columns
 
     return(wide)
   }
