@@ -26,13 +26,11 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
   files <- list.files(search_dir, full.names = TRUE)
 
   if (length(files) == 0) {
-    return("")  # No files found
+    return("")  
   }
 
-  # Compute string distance using Levenshtein method
   distances <- stringdist::stringdist(target_file, basename(files), method = "lv")  # nolint
 
-  # Find the best match
   best_match_index <- which.min(distances)
   best_match <- files[best_match_index]
   best_distance <- distances[best_match_index]
@@ -60,16 +58,89 @@ log_file <- file.path(log_dir, paste0("data_check_", Sys.time(), ".log")) # noli
 # Define report file name (daily timestamped report file), contains data quality metrics # nolint
 report_file <- file.path(log_dir, paste0("report_", Sys.time(), ".xlsx")) # nolint
 
-# Configure logger to append logs to the file
+# Configure both file and database logging
 log_appender(appender_file(log_file))
-
-# Use a structured log format
 log_layout(layout_glue_generator(format = "{time} | {level} | {msg}"))
 
 # connect to the database
 message("Connecting to the database...")
 # con <- dbConnect(RSQLite::SQLite(), dbname = file.path(raw_data_dir, "temiz-hava.sqlite")) # nolint
 con <- create_postgres_conn()
+
+
+# Enhanced logging function
+log_operation <- function(level, location, message, details = NULL) {
+  # Standard file logging
+  if (level == "ERROR") {
+    log_error(sprintf("%s | %s", location, message))
+  } else if (level == "WARN") {
+    log_warn(sprintf("%s | %s", location, message))
+  } else {
+    log_info(sprintf("%s | %s", location, message))
+  }
+  
+
+}
+
+# Initialize logging session
+session_id <- paste0("CHECK_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", random_string("", 6))
+
+# Enhanced logging function with better NULL handling
+log_to_db <- function(message, level, category, location_id = NULL, station_name = NULL, details = NULL) {
+  if (is.null(message)) {
+    message <- "No message provided"
+  }
+  
+  # Handle NULL values for location_id and station_name
+  location_id_sql <- if (is.null(location_id)) "NULL" else dbQuoteString(con, as.character(location_id))
+  station_name_sql <- if (is.null(station_name)) "NULL" else dbQuoteString(con, as.character(station_name))
+  
+  # Convert details to JSON with error handling
+  details_json <- tryCatch({
+    if (is.null(details)) {
+      "null"
+    } else if (is.list(details)) {
+      jsonlite::toJSON(details, auto_unbox = TRUE)
+    } else {
+      jsonlite::toJSON(list(value = details), auto_unbox = TRUE)
+    }
+  }, error = function(e) {
+    warning("Failed to convert details to JSON: ", e$message)
+    "null"
+  })
+
+  # Database logging with error handling
+  tryCatch({
+    sql <- sprintf("
+      INSERT INTO data_cleaning_log 
+        (session_id, script_name, log_level, category, location_id, station_name, message, details)
+      VALUES 
+        (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
+      dbQuoteString(con, session_id),
+      dbQuoteString(con, "data_checks"),
+      dbQuoteString(con, level),
+      dbQuoteString(con, category),
+      location_id_sql,
+      station_name_sql,
+      dbQuoteString(con, message),
+      dbQuoteString(con, details_json)
+    )
+    dbExecute(con, sql)
+  }, error = function(e) {
+    warning("Failed to write to database log: ", e$message)
+  })
+
+  # Console logging always happens even if DB fails
+  timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  cat(sprintf("[%s] %s | %s | %s\n", 
+              timestamp, 
+              level, 
+              ifelse(is.null(station_name), category, station_name),
+              message))
+}
+
+# Update logging calls to use new function
+log_to_db("Starting data quality checks", "INFO", "system")
 
 # get daily data table
 message("Reading daily data table...")
@@ -130,9 +201,17 @@ missing_locations_is_empty <- missing_locations %>% tally() %>% pull(n) == 0
 
 # log missing locations
 if (!missing_locations_is_empty) {
-  log_error(paste0("Missing locations found in the location table: ", missing_locations)) # nolint
+  log_to_db(
+    paste0("Missing locations found in the location table: ", missing_locations),
+    "ERROR", 
+    "location_check"
+  )
 } else {
-  log_info("No missing locations found in the location table") # nolint
+  log_to_db(
+    "No missing locations found in the location table",
+    "INFO", 
+    "location_check"
+  )
 }
 
 # romove missing locations
@@ -165,12 +244,12 @@ for (i in seq_len(as.integer(locations_count))) {
   # DAILY SUMMARY --------------------------------------------------------------
   if (!file.exists(daily_summary_file)) {
     # log the error
-    log_error(paste0(location$Istasyon_modified, " | ", "Daily summary file does not exist: ", daily_summary_file)) # nolint
+    log_to_db("ERROR", location$Istasyon_modified, paste0("Daily summary file does not exist: ", daily_summary_file)) # nolint
 
     # fuzzy search in directory for the file
     closest_file <- find_closest_file(basename(daily_summary_file), dirname(daily_summary_file)) # nolint
     if (nchar(closest_file) > 0) {
-      log_warn(paste0(location$Istasyon_modified, " | ", "Closest daily summary file found: ", closest_file)) # nolint
+      log_to_db("WARN", location$Istasyon_modified, paste0("Closest daily summary file found: ", closest_file)) # nolint
     }
   } else {
     # update the report with the daily summary file path
@@ -185,7 +264,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
     # check if the second element of the second row is the same as the station name # nolint
     if (second_element != location$Istasyon_original) {
-      log_error(paste0(location$Istasyon_modified, " | ", "Daily summary file station name mismatch: ", daily_summary_file)) # nolint
+      log_to_db("ERROR", location$Istasyon_modified, paste0("Daily summary file station name mismatch: ", daily_summary_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "daily_summary_file_station_name_match"] <- 1 # nolint
 
@@ -210,12 +289,12 @@ for (i in seq_len(as.integer(locations_count))) {
 
   # DAILY DATA --------------------------------------------------------------
   if (!file.exists(daily_data_file)) {
-    log_error(paste0(location$Istasyon_modified, " | ", "Daily data file does not exist: ", daily_data_file)) # nolint
+    log_to_db("ERROR", location$Istasyon_modified, paste0("Daily data file does not exist: ", daily_data_file)) # nolint
 
     # fuzzy search in directory for the file
     closest_file <- find_closest_file(basename(daily_data_file), dirname(daily_data_file)) # nolint
     if (nchar(closest_file) > 0) {
-      log_warn(paste0(location$Istasyon_modified, " | ", "Closest daily data file found: ", closest_file)) # nolint
+      log_to_db("WARN", location$Istasyon_modified, paste0("Closest daily data file found: ", closest_file)) # nolint
     }
   } else {
     report[report$station == location$Istasyon_modified, "daily_data_file"] <- daily_data_file # nolint
@@ -229,7 +308,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
     # check if the second column name is the same as the station name
     if (second_column != location$Istasyon_original) {
-      log_error(paste0(location$Istasyon_modified, " | ", "Daily data file station name mismatch: ", daily_data_file)) # nolint
+      log_to_db("ERROR", location$Istasyon_modified, paste0("Daily data file station name mismatch: ", daily_data_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "daily_data_file_station_name_match"] <- 1 # nolint
 
@@ -249,14 +328,14 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # log if there are duplicate data
       if (nrow(daily_detail_for_location_duplicates) > 0) {
-        log_warn(paste0(location$Istasyon_modified, " | ", "Daily data file contains duplicate data.")) # nolint
+        log_to_db("WARN", location$Istasyon_modified, "Daily data file contains duplicate data.") # nolint
       }
 
       daily_detail_for_location_count <- daily_detail_for_location %>% tally() %>% pull(n) # nolint
 
       # check if the number of rows in the daily data file is the same as the daily detail table # nolint
       if (nrow(daily_data) != daily_detail_for_location_count && (nrow(daily_data) != total_daily_data_count)) { # nolint
-        log_error(paste0(location$Istasyon_modified, " | ", "Daily data file row count mismatch.")) # nolint
+        log_to_db("ERROR", location$Istasyon_modified, "Daily data file row count mismatch.") # nolint
       } else {
         report[report$station == location$Istasyon_modified, "daily_data_file_row_count_match"] <- 1 # nolint
       }
@@ -265,7 +344,7 @@ for (i in seq_len(as.integer(locations_count))) {
       daily_detail_for_location_count <- daily_detail_for_location %>% tally() %>% pull(n)
       
       if (daily_detail_for_location_count == 0) {
-        log_warn(sprintf("%s | No daily data found in database", location$Istasyon_modified))
+        log_to_db("WARN", location$Istasyon_modified, sprintf("No daily data found in database"))
       } else {
         daily_quality_check <- tidy_air_quality_data(daily_detail_for_location, "daily_detail", FALSE, con)
         
@@ -275,23 +354,20 @@ for (i in seq_len(as.integer(locations_count))) {
         report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- daily_quality_check$invalid_nox
         
         # Log quality issues with location info
-        log_info(sprintf("%s | Processing %.0f daily records", location$Istasyon_modified, daily_detail_for_location_count))
+        log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f daily records", daily_detail_for_location_count))
         
         if (daily_quality_check$negative_values > 0) {
-          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with negative values will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Daily data: %.0f records (%.2f%%) with negative values will be nullified", 
                           daily_quality_check$negative_values,
                           100 * daily_quality_check$negative_values / daily_detail_for_location_count))
         }
         if (daily_quality_check$invalid_pm > 0) {
-          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Daily data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
                           daily_quality_check$invalid_pm,
                           100 * daily_quality_check$invalid_pm / daily_detail_for_location_count))
         }
         if (daily_quality_check$invalid_nox > 0) {
-          log_warn(sprintf("%s | Daily data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Daily data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
                           daily_quality_check$invalid_nox,
                           100 * daily_quality_check$invalid_nox / daily_detail_for_location_count))
         }
@@ -313,7 +389,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
         # check if the number of not NA data for the parameter matches summary
         if (daily_data_for_parameter != parameter_data_count) {
-          log_warn(paste0(location$Istasyon_modified, " | ", "Daily data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', daily_data_for_parameter)) # nolint
+          log_to_db("WARN", location$Istasyon_modified, paste0("Daily data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', daily_data_for_parameter)) # nolint
         } else {
           report[report$station == location$Istasyon_modified, paste0("daily_data_file_", parameter, "_data_count_match")] <- 1 # nolint
         }
@@ -323,12 +399,12 @@ for (i in seq_len(as.integer(locations_count))) {
 
   # HOURLY SUMMARY -------------------------------------------------------------
   if (!file.exists(hourly_summary_file)) {
-    log_error(paste0(location$Istasyon_modified, " | ", "Hourly summary file does not exist: ", hourly_summary_file)) # nolint
+    log_to_db("ERROR", location$Istasyon_modified, paste0("Hourly summary file does not exist: ", hourly_summary_file)) # nolint
 
     # fuzzy search in directory for the file
     closest_file <- find_closest_file(basename(hourly_summary_file), dirname(hourly_summary_file)) # nolint
     if (nchar(closest_file) > 0) {
-      log_warn(paste0(location$Istasyon_modified, " | ", "Closest hourly summary file found: ", closest_file)) # nolint
+      log_to_db("WARN", location$Istasyon_modified, paste0("Closest hourly summary file found: ", closest_file)) # nolint
     }
   } else {
     report[report$station == location$Istasyon_modified, "hourly_summary_file"] <- hourly_summary_file # nolint
@@ -342,7 +418,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
     # check if the second element of the second row is the same as the station name # nolint
     if (second_element != location$Istasyon_original) {
-      log_error(paste0(location$Istasyon_modified, " | ", "Hourly summary file station name mismatch: ", hourly_summary_file)) # nolint
+      log_to_db("ERROR", location$Istasyon_modified, paste0("Hourly summary file station name mismatch: ", hourly_summary_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "hourly_summary_file_station_name_match"] <- 1 # nolint
 
@@ -365,12 +441,12 @@ for (i in seq_len(as.integer(locations_count))) {
 
   # HOURLY DATA -------------------------------------------------------------
   if (!file.exists(hourly_data_file)) {
-    log_error(paste0(location$Istasyon_modified, " | ", "Hourly data file does not exist: ", hourly_data_file)) # nolint
+    log_to_db("ERROR", location$Istasyon_modified, paste0("Hourly data file does not exist: ", hourly_data_file)) # nolint
 
     # fuzzy search in directory for the file
     closest_file <- find_closest_file(basename(hourly_data_file), dirname(hourly_data_file)) # nolint
     if (nchar(closest_file) > 0) {
-      log_warn(paste0(location$Istasyon_modified, " | ", "Closest hourly data file found: ", closest_file)) # nolint
+      log_to_db("WARN", location$Istasyon_modified, paste0("Closest hourly data file found: ", closest_file)) # nolint
     }
   } else {
     report[report$station == location$Istasyon_modified, "hourly_data_file"] <- hourly_data_file # nolint
@@ -382,9 +458,8 @@ for (i in seq_len(as.integer(locations_count))) {
     columns <- colnames(hourly_data)
     second_column <- columns[2]
 
-    # check if the second column name is the same as the station name
     if (second_column != location$Istasyon_original) {
-      log_error(paste0(location$Istasyon_modified, " | ", "Hourly data file station name mismatch: ", hourly_data_file)) # nolint
+      log_to_db("ERROR", location$Istasyon_modified, paste0("Hourly data file station name mismatch: ", hourly_data_file)) # nolint
     } else {
       report[report$station == location$Istasyon_modified, "hourly_data_file_station_name_match"] <- 1 # nolint
 
@@ -408,54 +483,47 @@ for (i in seq_len(as.integer(locations_count))) {
 
       # log if there are duplicate data
       if (nrow(hourly_detail_for_location_duplicates) > 0) {
-        log_warn(paste0(location$Istasyon_modified, " | ", "Daily data file contains duplicate data.")) # nolint
+        log_to_db("WARN", location$Istasyon_modified, "Daily data file contains duplicate data.") # nolint
       }
 
       # check if the number of rows in the hourly data file is the same as the hourly detail table # nolint
       if (nrow(hourly_data) != hourly_detail_for_location_count && (nrow(hourly_data) != total_hourly_data_count)) { # nolint
-        log_error(paste0(location$Istasyon_modified, " | ", "Hourly data file row count mismatch.")) # nolint
+        log_to_db("ERROR", location$Istasyon_modified, "Hourly data file row count mismatch.") # nolint
       } else {
         report[report$station == location$Istasyon_modified, "hourly_data_file_row_count_match"] <- 1 # nolint
       }
 
-      # Add data quality checks for hourly data
       hourly_detail_for_location_count <- hourly_detail_for_location %>% tally() %>% pull(n)
       
       if (hourly_detail_for_location_count == 0) {
-        log_warn(sprintf("%s | No hourly data found in database", location$Istasyon_modified))
+        log_to_db("WARN", location$Istasyon_modified, sprintf("No hourly data found in database"))
       } else {
         hourly_quality_check <- tidy_air_quality_data(hourly_detail_for_location, "hourly_detail", TRUE, con)
         
-        # Update report with quality metrics
         report[report$station == location$Istasyon_modified, "hourly_negative_values"] <- hourly_quality_check$negative_values
         report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] <- hourly_quality_check$invalid_pm
         report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- hourly_quality_check$invalid_nox
         report[report$station == location$Istasyon_modified, "hourly_wrong_time"] <- hourly_quality_check$wrong_time
         
-        # Log quality issues with location info
-        log_info(sprintf("%s | Processing %.0f hourly records", location$Istasyon_modified, hourly_detail_for_location_count))
+        log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f hourly records", hourly_detail_for_location_count))
         
         if (hourly_quality_check$negative_values > 0) {
-          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with negative values will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with negative values will be nullified", 
                           hourly_quality_check$negative_values,
                           100 * hourly_quality_check$negative_values / hourly_detail_for_location_count))
         }
         if (hourly_quality_check$invalid_pm > 0) {
-          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
                           hourly_quality_check$invalid_pm,
                           100 * hourly_quality_check$invalid_pm / hourly_detail_for_location_count))
         }
         if (hourly_quality_check$invalid_nox > 0) {
-          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
                           hourly_quality_check$invalid_nox,
                           100 * hourly_quality_check$invalid_nox / hourly_detail_for_location_count))
         }
         if (hourly_quality_check$wrong_time > 0) {
-          log_warn(sprintf("%s | Hourly data: %.0f records (%.2f%%) with incorrect time format will be removed", 
-                          location$Istasyon_modified, 
+          log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with incorrect time format will be removed", 
                           hourly_quality_check$wrong_time,
                           100 * hourly_quality_check$wrong_time / hourly_detail_for_location_count))
         }
@@ -476,7 +544,7 @@ for (i in seq_len(as.integer(locations_count))) {
 
         # check if the number of not NA data for the parameter matches summary
         if (hourly_data_for_parameter != parameter_data_count) {
-          log_warn(paste0(location$Istasyon_modified, " | ", "Hourly data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', hourly_data_for_parameter)) # nolint
+          log_to_db("WARN", location$Istasyon_modified, paste0("Hourly data file parameter data count mismatch: ", parameter, ' | ', parameter_data_count, '/', hourly_data_for_parameter)) # nolint
         } else {
           report[report$station == location$Istasyon_modified, paste0("hourly_data_file_", parameter, "_data_count_match")] <- 1 # nolint
         }
@@ -492,7 +560,7 @@ write_xlsx(report, report_file)
 dbDisconnect(con)
 
 # log the completion
-log_info("Data checks completed successfully")
+log_to_db("INFO", "system", "Data checks completed successfully")
 
 # message the completion
 message("Data checks completed successfully")

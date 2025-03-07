@@ -143,22 +143,118 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
     
     invalid_nox <- as.numeric(dbGetQuery(con, invalid_nox_sql)$n)
     
-    # Create log table if it doesn't exist
-    dbExecute(con, "
-      CREATE TABLE IF NOT EXISTS data_quality_log (
-        id SERIAL PRIMARY KEY,
-        table_name TEXT,
-        location_id TEXT,
-        operation_type TEXT,
-        field_name TEXT,
-        affected_rows INTEGER,
-        reason TEXT,
-        old_value TEXT,
-        new_value TEXT,
-        operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )")
+    # Get counts before creating logs
+    negative_values <- negative_count_sql
+    
+    # Create enhanced log tables - moved before any logging attempts
+    tryCatch({
+      dbExecute(con, "
+        CREATE TABLE IF NOT EXISTS data_cleaning_log (
+          id SERIAL PRIMARY KEY,
+          session_id TEXT,
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          script_name TEXT,
+          log_level TEXT,
+          category TEXT,
+          location_id TEXT,
+          station_name TEXT,
+          message TEXT,
+          details JSONB,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )")
+      
+      dbExecute(con, "
+        CREATE TABLE IF NOT EXISTS data_quality_log (
+          id SERIAL PRIMARY KEY,
+          table_name TEXT,
+          location_id TEXT,
+          operation_type TEXT,
+          field_name TEXT,
+          affected_rows INTEGER,
+          reason TEXT,
+          old_value TEXT,
+          new_value TEXT,
+          operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )")
+      
+    }, error = function(e) {
+      warning("Failed to create log tables: ", e$message)
+      return(NULL)
+    })
 
-    # Function to log data quality operations
+    # Generate unique session ID for this cleaning run
+    session_id <- paste0("CLEAN_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", random_string("", 6))
+
+    # Enhanced logging function
+    log_to_db <- function(message, level, category, location_id = NULL, station_name = NULL, details = NULL) {
+      if (is.null(message)) {
+        message <- "No message provided"
+      }
+      
+      # Handle NULL values for location_id and station_name
+      location_id_sql <- if (is.null(location_id)) "NULL" else dbQuoteString(con, as.character(location_id))
+      station_name_sql <- if (is.null(station_name)) "NULL" else dbQuoteString(con, as.character(station_name))
+      
+      # Convert details to JSON with error handling
+      details_json <- tryCatch({
+        if (is.null(details)) {
+          "null"
+        } else if (is.list(details)) {
+          jsonlite::toJSON(details, auto_unbox = TRUE)
+        } else {
+          jsonlite::toJSON(list(value = details), auto_unbox = TRUE)
+        }
+      }, error = function(e) {
+        warning("Failed to convert details to JSON: ", e$message)
+        "null"
+      })
+
+      # Database logging
+      tryCatch({
+        sql <- sprintf("
+          INSERT INTO data_cleaning_log 
+            (session_id, script_name, log_level, category, location_id, station_name, message, details)
+          VALUES 
+            (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
+          dbQuoteString(con, session_id),
+          dbQuoteString(con, "tidy_air_quality_data"),
+          dbQuoteString(con, level),
+          dbQuoteString(con, category),
+          location_id_sql,
+          station_name_sql,
+          dbQuoteString(con, message),
+          dbQuoteString(con, details_json)
+        )
+        dbExecute(con, sql)
+      }, error = function(e) {
+        warning("Failed to write to database log: ", e$message)
+      })
+
+      # Console output
+      timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+      cat(sprintf("[%s] %s | %s | %s\n", 
+                timestamp, 
+                level, 
+                ifelse(is.null(station_name), category, station_name),
+                message))
+    }
+
+    # Quality check logging with correct argument order and variable scoping
+    if (negative_values > 0) {
+      log_to_db(
+        sprintf("Found %d records with negative values", negative_values),
+        "WARN",
+        "QUALITY_CHECK",
+        location_id = tbl_db %>% pull(location_id) %>% unique() %>% as.character(),
+        station_name = tbl_db %>% pull(Istasyon_modified) %>% unique() %>% as.character(),
+        details = list(
+          check_type = "negative_values",
+          affected_count = negative_values,
+          table_name = table_name
+        )
+      )
+    }
+
     log_quality_operation <- function(operation_type, field_name, affected_rows, reason, old_value = NULL, new_value = NULL) {
       dbExecute(con, sprintf("
         INSERT INTO data_quality_log (table_name, location_id, operation_type, field_name, affected_rows, reason, old_value, new_value)
@@ -172,16 +268,28 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
         ifelse(is.null(old_value), "NULL", dbQuoteString(con, old_value)),
         ifelse(is.null(new_value), "NULL", dbQuoteString(con, new_value))
       ))
+      
+      # Use log_to_db instead of log_operation
+      log_to_db(
+        sprintf("Quality check: %s %s records affected", operation_type, affected_rows),
+        "INFO",
+        "QUALITY_CHECK",
+        tbl_db %>% pull(location_id) %>% unique() %>% as.character(),
+        NULL,
+        list(
+          field = field_name,
+          reason = reason,
+          affected_rows = affected_rows
+        )
+      )
     }
 
-    # Handle negative values with logging
     for (field in c("PM10", "PM25", "SO2", "NO2", "O3", "CO", "NO", "NOX")) {
       affected_rows <- as.numeric(dbGetQuery(con, sprintf("
         SELECT COUNT(*) as count FROM %s WHERE \"%s\" < 0 AND \"%s\" IS NOT NULL",
         temp_table, field, field))$count)
       
       if (affected_rows > 0) {
-        # Log the operation before executing
         log_quality_operation(
           "nullify", 
           field, 
@@ -191,14 +299,12 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
           "NULL"
         )
         
-        # Update the values
         dbExecute(con, sprintf("
           UPDATE %s SET \"%s\" = NULL WHERE \"%s\" < 0",
           temp_table, field, field))
       }
     }
 
-    # Handle PM2.5 > PM10 with logging
     affected_rows <- invalid_pm
     if (affected_rows > 0) {
       log_quality_operation(
@@ -217,7 +323,6 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
         temp_table))
     }
 
-    # Handle NOx relationships with logging
     affected_rows <- invalid_nox
     if (affected_rows > 0) {
       log_quality_operation(
@@ -237,7 +342,6 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
         temp_table))
     }
 
-    # Handle hourly time format with nullification instead of deletion
     wrong_time <- 0
     if (check_hourly) {
       wrong_time_sql <- sprintf("
@@ -259,7 +363,6 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
           "NULL"
         )
         
-        # Nullify values for incorrect time format instead of deleting
         dbExecute(con, sprintf("
           UPDATE %s 
           SET \"PM10\" = NULL, \"PM25\" = NULL, \"SO2\" = NULL, \"NO2\" = NULL, 
@@ -270,11 +373,9 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
       }
     }
 
-    # Get final cleaned data
     cleaned_data <- tbl(con, sprintf("%s", temp_table))
     cleaned_count <- as.numeric(dbGetQuery(con, sprintf("SELECT COUNT(*) as n FROM %s", temp_table))$n)
     
-    # Clean up temporary tables
     on.exit({
       dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", temp_table))
     })
