@@ -54,6 +54,8 @@ create_daily_time_series_graph <- function(data, file_path, parameters, is_panel
 
   # Save the plot as a PNG file
   ggsave(file_path, plot = p, width = 16, height = 6, dpi = 300)
+
+  p
 }
 
 
