@@ -89,7 +89,6 @@ dbExecute(con, "CREATE TABLE IF NOT EXISTS data_quality_log (
   new_value TEXT,
   operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )")
-source("/home/byte/Desktop/Work/temizhavaR/R/tidy_air_quality_data.R")
 
 log_operation <- function(level, location, message, details = NULL) {
   if (level == "ERROR") {
