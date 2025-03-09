@@ -1,3 +1,13 @@
+#' Tidy air quality data
+#' 
+#' @param tbl_db A database table to clean.
+#' @param table_name The name of the table to clean.
+#' @param check_hourly Whether to check for hourly data.
+#' @param con A database connection.
+#' @param update_original Whether to update the original table.
+#' @export
+#' @examples
+#' tidy_air_quality_data(tbl_db, "table_name")
 tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con = NULL, update_original = TRUE) {
   if (is.null(con)) {
     con <- get("con", envir = parent.frame())
