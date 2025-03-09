@@ -1,245 +1,61 @@
-#' Clean air quality data by applying various quality checks
-#' 
-#' @param tbl_db Database table reference
-#' @param table_name Name of the table
-#' @param check_hourly Whether to check hourly data format
-#' @param con Database connection
-#' @param update_original Whether to update the original table with cleaned data
-#' @return List containing cleaning results and statistics
-#' @export
 tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con = NULL, update_original = TRUE) {
   if (is.null(con)) {
     con <- get("con", envir = parent.frame())
   }
-
   tryCatch({
-    # Check if there's any data for this query first
-    data_exists <- as.numeric(tbl_db %>% 
-      summarise(n = sql('COUNT(1)')) %>% 
-      collect() %>% 
-      pull(n))
-    
+    data_exists <- as.numeric(tbl_db %>% summarise(n = sql('COUNT(1)')) %>% collect() %>% pull(n))
     if (data_exists == 0) {
-      # Return early with zeros
-      return(list(
-        data = NULL,
-        original_count = 0,
-        cleaned_count = 0,
-        exact_duplicates = 0,
-        time_duplicates = 0,
-        negative_values = 0,
-        invalid_pm = 0,
-        invalid_nox = 0,
-        wrong_time = 0
-      ))
+      return(list(data = NULL, original_count = 0, cleaned_count = 0, exact_duplicates = 0, time_duplicates = 0, negative_values = 0, invalid_pm = 0, invalid_nox = 0, wrong_time = 0))
     }
-
     temp_table <- unique(random_string("temp_", 10))
-    
     query <- dbplyr::sql_render(tbl_db)
-    
-    create_temp_sql <- sprintf('CREATE TEMPORARY TABLE %s AS (%s)',
-                             dbQuoteIdentifier(con, temp_table),
-                             query)
-    
+    create_temp_sql <- sprintf('CREATE TEMPORARY TABLE %s AS (%s)', dbQuoteIdentifier(con, temp_table), query)
     tryCatch({
       dbExecute(con, create_temp_sql)
-      # Add needs_cleaning column after table creation
-      dbExecute(con, sprintf('ALTER TABLE %s ADD COLUMN needs_cleaning BOOLEAN',
-                           dbQuoteIdentifier(con, temp_table)))
-    }, error = function(e) {
-      stop(paste("Failed to create temporary table:", e$message))
-    })
-
+      dbExecute(con, sprintf('ALTER TABLE %s ADD COLUMN needs_cleaning BOOLEAN', dbQuoteIdentifier(con, temp_table)))
+    }, error = function(e) { stop(paste("Failed to create temporary table:", e$message)) })
     original_count <- tryCatch({
       as.numeric(dbGetQuery(con, sprintf('SELECT COUNT(1) as n FROM %s', dbQuoteIdentifier(con, temp_table)))$n)
     }, error = function(e) {
       dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", dbQuoteIdentifier(con, temp_table)))
       stop(paste("Failed to query temporary table:", e$message))
     })
-
     if (original_count == 0) {
       dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", temp_table))
-      return(list(
-        data = NULL,
-        original_count = 0,
-        cleaned_count = 0,
-        exact_duplicates = 0,
-        time_duplicates = 0,
-        negative_values = 0,
-        invalid_pm = 0,
-        invalid_nox = 0,
-        wrong_time = 0
-      ))
+      return(list(data = NULL, original_count = 0, cleaned_count = 0, exact_duplicates = 0, time_duplicates = 0, negative_values = 0, invalid_pm = 0, invalid_nox = 0, wrong_time = 0))
     }
-
-    # Move needs_cleaning function and check to the beginning, right after temp table creation
     needs_cleaning <- function(temp_table) {
-      # Check all quality issues before any cleaning is done
-      checks <- dbGetQuery(con, sprintf("
-        SELECT 
-          (SELECT COUNT(*) FROM %1$s 
-           WHERE \"PM25\" > \"PM10\" AND \"PM25\" IS NOT NULL AND \"PM10\" IS NOT NULL) > 0 
-          OR (SELECT COUNT(*) FROM %1$s 
-              WHERE (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5 
-              AND \"NO\" IS NOT NULL AND \"NO2\" IS NOT NULL AND \"NOX\" IS NOT NULL) > 0
-          OR (SELECT COUNT(*) FROM %1$s 
-              WHERE (\"PM10\" < 0 AND \"PM10\" IS NOT NULL)
-                 OR (\"PM25\" < 0 AND \"PM25\" IS NOT NULL)
-                 OR (\"SO2\" < 0 AND \"SO2\" IS NOT NULL)
-                 OR (\"NO2\" < 0 AND \"NO2\" IS NOT NULL)
-                 OR (\"O3\" < 0 AND \"O3\" IS NOT NULL)
-                 OR (\"CO\" < 0 AND \"CO\" IS NOT NULL)
-                 OR (\"NO\" < 0 AND \"NO\" IS NOT NULL)
-                 OR (\"NOX\" < 0 AND \"NOX\" IS NOT NULL)) > 0 as needs_cleaning", 
-        temp_table))
-      
+      checks <- dbGetQuery(con, sprintf("SELECT (SELECT COUNT(*) FROM %1$s WHERE \"PM25\" > \"PM10\" AND \"PM25\" IS NOT NULL AND \"PM10\" IS NOT NULL) > 0 OR (SELECT COUNT(*) FROM %1$s WHERE (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5 AND \"NO\" IS NOT NULL AND \"NO2\" IS NOT NULL AND \"NOX\" IS NOT NULL) > 0 OR (SELECT COUNT(*) FROM %1$s WHERE (\"PM10\" < 0 AND \"PM10\" IS NOT NULL) OR (\"PM25\" < 0 AND \"PM25\" IS NOT NULL) OR (\"SO2\" < 0 AND \"SO2\" IS NOT NULL) OR (\"NO2\" < 0 AND \"NO2\" IS NOT NULL) OR (\"O3\" < 0 AND \"O3\" IS NOT NULL) OR (\"CO\" < 0 AND \"CO\" IS NOT NULL) OR (\"NO\" < 0 AND \"NO\" IS NOT NULL) OR (\"NOX\" < 0 AND \"NOX\" IS NOT NULL)) > 0 as needs_cleaning", temp_table))
       return(as.logical(checks$needs_cleaning))
     }
-
-    # Check if cleaning is needed before any operations
     should_clean <- needs_cleaning(temp_table)
-    
     if (!should_clean) {
-      log_to_db(
-        "No data quality issues detected before cleaning modifications; proceeding for consistency.",
-        "INFO",
-        "DATA_CHECK",
-        tbl_db %>% pull(location_id) %>% unique() %>% as.character(),
-        NULL,
-        NULL
-      )
+      log_to_db("No data quality issues detected before cleaning modifications; proceeding for consistency.", "INFO", "DATA_CHECK", tbl_db %>% pull(location_id) %>% unique() %>% as.character(), NULL, NULL)
     }
-
-    # Only continue with these operations if cleaning is needed
-    exact_dupes_sql <- sprintf("
-      SELECT COUNT(*) as n FROM (
-        SELECT COUNT(*) as cnt
-        FROM %s
-        GROUP BY \"Id\", \"location_id\", \"Tarih\", \"PM10\", \"PM25\", \"SO2\", \"CO\", \"NO2\", \"NOX\", \"NO\", \"O3\"
-        HAVING COUNT(*) > 1
-      ) t", temp_table)
-    
+    exact_dupes_sql <- sprintf("SELECT COUNT(*) as n FROM ( SELECT COUNT(*) as cnt FROM %s GROUP BY \"Id\", \"location_id\", \"Tarih\", \"PM10\", \"PM25\", \"SO2\", \"CO\", \"NO2\", \"NOX\", \"NO\", \"O3\" HAVING COUNT(*) > 1 ) t", temp_table)
     exact_duplicates <- as.numeric(dbGetQuery(con, exact_dupes_sql)$n)
-    
-    time_dupes_sql <- sprintf("
-      WITH LocationTimeDupes AS (
-        SELECT \"Tarih\", \"location_id\", COUNT(*) as cnt
-        FROM %s
-        GROUP BY \"Tarih\", \"location_id\"
-        HAVING COUNT(*) > 1
-      )
-      SELECT COUNT(*) as n FROM LocationTimeDupes", temp_table)
-    
+    time_dupes_sql <- sprintf("WITH LocationTimeDupes AS ( SELECT \"Tarih\", \"location_id\", COUNT(*) as cnt FROM %s GROUP BY \"Tarih\", \"location_id\" HAVING COUNT(*) > 1 ) SELECT COUNT(*) as n FROM LocationTimeDupes", temp_table)
     time_duplicates <- as.numeric(dbGetQuery(con, time_dupes_sql)$n)
-    
-    dbExecute(con, sprintf("
-      DELETE FROM %s
-      WHERE ctid NOT IN (
-        SELECT MIN(ctid)
-        FROM %s
-        GROUP BY \"Tarih\", \"location_id\"
-      )", temp_table, temp_table))
-    
-    negative_sql <- sprintf("
-      SELECT COUNT(*) as n
-      FROM %s
-      WHERE (\"PM10\" < 0 AND \"PM10\" IS NOT NULL)
-         OR (\"PM25\" < 0 AND \"PM25\" IS NOT NULL)
-         OR (\"SO2\" < 0 AND \"SO2\" IS NOT NULL)
-         OR (\"NO2\" < 0 AND \"NO2\" IS NOT NULL)
-         OR (\"O3\" < 0 AND \"O3\" IS NOT NULL)
-         OR (\"CO\" < 0 AND \"CO\" IS NOT NULL)
-         OR (\"NO\" < 0 AND \"NO\" IS NOT NULL)
-         OR (\"NOX\" < 0 AND \"NOX\" IS NOT NULL)", temp_table)
-    
+    dbExecute(con, sprintf("DELETE FROM %s WHERE ctid NOT IN ( SELECT MIN(ctid) FROM %s GROUP BY \"Tarih\", \"location_id\" )", temp_table, temp_table))
+    negative_sql <- sprintf("SELECT COUNT(*) as n FROM %s WHERE (\"PM10\" < 0 AND \"PM10\" IS NOT NULL) OR (\"PM25\" < 0 AND \"PM25\" IS NOT NULL) OR (\"SO2\" < 0 AND \"SO2\" IS NOT NULL) OR (\"NO2\" < 0 AND \"NO2\" IS NOT NULL) OR (\"O3\" < 0 AND \"O3\" IS NOT NULL) OR (\"CO\" < 0 AND \"CO\" IS NOT NULL) OR (\"NO\" < 0 AND \"NO\" IS NOT NULL) OR (\"NOX\" < 0 AND \"NOX\" IS NOT NULL)", temp_table)
     negative_count_sql <- as.numeric(dbGetQuery(con, negative_sql)$n)
-    
-    invalid_pm_sql <- sprintf("
-      SELECT COUNT(*) as n
-      FROM %s
-      WHERE \"PM25\" > \"PM10\" 
-        AND \"PM25\" IS NOT NULL 
-        AND \"PM10\" IS NOT NULL", temp_table)
-    
+    invalid_pm_sql <- sprintf("SELECT COUNT(*) as n FROM %s WHERE \"PM25\" > \"PM10\" AND \"PM25\" IS NOT NULL AND \"PM10\" IS NOT NULL", temp_table)
     invalid_pm <- as.numeric(dbGetQuery(con, invalid_pm_sql)$n)
-    
-    invalid_nox_sql <- sprintf("
-      SELECT COUNT(*) as n
-      FROM %s
-      WHERE \"NO\" IS NOT NULL 
-        AND \"NO2\" IS NOT NULL 
-        AND \"NOX\" IS NOT NULL
-        AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", temp_table)
-    
+    invalid_nox_sql <- sprintf("SELECT COUNT(*) as n FROM %s WHERE \"NO\" IS NOT NULL AND \"NO2\" IS NOT NULL AND \"NOX\" IS NOT NULL AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", temp_table)
     invalid_nox <- as.numeric(dbGetQuery(con, invalid_nox_sql)$n)
-    
     negative_values <- negative_count_sql
-    
     tryCatch({
-      dbExecute(con, "
-        CREATE TABLE IF NOT EXISTS data_cleaning_log (
-          id SERIAL PRIMARY KEY,
-          session_id TEXT,
-          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          script_name TEXT,
-          log_level TEXT,
-          category TEXT,
-          location_id TEXT,
-          station_name TEXT,
-          message TEXT,
-          details JSONB,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )")
-      
-      dbExecute(con, "
-        CREATE TABLE IF NOT EXISTS data_quality_log (
-          id SERIAL PRIMARY KEY,
-          table_name TEXT,
-          location_id TEXT,
-          operation_type TEXT,
-          field_name TEXT,
-          affected_rows INTEGER,
-          reason TEXT,
-          old_value TEXT,
-          new_value TEXT,
-          operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )")
-      
-    }, error = function(e) {
-      warning("Failed to create log tables: ", e$message)
-      return(NULL)
-    })
-
+      dbExecute(con, "CREATE TABLE IF NOT EXISTS data_cleaning_log ( id SERIAL PRIMARY KEY, session_id TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, script_name TEXT, log_level TEXT, category TEXT, location_id TEXT, station_name TEXT, message TEXT, details JSONB, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP )")
+      dbExecute(con, "CREATE TABLE IF NOT EXISTS data_quality_log ( id SERIAL PRIMARY KEY, table_name TEXT, location_id TEXT, operation_type TEXT, field_name TEXT, affected_rows INTEGER, reason TEXT, old_value TEXT, new_value TEXT, operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP )")
+    }, error = function(e) { warning("Failed to create log tables: ", e$message); return(NULL) })
     session_id <- paste0("CLEAN_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", random_string("", 6))
-
     log_to_db <- function(message, level, category, location_id = NULL, station_name = NULL, details = NULL) {
-      if (is.null(message)) {
-        message <- "No message provided"
-      }
-      
+      if (is.null(message)) { message <- "No message provided" }
       location_id_sql <- if (is.null(location_id)) "NULL" else dbQuoteString(con, as.character(location_id))
       station_name_sql <- if (is.null(station_name)) "NULL" else dbQuoteString(con, as.character(station_name))
-      
-      details_json <- tryCatch({
-        if (is.null(details)) {
-          "null"
-        } else if (is.list(details)) {
-          jsonlite::toJSON(details, auto_unbox = TRUE)
-        } else {
-          jsonlite::toJSON(list(value = details), auto_unbox = TRUE)
-        }
-      }, error = function(e) {
-        warning("Failed to convert details to JSON: ", e$message)
-        "null"
-      })
-
+      details_json <- tryCatch({ if (is.null(details)) { "null" } else if (is.list(details)) { jsonlite::toJSON(details, auto_unbox = TRUE) } else { jsonlite::toJSON(list(value = details), auto_unbox = TRUE) } }, error = function(e) { warning("Failed to convert details to JSON: ", e$message); "null" })
       tryCatch({
-        sql <- sprintf("
-          INSERT INTO data_cleaning_log 
-            (session_id, script_name, log_level, category, location_id, station_name, message, details)
-          VALUES 
-            (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
+        sql <- sprintf(" INSERT INTO data_cleaning_log (session_id, script_name, log_level, category, location_id, station_name, message, details) VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
           dbQuoteString(con, session_id),
           dbQuoteString(con, "tidy_air_quality_data"),
           dbQuoteString(con, level),
@@ -250,37 +66,15 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
           dbQuoteString(con, details_json)
         )
         dbExecute(con, sql)
-      }, error = function(e) {
-        warning("Failed to write to database log: ", e$message)
-      })
-
+      }, error = function(e) { warning("Failed to write to database log: ", e$message) })
       timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
-      cat(sprintf("[%s] %s | %s | %s\n", 
-                timestamp, 
-                level, 
-                ifelse(is.null(station_name), category, station_name),
-                message))
+      cat(sprintf("[%s] %s | %s | %s\n", timestamp, level, ifelse(is.null(station_name), category, station_name), message))
     }
-
     if (negative_values > 0) {
-      log_to_db(
-        sprintf("Found %d records with negative values", negative_values),
-        "WARN",
-        "QUALITY_CHECK",
-        location_id = tbl_db %>% pull(location_id) %>% unique() %>% as.character(),
-        station_name = tbl_db %>% pull(Istasyon_modified) %>% unique() %>% as.character(),
-        details = list(
-          check_type = "negative_values",
-          affected_count = negative_values,
-          table_name = table_name
-        )
-      )
+      log_to_db(sprintf("Found %d records with negative values", negative_values), "WARN", "QUALITY_CHECK", tbl_db %>% pull(location_id) %>% unique() %>% as.character(), tbl_db %>% pull(Istasyon_modified) %>% unique() %>% as.character(), list(check_type = "negative_values", affected_count = negative_values, table_name = table_name))
     }
-
     log_quality_operation <- function(operation_type, field_name, affected_rows, reason, old_value = NULL, new_value = NULL) {
-      dbExecute(con, sprintf("
-        INSERT INTO data_quality_log (table_name, location_id, operation_type, field_name, affected_rows, reason, old_value, new_value)
-        VALUES (%s, %s, %s, %s, %d, %s, %s, %s)",
+      dbExecute(con, sprintf(" INSERT INTO data_quality_log (table_name, location_id, operation_type, field_name, affected_rows, reason, old_value, new_value) VALUES (%s, %s, %s, %s, %d, %s, %s, %s)",
         dbQuoteString(con, table_name),
         dbQuoteString(con, tbl_db %>% pull(location_id) %>% unique() %>% as.character()),
         dbQuoteString(con, operation_type),
@@ -290,351 +84,94 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
         ifelse(is.null(old_value), "NULL", dbQuoteString(con, old_value)),
         ifelse(is.null(new_value), "NULL", dbQuoteString(con, new_value))
       ))
-      
-      log_to_db(
-        sprintf("Quality check: %s %s records affected", operation_type, affected_rows),
-        "INFO",
-        "QUALITY_CHECK",
-        tbl_db %>% pull(location_id) %>% unique() %>% as.character(),
-        NULL,
-        list(
-          field = field_name,
-          reason = reason,
-          affected_rows = affected_rows
-        )
-      )
+      log_to_db(sprintf("Quality check: %s %s records affected", operation_type, affected_rows), "INFO", "QUALITY_CHECK", tbl_db %>% pull(location_id) %>% unique() %>% as.character(), NULL, list(field = field_name, reason = reason, affected_rows = affected_rows))
     }
-
-    for (field in c("PM10", "PM25", "SO2", "NO2", "O3", "CO", "NO", "NOX")) {
-      affected_rows <- as.numeric(dbGetQuery(con, sprintf("
-        SELECT COUNT(*) as count FROM %s WHERE \"%s\" < 0 AND \"%s\" IS NOT NULL",
-        temp_table, field, field))$count)
-      
+    for (field in c("PM10","PM25","SO2","NO2","O3","CO","NO","NOX")) {
+      affected_rows <- as.numeric(dbGetQuery(con, sprintf(" SELECT COUNT(*) as count FROM %s WHERE \"%s\" < 0 AND \"%s\" IS NOT NULL", temp_table, field, field))$count)
       if (affected_rows > 0) {
-        log_quality_operation(
-          "nullify", 
-          field, 
-          affected_rows,
-          "negative_values",
-          "< 0",
-          "NULL"
-        )
-        
-        dbExecute(con, sprintf("
-          UPDATE %s SET \"%s\" = NULL WHERE \"%s\" < 0",
-          temp_table, field, field))
+        log_quality_operation("nullify", field, affected_rows, "negative_values", "< 0", "NULL")
+        dbExecute(con, sprintf(" UPDATE %s SET \"%s\" = NULL WHERE \"%s\" < 0", temp_table, field, field))
       }
     }
-
     affected_rows <- invalid_pm
     if (affected_rows > 0) {
-      log_quality_operation(
-        "nullify",
-        "PM10,PM25",
-        affected_rows,
-        "invalid_pm_relationship",
-        "PM2.5 > PM10",
-        "NULL"
-      )
-      
-      dbExecute(con, sprintf("
-        UPDATE %s 
-        SET \"PM10\" = NULL, \"PM25\" = NULL 
-        WHERE \"PM25\" > \"PM10\" AND \"PM25\" IS NOT NULL AND \"PM10\" IS NOT NULL",
-        temp_table))
+      log_quality_operation("nullify", "PM10,PM25", affected_rows, "invalid_pm_relationship", "PM2.5 > PM10", "NULL")
+      dbExecute(con, sprintf(" UPDATE %s SET \"PM10\" = NULL, \"PM25\" = NULL WHERE \"PM25\" > \"PM10\" AND \"PM25\" IS NOT NULL AND \"PM10\" IS NOT NULL", temp_table))
     }
-
     affected_rows <- invalid_nox
     if (affected_rows > 0) {
-      log_quality_operation(
-        "nullify",
-        "NO,NO2,NOX",
-        affected_rows,
-        "invalid_nox_relationship",
-        "NO+NO2 outside NOx bounds",
-        "NULL"
-      )
-      
-      dbExecute(con, sprintf("
-        UPDATE %s 
-        SET \"NO\" = NULL, \"NO2\" = NULL, \"NOX\" = NULL
-        WHERE \"NO\" IS NOT NULL AND \"NO2\" IS NOT NULL AND \"NOX\" IS NOT NULL
-        AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5",
-        temp_table))
+      log_quality_operation("nullify", "NO,NO2,NOX", affected_rows, "invalid_nox_relationship", "NO+NO2 outside NOx bounds", "NULL")
+      dbExecute(con, sprintf(" UPDATE %s SET \"NO\" = NULL, \"NO2\" = NULL, \"NOX\" = NULL WHERE \"NO\" IS NOT NULL AND \"NO2\" IS NOT NULL AND \"NOX\" IS NOT NULL AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", temp_table))
     }
-
     wrong_time <- 0
     if (check_hourly) {
-      wrong_time_sql <- sprintf("
-        SELECT COUNT(*) as n
-        FROM %s
-        WHERE EXTRACT(MINUTE FROM \"Tarih\") != 0 
-           OR EXTRACT(SECOND FROM \"Tarih\") != 56", temp_table)
-      
+      wrong_time_sql <- sprintf(" SELECT COUNT(*) as n FROM %s WHERE EXTRACT(MINUTE FROM \"Tarih\") != 0 OR EXTRACT(SECOND FROM \"Tarih\") != 56", temp_table)
       wrong_time <- as.numeric(dbGetQuery(con, wrong_time_sql)$n)
-      
       affected_rows <- wrong_time
       if (affected_rows > 0) {
-        log_quality_operation(
-          "nullify",
-          "all",
-          affected_rows,
-          "invalid_time_format",
-          "incorrect minutes/seconds",
-          "NULL"
-        )
-        
-        dbExecute(con, sprintf("
-          UPDATE %s 
-          SET \"PM10\" = NULL, \"PM25\" = NULL, \"SO2\" = NULL, \"NO2\" = NULL, 
-              \"O3\" = NULL, \"CO\" = NULL, \"NO\" = NULL, \"NOX\" = NULL
-          WHERE EXTRACT(MINUTE FROM \"Tarih\") != 0 
-             OR EXTRACT(SECOND FROM \"Tarih\") != 56",
-          temp_table))
+        log_quality_operation("nullify", "all", affected_rows, "invalid_time_format", "incorrect minutes/seconds", "NULL")
+        dbExecute(con, sprintf(" UPDATE %s SET \"PM10\" = NULL, \"PM25\" = NULL, \"SO2\" = NULL, \"NO2\" = NULL, \"O3\" = NULL, \"CO\" = NULL, \"NO\" = NULL, \"NOX\" = NULL WHERE EXTRACT(MINUTE FROM \"Tarih\") != 0 OR EXTRACT(SECOND FROM \"Tarih\") != 0", temp_table))
       }
     }
-
-    # Compute cleaned_count before any column drop operations
     cleaned_count <- as.numeric(dbGetQuery(con, sprintf("SELECT COUNT(*) as n FROM %s", temp_table))$n)
-
     if (update_original) {
-      location_id <- tbl_db %>% 
-        select(location_id) %>% 
-        distinct() %>% 
-        collect() %>% 
-        pull(location_id)
-      
+      location_id <- tbl_db %>% select(location_id) %>% distinct() %>% collect() %>% pull(location_id)
       issues_found <- negative_values + invalid_pm + invalid_nox + wrong_time
-      
-      # Check if any existing backup exists for this location and table
-      existing_backups <- dbGetQuery(con, sprintf("
-        SELECT table_name, created_at 
-        FROM (
-          SELECT table_name,
-                 (regexp_matches(table_name, '%s_backup_(\\d{8}_\\d{6})'))::text[] AS backup_date,
-                 to_timestamp(regexp_replace(table_name, '.*_backup_(\\d{8}_\\d{6}).*', '\\1'), 'YYYYMMDD_HH24MISS') as created_at
-          FROM information_schema.tables 
-          WHERE table_name LIKE '%s_backup_%%'
-          AND table_schema = 'public'
-        ) AS backups
-        WHERE table_name LIKE '%s_backup_%%'
-        ORDER BY created_at DESC", 
-        table_name, table_name, table_name
-      ))
-      
+      existing_backups <- dbGetQuery(con, sprintf(" SELECT table_name, created_at FROM ( SELECT table_name, (regexp_matches(table_name, '%s_backup_(\\d{8}_\\d{6})'))::text[] AS backup_date, to_timestamp(regexp_replace(table_name, '.*_backup_(\\d{8}_\\d{6}).*', '\\1'), 'YYYYMMDD_HH24MISS') as created_at FROM information_schema.tables WHERE table_name LIKE '%s_backup_%%' AND table_schema = 'public' ) AS backups WHERE table_name LIKE '%s_backup_%%' ORDER BY created_at DESC", table_name, table_name, table_name))
       has_recent_backup <- FALSE
       backup_table <- NULL
-      
       if (nrow(existing_backups) > 0) {
-        # Check if the most recent backup was made today
         most_recent_backup <- existing_backups$table_name[1]
         backup_date <- existing_backups$created_at[1]
         today <- as.Date(Sys.time())
         backup_day <- as.Date(backup_date)
-        
-        # Only consider backups from today as "recent"
         has_recent_backup <- (today == backup_day)
-        if (has_recent_backup) {
-          backup_table <- most_recent_backup
-        }
+        if (has_recent_backup) { backup_table <- most_recent_backup }
       }
-      
       if (issues_found > 0) {
-        # Create a backup if we don't have a recent one or if it's a new day
         if (!has_recent_backup) {
           backup_table <- paste0(table_name, "_backup_", format(Sys.time(), "%Y%m%d_%H%M%S"))
-          
-          # First, collect all existing backups for this location
-          all_old_backups <- dbGetQuery(con, sprintf("
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_name LIKE '%s_backup_%%'
-            AND table_schema = 'public'
-            ORDER BY table_name", 
-            table_name
-          ))
-          
-          dbExecute(con, sprintf("
-            CREATE TABLE %s AS 
-            SELECT *, %s::boolean as needs_cleaning 
-            FROM %s 
-            WHERE CAST(location_id AS TEXT) = %s", 
-            dbQuoteIdentifier(con, backup_table),
-            dbQuoteString(con, "TRUE"),
-            dbQuoteIdentifier(con, table_name),
-            dbQuoteString(con, as.character(location_id))))
-          
-          # Drop old backup tables after creating the new one
+          all_old_backups <- dbGetQuery(con, sprintf(" SELECT table_name FROM information_schema.tables WHERE table_name LIKE '%s_backup_%%' AND table_schema = 'public' ORDER BY table_name", table_name))
+          dbExecute(con, sprintf(" CREATE TABLE %s AS SELECT *, %s::boolean as needs_cleaning FROM %s WHERE CAST(location_id AS TEXT) = %s", dbQuoteIdentifier(con, backup_table), dbQuoteString(con, "TRUE"), dbQuoteIdentifier(con, table_name), dbQuoteString(con, as.character(location_id))))
           if (nrow(all_old_backups) > 0) {
             for (old_backup in all_old_backups$table_name) {
               tryCatch({
                 dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", dbQuoteIdentifier(con, old_backup)))
-                log_to_db(
-                  sprintf("Removed old backup table %s for location %s", old_backup, location_id),
-                  "INFO",
-                  "DATA_BACKUP",
-                  location_id,
-                  NULL,
-                  list(location_id = location_id, removed_backup = old_backup)
-                )
+                log_to_db(sprintf("Removed old backup table %s for location %s", old_backup, location_id), "INFO", "DATA_BACKUP", location_id, NULL, list(location_id = location_id, removed_backup = old_backup))
               }, error = function(e) {
-                log_to_db(
-                  sprintf("Failed to remove old backup table %s: %s", old_backup, e$message),
-                  "WARN",
-                  "DATA_BACKUP",
-                  location_id,
-                  NULL,
-                  list(location_id = location_id, backup_error = e$message)
-                )
+                log_to_db(sprintf("Failed to remove old backup table %s: %s", old_backup, e$message), "WARN", "DATA_BACKUP", location_id, NULL, list(location_id = location_id, backup_error = e$message))
               })
             }
           }
-          
-          log_to_db(
-            sprintf("Created backup of original data for location %s as %s", location_id, backup_table),
-            "INFO",
-            "DATA_BACKUP",
-            location_id,
-            NULL,
-            list(
-              location_id = location_id,
-              backup_table = backup_table
-            )
-          )
+          log_to_db(sprintf("Created backup of original data for location %s as %s", location_id, backup_table), "INFO", "DATA_BACKUP", location_id, NULL, list(location_id = location_id, backup_table = backup_table))
         } else {
-          log_to_db(
-            sprintf("Using existing backup %s for location %s from today", backup_table, location_id),
-            "INFO",
-            "DATA_BACKUP",
-            location_id,
-            NULL,
-            list(
-              location_id = location_id,
-              backup_table = backup_table
-            )
-          )
+          log_to_db(sprintf("Using existing backup %s for location %s from today", backup_table, location_id), "INFO", "DATA_BACKUP", location_id, NULL, list(location_id = location_id, backup_table = backup_table))
         }
-        
       } else {
-        # When no issues are found, check if data was previously cleaned
-        dbExecute(con, sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS needs_cleaning", 
-                           dbQuoteIdentifier(con, temp_table)))
-        
-        # Query logs to check if this location had data cleaning in the past
-        previous_cleanings <- dbGetQuery(con, sprintf("
-          SELECT 
-            MAX(operation_time) as last_cleaned_at,
-            COUNT(*) as clean_operations,
-            SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END) as pm_fixes,
-            SUM(CASE WHEN field_name = 'NO,NO2,NOX' THEN affected_rows ELSE 0 END) as nox_fixes,
-            SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END) as negative_fixes
-          FROM data_quality_log
-          WHERE location_id = %s 
-          AND table_name = %s
-          AND operation_type = 'nullify'
-          GROUP BY location_id, table_name",
-          dbQuoteString(con, as.character(location_id)),
-          dbQuoteString(con, table_name)
-        ))
-        
+        dbExecute(con, sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS needs_cleaning", dbQuoteIdentifier(con, temp_table)))
+        previous_cleanings <- dbGetQuery(con, sprintf(" SELECT MAX(operation_time) as last_cleaned_at, COUNT(*) as clean_operations, SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END) as pm_fixes, SUM(CASE WHEN field_name = 'NO,NO2,NOX' THEN affected_rows ELSE 0 END) as nox_fixes, SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END) as negative_fixes FROM data_quality_log WHERE location_id = %s AND table_name = %s AND operation_type = 'nullify' GROUP BY location_id, table_name", dbQuoteString(con, as.character(location_id)), dbQuoteString(con, table_name)))
         if (nrow(previous_cleanings) > 0 && previous_cleanings$clean_operations[1] > 0) {
-          # Format the last cleaned date for display
           last_cleaned <- format(previous_cleanings$last_cleaned_at[1], "%Y-%m-%d %H:%M:%S")
-          
-          log_to_db(
-            sprintf("No new issues found for location %s, but previously cleaned data exists. Last cleaned: %s", 
-                   location_id, last_cleaned),
-            "INFO",
-            "DATA_HISTORY",
-            location_id,
-            NULL,
-            list(
-              location_id = location_id,
-              last_cleaned = last_cleaned,
-              pm_fixes = previous_cleanings$pm_fixes[1],
-              nox_fixes = previous_cleanings$nox_fixes[1],
-              negative_fixes = previous_cleanings$negative_fixes[1],
-              total_operations = previous_cleanings$clean_operations[1]
-            )
-          )
-          
+          log_to_db(sprintf("No new issues found for location %s, but previously cleaned data exists. Last cleaned: %s", location_id, last_cleaned), "INFO", "DATA_HISTORY", location_id, NULL, list(location_id = location_id, last_cleaned = last_cleaned, pm_fixes = previous_cleanings$pm_fixes[1], nox_fixes = previous_cleanings$nox_fixes[1], negative_fixes = previous_cleanings$negative_fixes[1], total_operations = previous_cleanings$clean_operations[1]))
           if (previous_cleanings$pm_fixes[1] > 0) {
-            log_to_db(
-              sprintf("Previously fixed %.0f records with PM2.5 > PM10 relationship issues", 
-                     previous_cleanings$pm_fixes[1]),
-              "INFO",
-              "HISTORICAL_FIXES",
-              location_id,
-              NULL,
-              NULL
-            )
+            log_to_db(sprintf("Previously fixed %.0f records with PM2.5 > PM10 relationship issues", previous_cleanings$pm_fixes[1]), "INFO", "HISTORICAL_FIXES", location_id, NULL, NULL)
           }
-          
           if (previous_cleanings$nox_fixes[1] > 0) {
-            log_to_db(
-              sprintf("Previously fixed %.0f records with invalid NOx relationships", 
-                     previous_cleanings$nox_fixes[1]),
-              "INFO",
-              "HISTORICAL_FIXES",
-              location_id,
-              NULL,
-              NULL
-            )
+            log_to_db(sprintf("Previously fixed %.0f records with invalid NOx relationships", previous_cleanings$nox_fixes[1]), "INFO", "HISTORICAL_FIXES", location_id, NULL, NULL)
           }
-          
           if (previous_cleanings$negative_fixes[1] > 0) {
-            log_to_db(
-              sprintf("Previously fixed %.0f records with negative values", 
-                     previous_cleanings$negative_fixes[1]),
-              "INFO",
-              "HISTORICAL_FIXES",
-              location_id,
-              NULL,
-              NULL
-            )
+            log_to_db(sprintf("Previously fixed %.0f records with negative values", previous_cleanings$negative_fixes[1]), "INFO", "HISTORICAL_FIXES", location_id, NULL, NULL)
           }
         } else {
-          log_to_db(
-            sprintf("No data quality issues found for location %s. No previous cleaning records found.", location_id),
-            "INFO",
-            "DATA_CHECK",
-            location_id,
-            NULL,
-            NULL
-          )
+          log_to_db(sprintf("No data quality issues found for location %s. No previous cleaning records found.", location_id), "INFO", "DATA_CHECK", location_id, NULL, NULL)
         }
       }
     }
-
-    # Create the table reference after dropping the column
     cleaned_data <- tbl(con, sprintf("%s", temp_table))
-    
-    on.exit({
-      dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", temp_table))
-    })
-    
-    return(list(
-      data = cleaned_data,
-      original_count = original_count,
-      cleaned_count = cleaned_count,
-      exact_duplicates = exact_duplicates,
-      time_duplicates = time_duplicates,
-      negative_values = negative_values,
-      invalid_pm = invalid_pm,
-      invalid_nox = invalid_nox,
-      wrong_time = wrong_time
-    ))
-    
-  }, error = function(e) {
-    stop(paste("Error in tidy_air_quality_data:", e$message))
-  })
+    on.exit({ dbExecute(con, sprintf("DROP TABLE IF EXISTS %s", temp_table)) })
+    return(list(data = cleaned_data, original_count = original_count, cleaned_count = cleaned_count, exact_duplicates = exact_duplicates, time_duplicates = time_duplicates, negative_values = negative_values, invalid_pm = invalid_pm, invalid_nox = invalid_nox, wrong_time = wrong_time))
+  }, error = function(e) { stop(paste("Error in tidy_air_quality_data:", e$message)) })
 }
-
-#' Generate a random string
-#' @param prefix Prefix for the string
-#' @param n Length of random part
-#' @return Random string
-#' @export
 random_string <- function(prefix = "", n = 10) {
   paste0(prefix, paste0(sample(c(letters, 0:9), n, replace = TRUE), collapse = ""))
 }
