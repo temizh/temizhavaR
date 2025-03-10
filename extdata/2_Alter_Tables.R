@@ -5,8 +5,6 @@ alter_tables <- function() {
   db <- create_postgres_conn()
   
   new_columns <- c(
-    '"Station_original" TEXT',
-    '"Station_Type" TEXT',
     '"Sampling_Point_Id" TEXT',
     '"Longitude" REAL',
     '"Latitude" REAL',
@@ -15,7 +13,6 @@ alter_tables <- function() {
     '"LATTD" REAL',
     '"Air_Quality_Station_Area" TEXT',
     '"PM10ISTASYON" TEXT',
-    '"Tarih" TIMESTAMP WITH TIME ZONE'  
   )
   
   tryCatch({
