@@ -102,7 +102,7 @@ matchStationTypes <- function() {
     } else {
         script_dir <- getwd()
     }
-    station_file <- file.path(script_dir, "station_types.xlsx")
+    station_file <- file.path(script_dir, "extdata/station_types.xlsx")
     if (!file.exists(station_file)) {
         stop("Station types file not found:", station_file)
     }
@@ -169,7 +169,7 @@ matchStationTypes <- function() {
         }
     }
 
-    turkey_csv_file <- file.path(script_dir, "Turkey_Stations.csv")
+    turkey_csv_file <- file.path(script_dir, "extdata/Turkey_Stations.csv")
     if (file.exists(turkey_csv_file) && length(unmatched_stations) > 0) {
         turkey_stations <- read.csv(turkey_csv_file, stringsAsFactors = FALSE)
         for (station_name in unmatched_stations) {
