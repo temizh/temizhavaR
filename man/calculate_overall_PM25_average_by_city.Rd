@@ -5,16 +5,16 @@
 \title{Calculate Overall Average PM2.5 for specified parameter from daily_detail for all stations in a city}
 \usage{
 calculate_overall_PM25_average_by_city(
-  parameter,
   data_type = "daily",
-  threshold = 0,
+  threshold = 75,
+  by_city = FALSE,
   until_year = 2023
 )
 }
 \arguments{
-\item{parameter}{The parameter for which the overall average is calculated.}
-
 \item{city_name}{The name of the city.}
+
+\item{parameter}{The parameter for which the overall average is calculated.}
 }
 \value{
 The overall average value of the parameter for all stations in the city.

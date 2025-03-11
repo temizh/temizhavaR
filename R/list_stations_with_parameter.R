@@ -80,19 +80,13 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
   if (data_type == 'daily') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT DISTINCT d."Istasyon_modified", d."Tarih", d."%s", l."Id" as location_id 
-                     FROM daily_detail d 
-                     LEFT JOIN location l ON d."Istasyon_modified" = l."Istasyon_modifiedlar" 
-                     WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
+    query <- sprintf('SELECT * FROM daily_detail WHERE "%s" IS NOT NULL', parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
     result <- process_data(data, data_type)
   } else if (data_type == 'hourly') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT DISTINCT d."Istasyon_modified", d."Tarih", d."%s", l."Id" as location_id 
-                     FROM hourly_detail d 
-                     LEFT JOIN location l ON d."Istasyon_modified" = l."Istasyon_modifiedlar" 
-                     WHERE d."%s" IS NOT NULL', parameter_name, parameter_name)
+    query <- sprintf('SELECT * FROM daily_detail WHERE "%s" IS NOT NULL', parameter_name)
     data <- dbGetQuery(conn, query)
     disconnect_postgres(conn)
     result <- process_data(data, data_type)

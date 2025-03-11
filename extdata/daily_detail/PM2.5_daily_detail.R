@@ -69,20 +69,20 @@ output$PM25_9$data <- calculate_above_exceedance_all_stations(parameter_name, "d
 output$PM25_10$result_message <- print(paste0(parameter_name, "_10 : Günlük ortalaması 15 µg/m3'ün üstündeki istasyonların listesi ve aştıkları gun sayisi" ))
 output$PM25_10$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 15)
 
-#pm25_11 EKSIK
+# #pm25_11 EKSIK
 
 output$PM25_12$result_message <- print(paste0(parameter_name, "_12 : Günlük ortalaması 15 µg/m3'ün altındaki istasyonların listesi ve aştıkları gun sayisi" ))
 output$PM25_12$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 15)
 
-# output$PM25_13$result_message <- print(paste0(parameter_name, "_13 : PM25 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilecek hesaplanan PM25" ))
-# output$PM25_13$data <- calculate_overall_PM25_average_by_city()
+legend <- c("a: PM25 veri yüzdesi", "b: PM10 veri yüzdesi", "c: PM25 yıllık ortalaması", "d: PM10 yıllık ortalaması")
 
-# output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 yıllık ortalaması" ))
-# output$PM25_14$data <-output$PM25_13$data %>%
-#   group_by(Sehir) %>%
-#   summarise(PM25_Sehir_Yillik_Ortalama = mean(PM25, na.rm = T),
-#             PM25_Sehir_Yillik_Standat_Sapma = sd(PM25,  na.rm = T), n = sum(!is.na(PM25))) %>%
-#   select(Sehir, n, PM25_Sehir_Yillik_Ortalama, PM25_Sehir_Yillik_Standat_Sapma)
+output$PM25_13$result_message <- print(paste0(parameter_name, "_13 : PM25 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilecek hesaplanan PM25" ))
+output$PM25_13$data <- calculate_overall_PM25_average_by_city(data_type = "daily", threshold = 75)
+output$PM25_13$legend <- data.frame(Legend = legend)
+
+output$PM25_14$result_message <- print(paste0(parameter_name, "_14 : İl PM25 yıllık ortalaması" ))
+output$PM25_14$data <- calculate_overall_PM25_average_by_city(data_type = "daily", threshold = 75, by_city = TRUE)
+output$PM25_14$legend <- data.frame(Legend = legend)
 
 
 write_output_to_excel(output, result_pm25_daily_excel_file)

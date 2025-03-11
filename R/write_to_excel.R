@@ -34,6 +34,14 @@ write_output_to_excel <- function(output, output_filename) {
       output[[I]]$data <- cbind(Task = "", output[[I]]$data)
       output[[I]]$data[1, "Task"] <- output[[I]]$result_message
 
+      # data'nın ilk sütunu ve üçüncü satırına lejant ekler
+      if(!is.null(output[[I]]$legend) && nrow(output[[I]]$legend) > 0) {
+        for(j in 1:nrow(output[[I]]$legend)) {
+          output[[I]]$data[j + 2, "Task"] <- output[[I]]$legend[j, "Legend"]
+        }
+      }
+      
+
       hs1 <- createStyle(textDecoration = "Bold", border = "Bottom")
       writeData(wb, names(output)[I], output[[I]]$data, headerStyle = hs1)
       setColWidths(wb, names(output)[I], cols = 1, widths = 50)

@@ -47,8 +47,8 @@ output$NO2_3$data <- count_stations_with_parameter_threshold(parameter_name, "da
 
 # 4 missing
 
-# output$NO2_5$result_message  <- print(paste0(parameter_name, "_5 : Günlük ortalaması 25 esik degerini 3 kere asan istasyonlar ve aştıkları gun sayisi" ))
-# output$NO2_5$data <- daily_above_exceedance_days_double_threshold(parameter_name, threshold = 25, 3)
+output$NO2_5$result_message  <- print(paste0(parameter_name, "_5 : Günlük ortalaması 25 esik degerini 3 kere asan istasyonlar ve aştıkları gun sayisi" ))
+output$NO2_5$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 25, exceedance_count = 3)
 
 output$NO2_6$result_message <- print(paste0(parameter_name, "_6 : için istasyon ortalamaları"))
 output$NO2_6$data <- station_average(parameter_name, "daily", threshold = 90)
