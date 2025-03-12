@@ -48,6 +48,61 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
   }
 }
 
+find_best_file <- function(base_dir, city, station, file_type) {
+  date_ranges <- c("2024-2025", "2014-2024", "2023-2024", "2022-2023", "2020-2024", "2010-2024")
+  
+  for (date_range in date_ranges) {
+    file_path <- file.path(base_dir, city, paste0(station, "_", file_type, "_", date_range, ".xlsx"))
+    if (file.exists(file_path)) {
+      return(file_path)
+    }
+  }
+  
+  city_dir <- file.path(base_dir, city)
+  if (dir.exists(city_dir)) {
+    pattern <- paste0("^", station, "_", file_type, "_.*\\.xlsx$")
+    matching_files <- list.files(city_dir, pattern = pattern, full.names = TRUE)
+    
+    if (length(matching_files) > 0) {
+      if (length(matching_files) > 1) {
+        base_names <- basename(matching_files)
+        latest_idx <- which.max(sapply(base_names, function(name) {
+          year_match <- regexpr("\\d{4}-\\d{4}", name)
+          if (year_match > 0) {
+            year_range <- regmatches(name, year_match)
+            end_year <- as.numeric(substring(year_range, 6, 9))
+            return(end_year)
+          }
+          return(0) 
+        }))
+        return(matching_files[latest_idx])
+      } else {
+        return(matching_files[1])
+      }
+    }
+  }
+  
+  return(file.path(base_dir, city, paste0(station, "_", file_type, "_2014-2024.xlsx")))
+}
+
+extract_date_range <- function(file_path) {
+  basename_file <- basename(file_path)
+  date_match <- regexpr("\\d{4}-\\d{4}", basename_file)
+  
+  if (date_match > 0) {
+    date_range <- regmatches(basename_file, date_match)
+    start_year <- as.numeric(substr(date_range, 1, 4))
+    end_year <- as.numeric(substr(date_range, 6, 9))
+    
+    start_date <- as.Date(paste0(start_year, "-01-01"))
+    end_date <- as.Date(paste0(end_year, "-12-31"))
+    
+    return(list(start_date = start_date, end_date = end_date))
+  }
+  
+  return(list(start_date = as.Date("2000-01-01"), end_date = as.Date("2100-12-31")))
+}
+
 parameters <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")
 
 raw_data_dir <- options()$temizhavaR.base_dir
@@ -230,11 +285,11 @@ for (i in seq_len(as.integer(locations_count))) {
 
   message(paste0("Processing location: ", location$Istasyon_modified))
 
-  daily_data_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyon_modified, "_gunluk_detay_2014-2024", ".xlsx"))
-  daily_summary_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyon_modified, "_gunluk_ozet_2014-2024", ".xlsx"))
-  hourly_data_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyon_modified, "_saatlik_detay_2014-2024", ".xlsx"))
-  hourly_summary_file <- file.path(raw_data_dir, location$Sehir, paste0(location$Istasyon_modified, "_saatlik_ozet_2014-2024", ".xlsx"))
-
+  daily_data_file <- find_best_file(raw_data_dir, location$Sehir, location$Istasyon_modified, "gunluk_detay")
+  daily_summary_file <- find_best_file(raw_data_dir, location$Sehir, location$Istasyon_modified, "gunluk_ozet")
+  hourly_data_file <- find_best_file(raw_data_dir, location$Sehir, location$Istasyon_modified, "saatlik_detay")
+  hourly_summary_file <- find_best_file(raw_data_dir, location$Sehir, location$Istasyon_modified, "saatlik_ozet")
+  
   if (!file.exists(daily_summary_file)) {
     log_to_db("ERROR", location$Istasyon_modified, paste0("Daily summary file does not exist: ", daily_summary_file))
 
@@ -278,6 +333,8 @@ for (i in seq_len(as.integer(locations_count))) {
   } else {
     report[report$station == location$Istasyon_modified, "daily_data_file"] <- daily_data_file
 
+    date_range <- extract_date_range(daily_data_file)
+    
     suppressMessages(daily_data <- read_excel(daily_data_file))
 
     columns <- colnames(daily_data)
@@ -288,7 +345,11 @@ for (i in seq_len(as.integer(locations_count))) {
     } else {
       report[report$station == location$Istasyon_modified, "daily_data_file_station_name_match"] <- 1
       daily_data <- daily_data %>% filter(!is.na(Tarih))
-      daily_detail_for_location <- daily_detail %>% filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id)))))
+      daily_detail_for_location <- daily_detail %>% 
+        filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id))))) %>%
+        filter(sql(sprintf('"Tarih" >= %s AND "Tarih" <= %s', 
+                           dbQuoteString(con, as.character(date_range$start_date)),
+                           dbQuoteString(con, as.character(date_range$end_date)))))
       daily_detail_for_location_duplicates <- daily_detail_for_location %>% collect() %>% as.data.frame() %>% filter(duplicated(Tarih))
       if (nrow(daily_detail_for_location_duplicates) > 0) {
         log_to_db("WARN", location$Istasyon_modified, "Daily data file contains duplicate data.")
@@ -297,7 +358,9 @@ for (i in seq_len(as.integer(locations_count))) {
       dq <- tidy_air_quality_data(daily_detail_for_location, "daily_detail", FALSE, con, TRUE)
       report[report$station == location$Istasyon_modified, "daily_negative_values"] <- dq$negative_values
       report[report$station == location$Istasyon_modified, "daily_invalid_pm"] <- dq$invalid_pm
-      report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- dq$invalid_nox
+      if (!is.null(dq$invalid_nox)) {
+        report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- dq$invalid_nox
+      }
       log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f daily records", dq$cleaned_count))
 
       if (nrow(daily_data) != daily_detail_for_location_count && (nrow(daily_data) != total_daily_data_count)) {
@@ -414,6 +477,8 @@ for (i in seq_len(as.integer(locations_count))) {
   } else {
     report[report$station == location$Istasyon_modified, "hourly_data_file"] <- hourly_data_file
 
+    hourly_date_range <- extract_date_range(hourly_data_file)
+    
     suppressMessages(hourly_data <- read_excel(hourly_data_file))
 
     columns <- colnames(hourly_data)
@@ -428,7 +493,10 @@ for (i in seq_len(as.integer(locations_count))) {
         filter(!is.na(Tarih))
 
       hourly_detail_for_location <- hourly_detail %>%
-        filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id)))))
+        filter(sql(sprintf('CAST(location_id AS TEXT) = %s', dbQuoteString(con, as.character(location$Id))))) %>%
+        filter(sql(sprintf('"Tarih" >= %s AND "Tarih" <= %s', 
+                           dbQuoteString(con, as.character(hourly_date_range$start_date)),
+                           dbQuoteString(con, as.character(hourly_date_range$end_date)))))
 
       hourly_detail_for_location_count <- hourly_detail_for_location %>% 
         tally() %>% 
@@ -464,7 +532,9 @@ for (i in seq_len(as.integer(locations_count))) {
         
         report[report$station == location$Istasyon_modified, "hourly_negative_values"] <- hourly_quality_check$negative_values
         report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] <- hourly_quality_check$invalid_pm
-        report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- hourly_quality_check$invalid_nox
+        if (!is.null(hourly_quality_check$invalid_nox)) {
+          report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- hourly_quality_check$invalid_nox
+        }
         report[report$station == location$Istasyon_modified, "hourly_wrong_time"] <- hourly_quality_check$wrong_time
         
         log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f hourly records", hourly_quality_check$cleaned_count))
