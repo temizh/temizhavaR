@@ -51,7 +51,8 @@ remove_duplicates <- function(df) {
 read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data_dict = NULL, 
                                start_hour = 0, end_hour = 23,
                                start_meridiem = NULL, end_meridiem = NULL,
-                               time_format = "24h") {
+                               time_format = "24h", all_files = FALSE
+                               ) {
   
   if (time_format == "AMPM") {
     if (is.null(start_meridiem) || is.null(end_meridiem)) {
@@ -174,7 +175,38 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
   if (is.null(pattern)){
     pattern = "\\.xlsx$"
   }
-  files <- list.files(data_dir, pattern = pattern, full.names = TRUE, recursive = TRUE)
+  
+  initial_files <- list.files(data_dir, pattern = pattern, full.names = TRUE, recursive = TRUE)
+  
+  if (all_files) {
+    all_excel_files <- list.files(data_dir, pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
+    
+    stations <- character(0)
+    for (file in initial_files) {
+      station_name <- str_extract(basename(file), "^[^_]+")
+      if (!is.na(station_name)) {
+        stations <- c(stations, station_name)
+      }
+    }
+    stations <- unique(stations)
+    
+    files <- character(0)
+    for (station in stations) {
+      station_pattern <- paste0("^", station, "_")
+      station_files <- all_excel_files[grepl(station_pattern, basename(all_excel_files))]
+      files <- c(files, station_files)
+      
+      cat(sprintf("For station %s, found %d files:\n", station, length(station_files)))
+      for (f in station_files) {
+        cat(sprintf("  - %s\n", basename(f)))
+      }
+    }
+    
+    files <- unique(files)
+    cat(sprintf("Total files to process: %d\n", length(files)))
+  } else {
+    files <- initial_files
+  }
   
   rows_written <- 0
   batch_size <- 5000  
@@ -524,11 +556,17 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 # rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
 # rows_written <- read_and_write_data(pattern = "\\.xlsx$", delete_previous = FALSE)
 
-rows_written <- read_and_write_data(
-  pattern = "_2024-2025\\.xlsx$", 
-  delete_previous = FALSE
-)
+# rows_written <- read_and_write_data(
+#   pattern = "_2024-2025\\.xlsx$", 
+#   delete_previous = FALSE
+# )
 
+
+rows_written <- read_and_write_data(
+  pattern = "\\.xlsx$", 
+  delete_previous = TRUE,
+  all_files = TRUE
+)
 # overwrite_dict <- list(
 #   "Adana-Seyhan" = c("2021-02-20", "2021-02-21")
 # )
