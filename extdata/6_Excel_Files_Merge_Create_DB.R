@@ -503,9 +503,12 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 
 # rows_written <- read_and_write_data()
 # rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
-rows_written <- read_and_write_data(pattern = "\\.xlsx$", delete_previous = FALSE)
+# rows_written <- read_and_write_data(pattern = "\\.xlsx$", delete_previous = FALSE)
 
-
+rows_written <- read_and_write_data(
+  pattern = "_2024-2025\\.xlsx$", 
+  delete_previous = FALSE
+)
 
 # overwrite_dict <- list(
 #   "Adana-Seyhan" = c("2021-02-20", "2021-02-21")
