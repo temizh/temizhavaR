@@ -7,7 +7,6 @@ library(dplyr)
 library(dbplyr)
 
 
-# checkleri çalıştır
 
 #' Convert 12-hour time to 24-hour format
 #' @param hour Numeric hour (1-12)
@@ -270,7 +269,6 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     min_date <- format(min(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
     max_date <- format(max(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
     
-    # Check if table exists and get column type for Tarih
     tarih_type_query <- sprintf(
       "SELECT data_type FROM information_schema.columns 
        WHERE table_name = '%s' AND column_name = 'Tarih'",
@@ -285,22 +283,23 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     
     cat("Tarih column data type:", tarih_type, "\n")
     
-    # Skip timestamp comparison for existing data if table doesn't exist yet
     existing_count <- 0
     tryCatch({
         existing_query <- sprintf('
-        SELECT COUNT(*) 
+        SELECT COUNT(*) as count
         FROM %s 
         WHERE "Istasyon_modified" = \'%s\' 
         AND "Tarih"::text >= \'%s\' 
         AND "Tarih"::text <= \'%s\'', 
         target_table, station_extracted, min_date, max_date)
       
-      existing_count <- dbGetQuery(db, existing_query)$count
-      cat("Found", existing_count, "existing records\n")
+      existing_count <- as.integer(dbGetQuery(db, existing_query)$count)
+      cat("Found", format(existing_count, scientific = FALSE), "existing records\n")
     }, error = function(e) {
-      cat("Error checking existing data:", conditionMessage(e), "\n")
-      return(0)
+      cat("\n\n==== ERROR CHECKING EXISTING DATA ====\n")
+      cat(sprintf("Error checking existing data: %s\n", conditionMessage(e)))
+      cat("=================================\n\n")
+      existing_count <- 0
     })
     
     should_process <- TRUE
@@ -393,8 +392,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                    }
                  )
                  values
-               }),
-        Tarih = format(as.POSIXct(Tarih, tz = "UTC"), "%Y-%m-%d %H:%M:%S")
+               })
       ) %>%
       select(any_of(c("location_id", "Tarih", "PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")))
 
@@ -454,14 +452,32 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
         )
         dbExecute(db, constraint_query)
         
-        processed_data <- processed_data %>%
-          mutate(across(intersect(names(.), c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")), 
-                       ~as.numeric(.)))
+        temp_table_name <- paste0("temp_", target_table, "_", format(Sys.time(), "%Y%m%d%H%M%S"))
+        clone_table_query <- sprintf(
+          "CREATE TABLE %s (LIKE %s INCLUDING ALL)",
+          temp_table_name, target_table
+        )
+        dbExecute(db, clone_table_query)
         
-        dbWriteTable(db, target_table, processed_data, 
-                    append = TRUE,
-                    row.names = FALSE, 
-                    overwrite = FALSE)
+        dbAppendTable(db, temp_table_name, processed_data)
+        
+        measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "location_id")
+        available_cols <- intersect(names(processed_data), measurement_cols)
+        update_cols <- paste(sprintf('"%s" = EXCLUDED."%s"', available_cols, available_cols), 
+                            collapse = ", ")
+        
+        upsert_query <- sprintf(
+          'INSERT INTO %s 
+           SELECT * FROM %s
+           ON CONFLICT ("Istasyon_modified", "Tarih") 
+           DO UPDATE SET %s',
+          target_table, temp_table_name, update_cols
+        )
+        
+        cat("\nExecuting upsert query...\n")
+        dbExecute(db, upsert_query)
+        
+        dbExecute(db, sprintf("DROP TABLE %s", temp_table_name))
         
         index_query <- sprintf(
           "CREATE INDEX IF NOT EXISTS %s_idx ON %s (\"Istasyon_modified\", \"Tarih\")",
@@ -470,17 +486,20 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
         dbExecute(db, index_query)
         
         rows_written <- rows_written + nrow(processed_data)
-        cat("Successfully inserted data from:", basename(file), "\n")
+        cat("\n✅ SUCCESSFULLY inserted/updated data from:", basename(file), "\n")
       }, error = function(e) {
+        cat("\n\n======== ERROR INSERTING DATA ========\n")
         cat("Error inserting data for file:", basename(file), "\n")
         cat("Error message:", conditionMessage(e), "\n")
+        cat("-------------------------------------\n")
         cat("Data sample:\n")
         print(head(processed_data))
         cat("\nColumn types:\n")
         print(sapply(processed_data, class))
+        cat("=====================================\n\n")
       })
     } else {
-      cat("Skipping file due to invalid data:", basename(file), "\n")
+      cat("\n⚠️ SKIPPING file due to invalid data:", basename(file), "\n")
     }
   }
   
