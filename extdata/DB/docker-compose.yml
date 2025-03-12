@@ -13,6 +13,7 @@ services:
     volumes:
       - temizhava_postgis_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d  # Custom init scripts
+      - /home/temizhava/postgres_dump:/postgres_dump
         
 volumes:
   temizhava_postgis_data:  
