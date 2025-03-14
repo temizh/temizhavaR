@@ -231,13 +231,10 @@ report <- locations %>%
     hourly_data_file_station_name_match = 0,
     hourly_summary_file_station_name_match = 0,
     daily_data_file_row_count_match = 0,
-    hourly_data_file_row_count_match = 0,
     daily_negative_values = 0,
     daily_invalid_pm = 0,
-    daily_invalid_nox = 0,
     hourly_negative_values = 0,
     hourly_invalid_pm = 0,
-    hourly_invalid_nox = 0,
     hourly_wrong_time = 0
   ) %>%
   collect() %>%
@@ -358,9 +355,6 @@ for (i in seq_len(as.integer(locations_count))) {
       dq <- tidy_air_quality_data(daily_detail_for_location, "daily_detail", FALSE, con, TRUE)
       report[report$station == location$Istasyon_modified, "daily_negative_values"] <- dq$negative_values
       report[report$station == location$Istasyon_modified, "daily_invalid_pm"] <- dq$invalid_pm
-      if (!is.null(dq$invalid_nox)) {
-        report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- dq$invalid_nox
-      }
       log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f daily records", dq$cleaned_count))
 
       if (nrow(daily_data) != daily_detail_for_location_count && (nrow(daily_data) != total_daily_data_count)) {
@@ -393,7 +387,6 @@ for (i in seq_len(as.integer(locations_count))) {
             MAX(operation_time) as last_cleaned_at,
             COUNT(*)::integer as clean_operations,
             SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END)::integer as pm_fixes,
-            SUM(CASE WHEN field_name = 'NO,NO2,NOX' THEN affected_rows ELSE 0 END)::integer as nox_fixes,
             SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END)::integer as negative_fixes,
             SUM(CASE WHEN reason = 'invalid_time_format' THEN affected_rows ELSE 0 END)::integer as time_fixes
           FROM data_quality_log
@@ -413,11 +406,10 @@ for (i in seq_len(as.integer(locations_count))) {
           last_cleaned <- format(previous_cleanings$last_cleaned_at, "%Y-%m-%d %H:%M:%S")
           
           log_to_db("INFO", location$Istasyon_modified, sprintf(
-            "Previously cleaned daily data: %i total operations on %s (PM fixes: %i, NOx fixes: %i, Negative values: %i)",
+            "Previously cleaned daily data: %i total operations on %s (PM fixes: %i, Negative values: %i)",
             as.integer(previous_cleanings$clean_operations), 
             last_cleaned,
             as.integer(previous_cleanings$pm_fixes),
-            as.integer(previous_cleanings$nox_fixes),
             as.integer(previous_cleanings$negative_fixes)
           ))
           
@@ -425,8 +417,6 @@ for (i in seq_len(as.integer(locations_count))) {
             report[report$station == location$Istasyon_modified, "daily_negative_values"] + as.integer(previous_cleanings$negative_fixes)
           report[report$station == location$Istasyon_modified, "daily_invalid_pm"] <- 
             report[report$station == location$Istasyon_modified, "daily_invalid_pm"] + as.integer(previous_cleanings$pm_fixes)
-          report[report$station == location$Istasyon_modified, "daily_invalid_nox"] <- 
-            report[report$station == location$Istasyon_modified, "daily_invalid_nox"] + as.integer(previous_cleanings$nox_fixes)
         }, error = function(e) {
           log_to_db("WARN", location$Istasyon_modified, sprintf("Error processing previous cleaning data: %s", e$message))
         })
@@ -532,9 +522,6 @@ for (i in seq_len(as.integer(locations_count))) {
         
         report[report$station == location$Istasyon_modified, "hourly_negative_values"] <- hourly_quality_check$negative_values
         report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] <- hourly_quality_check$invalid_pm
-        if (!is.null(hourly_quality_check$invalid_nox)) {
-          report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- hourly_quality_check$invalid_nox
-        }
         report[report$station == location$Istasyon_modified, "hourly_wrong_time"] <- hourly_quality_check$wrong_time
         
         log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f hourly records", hourly_quality_check$cleaned_count))
@@ -548,11 +535,6 @@ for (i in seq_len(as.integer(locations_count))) {
           log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with PM2.5 > PM10 will be nullified", 
                           hourly_quality_check$invalid_pm,
                           100 * hourly_quality_check$invalid_pm / hourly_quality_check$cleaned_count))
-        }
-        if (hourly_quality_check$invalid_nox > 0) {
-          log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with invalid NOx relationships will be nullified", 
-                          hourly_quality_check$invalid_nox,
-                          100 * hourly_quality_check$invalid_nox / hourly_quality_check$cleaned_count))
         }
         if (hourly_quality_check$wrong_time > 0) {
           log_to_db("WARN", location$Istasyon_modified, sprintf("Hourly data: %.0f records (%.2f%%) with incorrect time format will be removed", 
@@ -585,7 +567,6 @@ for (i in seq_len(as.integer(locations_count))) {
             MAX(operation_time) as last_cleaned_at,
             COUNT(*)::integer as clean_operations,
             SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END)::integer as pm_fixes,
-            SUM(CASE WHEN field_name = 'NO,NO2,NOX' THEN affected_rows ELSE 0 END)::integer as nox_fixes,
             SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END)::integer as negative_fixes,
             SUM(CASE WHEN field_name = 'all' AND reason = 'invalid_time_format' THEN affected_rows ELSE 0 END)::integer as time_fixes
           FROM data_quality_log
@@ -605,11 +586,10 @@ for (i in seq_len(as.integer(locations_count))) {
           last_cleaned <- format(previous_hourly_cleanings$last_cleaned_at, "%Y-%m-%d %H:%M:%S")
           
           log_to_db("INFO", location$Istasyon_modified, sprintf(
-            "Previously cleaned hourly data: %i total operations on %s (PM fixes: %i, NOx fixes: %i, Negative values: %i, Time format fixes: %i)",
+            "Previously cleaned hourly data: %i total operations on %s (PM fixes: %i, Negative values: %i, Time format fixes: %i)",
             as.integer(previous_hourly_cleanings$clean_operations), 
             last_cleaned,
             as.integer(previous_hourly_cleanings$pm_fixes),
-            as.integer(previous_hourly_cleanings$nox_fixes),
             as.integer(previous_hourly_cleanings$negative_fixes),
             as.integer(previous_hourly_cleanings$time_fixes)
           ))
@@ -618,8 +598,6 @@ for (i in seq_len(as.integer(locations_count))) {
             report[report$station == location$Istasyon_modified, "hourly_negative_values"] + as.integer(previous_hourly_cleanings$negative_fixes)
           report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] <- 
             report[report$station == location$Istasyon_modified, "hourly_invalid_pm"] + as.integer(previous_hourly_cleanings$pm_fixes)
-          report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] <- 
-            report[report$station == location$Istasyon_modified, "hourly_invalid_nox"] + as.integer(previous_hourly_cleanings$nox_fixes)
           report[report$station == location$Istasyon_modified, "hourly_wrong_time"] <- 
             report[report$station == location$Istasyon_modified, "hourly_wrong_time"] + as.integer(previous_hourly_cleanings$time_fixes)
         }, error = function(e) {
