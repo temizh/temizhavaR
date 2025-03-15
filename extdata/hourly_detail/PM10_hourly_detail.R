@@ -6,7 +6,12 @@ library(dygraphs)
 total_hours <- 8761
 parameter_name <- "PM10"
 
-# init.temizhavaR()
+base_dir <- getOption("temizhavaR.base_dir")
+output_dir <- file.path(base_dir, "__results")  
+
+result_pm10_hourly_excel_file <- file.path(output_dir, "results_PM10_hourly.xlsx")
+
+init.temizhavaR()
 
 
 if (0) {
@@ -33,32 +38,26 @@ output <- list(PM10_1 = list(),
 # pm10_5 <- calculate_all_stations_means(all_hourly_detail_data , parameter, threshold = 0.9, total_days, verbose = FALSE)
 # pm10_5 <- rbind(result_message, pm10_5)
 
-output$PM10_1$result_message <- print(paste0(parameter_name,"_1: Veri alınan istasyon listesi" ))
-output$PM10_1$data <- list_stations_with_parameter(parameter_name, data_type = "hourly")
+# output$PM10_1$result_message <- print(paste0(parameter_name,"_1: Veri alınan istasyon listesi" ))
+# output$PM10_1$data <- list_stations_with_parameter(parameter_name, data_type = "hourly")
 
 
-output$PM10_2$result_message <- print(paste0(parameter_name,"_2: Veri alınan istasyon sayısı" ))
-output$PM10_2$data <- list_stations_with_parameter_count(parameter_name, data_type = "hourly")
+# output$PM10_2$result_message <- print(paste0(parameter_name,"_2: Veri alınan istasyon sayısı" ))
+# output$PM10_2$data <- list_stations_with_parameter_count(parameter_name, data_type = "hourly")
 
 
-output$PM10_3$result_message <- print(paste0(parameter_name,"_3: %90 veri alınan istasyon listesi" ))
-output$PM10_3$data <- list_stations_with_parameter(parameter_name, data_type = "hourly", threshold = 90)
+# output$PM10_3$result_message <- print(paste0(parameter_name,"_3: %90 veri alınan istasyon listesi" ))
+# output$PM10_3$data <- list_stations_with_parameter(parameter_name, data_type = "hourly", threshold = 90)
 
 
-output$PM10_4$result_message <- print(paste0(parameter_name,"_4: %90 Veri alınan istasyon sayısı" ))
-output$PM10_4$data <- count_stations_with_parameter_threshold(parameter_name, data_type = "hourly", threshold = 90)
+# output$PM10_4$result_message <- print(paste0(parameter_name,"_4: %90 Veri alınan istasyon sayısı" ))
+# output$PM10_4$data <- count_stations_with_parameter_threshold(parameter_name, data_type = "hourly", threshold = 90)
 
 
-output$PM10_5$result_message <- print(paste0(parameter_name,"_5: Her bir istasyonun yıllık PM10 ortalaması " ))
-output$PM10_5$data <- hourly_station_average(parameter_name, threshold = 90)
+# output$PM10_5$result_message <- print(paste0(parameter_name,"_5: Her bir istasyonun yıllık PM10 ortalaması " ))
+# output$PM10_5$data <- hourly_station_average(parameter_name, threshold = 90)
 
-base_dir <- getOption("temizhavaR.base_dir")
-output_dir <- file.path(base_dir, "__results")
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-  print(paste("Created output directory:", output_dir))
-}
-
-result_pm10_hourly_excel_file <- file.path(output_dir, "results_PM10_hourly.xlsx")
+output$PM10_5$result_message <- print(paste0(parameter_name,"_5: PM10 AQI"))
+output$PM10_5$data <- list_AQI(parameter_name, data_type = "hourly", threshold = 90)
 
 write_output_to_excel(output, result_pm10_hourly_excel_file)

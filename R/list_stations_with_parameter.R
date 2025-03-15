@@ -9,16 +9,18 @@
 
 list_stations_with_parameter <- function(parameter_name, data_type = "daily", threshold = 0, data_threshold = 0, season = NULL, until_year = 2023) {
   process_data <- function(data, data_type) {
-    if (nrow(data) == 0) {
-      warning("No data found for the given parameter")
-      return(data.frame(Istasyon_modified = character(0), Year = character(0)))
-    }
+
+    # if (nrow(data) == 0) {
+    #   warning("No data found for the given parameter")
+    #   return(data.frame(Istasyon_modified = character(0), Year = character(0)))
+    # }
+
+    browser()
 
     data <- data %>%
-      mutate(Date = as.POSIXct(Tarih, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")) %>%  # Convert to date
-      mutate(Year = format(Date, "%Y")) %>% # Extract year
-      filter(Year <= until_year) %>%  # Filter data until specified year
-      mutate(month = as.numeric(format(Date, "%m")))  # Extract month
+      filter(Tarih <= paste0(until_year, "-12-31")) %>%  # Filter data until specified year
+      mutate(Year = EXTRACT(YEAR FROM !!sym(Tarih))) %>% # Extract year
+      mutate(month = EXTRACT(MONTH FROM !!sym(Tarih))) %>% # Extract year
 
     if (!is.null(season)) {
       if (season == "summer") {
@@ -80,9 +82,11 @@ list_stations_with_parameter <- function(parameter_name, data_type = "daily", th
 
   if (data_type == 'daily') {
     conn <- create_postgres_conn()
-    query <- sprintf('SELECT * FROM daily_detail WHERE "%s" IS NOT NULL', parameter_name)
-    data <- dbGetQuery(conn, query)
-    disconnect_postgres(conn)
+    #query <- sprintf('SELECT * FROM daily_detail WHERE "%s" IS NOT NULL', parameter_name)
+    #data <- dbGetQuery(conn, query)
+    data <- tbl(conn, "daily_detail") %>%
+      filter(!is.na(!!sym(parameter_name)))
+    #disconnect_postgres(conn)
     result <- process_data(data, data_type)
   } else if (data_type == 'hourly') {
     conn <- create_postgres_conn()
