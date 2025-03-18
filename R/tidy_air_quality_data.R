@@ -156,7 +156,7 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
     
     log_quality_operation <- function(operation_type, field_name, affected_rows, reason, old_value = NULL, new_value = NULL) {
       location_id <- tryCatch({
-        tbl_db %>% pull(location_id) %>% unique() %>% as.character()
+        tbl_db %>% pull(location_id) %>% unique() %>% head(1) %>% as.character()
       }, error = function(e) {
         "Unknown"
       })
@@ -177,27 +177,32 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE, con 
         new_value = new_value
       )
       
-      dbExecute(con, sprintf("
-        INSERT INTO data_cleaning_log 
-          (session_id, script_name, log_level, category, location_id, station_name, message, details)
-        VALUES
-          (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
-        dbQuoteString(con, session_id),
-        dbQuoteString(con, "tidy_air_quality_data"),
-        dbQuoteString(con, "INFO"),
-        dbQuoteString(con, "DATA_QUALITY"),
-        dbQuoteString(con, location_id),
-        dbQuoteString(con, station_name),
-        dbQuoteString(con, sprintf("Quality check: %s %s records affected", operation_type, affected_rows)),
-        dbQuoteString(con, jsonlite::toJSON(details, auto_unbox = TRUE))
-      ))
-      
-      log_to_db(sprintf("Quality check: %s %s records affected", operation_type, affected_rows), 
-                "INFO", 
-                "QUALITY_CHECK", 
-                location_id, 
-                station_name, 
-                list(field = field_name, reason = reason, affected_rows = affected_rows))
+      tryCatch({
+        sql <- sprintf("
+          INSERT INTO data_cleaning_log 
+            (session_id, script_name, log_level, category, location_id, station_name, message, details)
+          VALUES
+            (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
+          dbQuoteString(con, session_id),
+          dbQuoteString(con, "tidy_air_quality_data"),
+          dbQuoteString(con, "INFO"),
+          dbQuoteString(con, "DATA_QUALITY"),
+          dbQuoteString(con, location_id),
+          dbQuoteString(con, station_name),
+          dbQuoteString(con, sprintf("Quality check: %s %s records affected", operation_type, affected_rows)),
+          dbQuoteString(con, jsonlite::toJSON(details, auto_unbox = TRUE))
+        )
+        dbExecute(con, sql)
+        
+        timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+        cat(sprintf("[%s] %s | %s | %s\n", 
+                    timestamp, 
+                    "INFO", 
+                    ifelse(is.null(station_name), "DATA_QUALITY", station_name), 
+                    sprintf("Quality check: %s %s records affected", operation_type, affected_rows)))
+      }, error = function(e) { 
+        warning("Failed to write to database log: ", e$message) 
+      })
     }
     
     for (field in c("PM10","PM25","SO2","NO2","O3","CO","NO","NOX")) {
