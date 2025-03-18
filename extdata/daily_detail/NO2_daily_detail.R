@@ -37,30 +37,30 @@ output <- list(NO2_1 = list(),
                NO2_9 = list())
 
 output$NO2_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan istasyon listesi" ))
-output$NO2_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
+output$NO2_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily", until_year = 2024)
 
 output$NO2_2$result_message <- print(paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi" ))
-output$NO2_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
+output$NO2_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90, until_year = 2024)
 
 output$NO2_3$result_message  <- print(paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı" ))
-output$NO2_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90)
+output$NO2_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90, until_year = 2024)
 
 # 4 missing
 
 output$NO2_5$result_message  <- print(paste0(parameter_name, "_5 : Günlük ortalaması 25 esik degerini 3 kere asan istasyonlar ve aştıkları gun sayisi" ))
-output$NO2_5$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 25, exceedance_count = 3)
+output$NO2_5$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 25, exceedance_count = 3, until_year = 2024)
 
 output$NO2_6$result_message <- print(paste0(parameter_name, "_6 : için istasyon ortalamaları"))
-output$NO2_6$data <- station_average(parameter_name, "daily", threshold = 90)
+output$NO2_6$data <- station_average(parameter_name, "daily", threshold = 90, until_year = 2024)
 
 output$NO2_7$result_message <- print(paste0(parameter_name, "_7 : Yıllık ortalaması 40 µg/m3 üstü istasyonların listesi ve aştıkları gun sayisi" ))
-output$NO2_7$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 40)
+output$NO2_7$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 40, until_year = 2024)
 
 output$NO2_8$result_message <- print(paste0(parameter_name, "_8 : Yıllık ortalaması 10 µg/m3 üstü istasyonların listesi ve aştıkları gun sayisi" ))
-output$NO2_8$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 10)
+output$NO2_8$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 10, until_year = 2024)
 
 output$NO2_9$result_message <- print(paste0(parameter_name, "_9 : İl NO2 yıllık ortalaması" ))
-output$NO2_9$data <- calculate_overall_average_by_city_threshold(parameter_name, "daily")
+output$NO2_9$data <- calculate_overall_average_by_city_threshold(parameter_name, "daily", until_year = 2024)
 
 
 write_output_to_excel(output, result_no2_daily_excel_file)

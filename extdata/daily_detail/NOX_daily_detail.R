@@ -30,15 +30,15 @@ output <- list(NOx_1 = list(),
                NOx_4 = list())
 
 output$NOx_1$result_message <- print(paste0(parameter_name, "_1 : Veri alınan istasyon listesi" ))
-output$NOx_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily")
+output$NOx_1$data <- list_stations_with_parameter(parameter_name, data_type = "daily", until_year = 2024)
 
 output$NOx_2$result_message <- print(paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi" ))
-output$NOx_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
+output$NOx_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90, until_year = 2024)
 
 output$NOx_3$result_message <- print(paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı" ))
-output$NOx_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90)
+output$NOx_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90, until_year = 2024)
 
 output$NOx_4$result_message <- print(paste0(parameter_name, "_4 : Yıllık ortalaması 30 µg/m3 üstündeki istasyonların listesi ve aştıkları gun sayısı" ))
-output$NOx_4$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 30)
+output$NOx_4$data <- calculate_above_exceedance_all_stations(parameter_name, "daily", pollutant_threshold = 30, until_year = 2024)
 
 write_output_to_excel(output, result_nox_daily_excel_file)

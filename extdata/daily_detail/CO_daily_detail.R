@@ -27,12 +27,12 @@ output <- list(CO_1 = list(),
                CO_3 = list())
 
 output$CO_1$result_message <- paste0(parameter_name, "_1 : Veri alınan istasyon listesi")
-output$CO_1$data <- list_stations_with_parameter_count(parameter_name, "daily")
+output$CO_1$data <- list_stations_with_parameter_count(parameter_name, "daily", until_year = 2024)
 
 output$CO_2$result_message <- paste0(parameter_name, "_2 : %90 veri alınan istasyon listesi")
-output$CO_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90)
+output$CO_2$data <- list_stations_with_parameter(parameter_name, data_type = "daily", threshold = 90, until_year = 2024)
 
 output$CO_3$result_message <- paste0(parameter_name, "_3 : %90 Veri alınan istasyon sayısı")
-output$CO_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90)
+output$CO_3$data <- count_stations_with_parameter_threshold(parameter_name, "daily", threshold = 90, until_year = 2024)
 
 write_output_to_excel(output, result_co_daily_excel_file)

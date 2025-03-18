@@ -10,6 +10,8 @@ write_output_to_excel <- function(output, output_filename) {
     if (length(output[[I]]) > 0) {
       addWorksheet(wb, names(output)[I])
 
+      print("A")
+
       # output[[I]]$data'nın bir veri çerçevesi veya liste olup olmadığını kontrol eder
       if (is.list(output[[I]]$data) && !is.data.frame(output[[I]]$data)) {
         # Listeyi veri çerçevesine dönüştür
@@ -25,14 +27,24 @@ write_output_to_excel <- function(output, output_filename) {
         output[[I]]$data <- data.frame(Task = "No Data Available")
       }
 
+      print("B")
+
       # Eğer data elemanının sütunu yoksa, bir sütun ekler
       if (ncol(output[[I]]$data) == 0) {
         output[[I]]$data <- data.frame(Task = "No Data Available")
       }
 
+      print("C")
+      print(nrow(output[[I]]$data))
+
       # data'nın ilk sütununu boşluk olarak ekleyin ve ilk hücreye result_message ekler
-      output[[I]]$data <- cbind(Task = "", output[[I]]$data)
-      output[[I]]$data[1, "Task"] <- output[[I]]$result_message
+      if(nrow(output[[I]]$data) == 0) {
+        print("Hello")
+        output[[I]]$data <- data.frame(Task = output[[I]]$result_message)
+      } else {
+        output[[I]]$data <- cbind(Task = "", output[[I]]$data)
+        output[[I]]$data[1, "Task"] <- output[[I]]$result_message
+      }
 
       # data'nın ilk sütunu ve üçüncü satırına lejant ekler
       if(!is.null(output[[I]]$legend) && nrow(output[[I]]$legend) > 0) {
@@ -40,6 +52,8 @@ write_output_to_excel <- function(output, output_filename) {
           output[[I]]$data[j + 2, "Task"] <- output[[I]]$legend[j, "Legend"]
         }
       }
+
+      print("E")
       
 
       hs1 <- createStyle(textDecoration = "Bold", border = "Bottom")
