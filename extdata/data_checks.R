@@ -51,17 +51,29 @@ find_closest_file <- function(target_file, search_dir, threshold = 5) {
 find_best_file <- function(base_dir, city, station, file_type) {
   date_ranges <- c("2024-2025", "2014-2024", "2023-2024", "2022-2023", "2020-2024", "2010-2024")
   
+  safe_station <- gsub("[^[:alnum:]-]", "_", station)
+  
   for (date_range in date_ranges) {
-    file_path <- file.path(base_dir, city, paste0(station, "_", file_type, "_", date_range, ".xlsx"))
+    file_path <- file.path(base_dir, city, paste0(safe_station, "_", file_type, "_", date_range, ".xlsx"))
     if (file.exists(file_path)) {
       return(file_path)
+    }
+    
+    orig_file_path <- file.path(base_dir, city, paste0(station, "_", file_type, "_", date_range, ".xlsx"))
+    if (file.exists(orig_file_path)) {
+      return(orig_file_path)
     }
   }
   
   city_dir <- file.path(base_dir, city)
   if (dir.exists(city_dir)) {
-    pattern <- paste0("^", station, "_", file_type, "_.*\\.xlsx$")
-    matching_files <- list.files(city_dir, pattern = pattern, full.names = TRUE)
+    pattern1 <- paste0("^", safe_station, "_", file_type, "_.*\\.xlsx$")
+    pattern2 <- paste0("^", station, "_", file_type, "_.*\\.xlsx$")
+    
+    matching_files <- c(
+      list.files(city_dir, pattern = pattern1, full.names = TRUE),
+      list.files(city_dir, pattern = pattern2, full.names = TRUE)
+    )
     
     if (length(matching_files) > 0) {
       if (length(matching_files) > 1) {
@@ -82,7 +94,7 @@ find_best_file <- function(base_dir, city, station, file_type) {
     }
   }
   
-  return(file.path(base_dir, city, paste0(station, "_", file_type, "_2014-2024.xlsx")))
+  return(file.path(base_dir, city, paste0(safe_station, "_", file_type, "_2014-2024.xlsx")))
 }
 
 extract_date_range <- function(file_path) {
@@ -105,7 +117,7 @@ extract_date_range <- function(file_path) {
 
 parameters <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")
 
-raw_data_dir <- options()$temizhavaR.base_dir
+raw_data_dir <- options()$temizhavaR.base_dir  
 
 log_dir <- file.path(raw_data_dir, "logs")
 
@@ -117,10 +129,11 @@ log_appender(appender_file(log_file))
 log_layout(layout_glue_generator(format = "{time} | {level} | {msg}"))
 
 message("Connecting to the database...")
-con <- create_postgres_conn()
+con <- temizhavaR:::create_postgres_conn()
 
 dbExecute(con, "CREATE TABLE IF NOT EXISTS data_cleaning_log (
   id SERIAL PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   session_id TEXT,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   script_name TEXT,
@@ -129,20 +142,7 @@ dbExecute(con, "CREATE TABLE IF NOT EXISTS data_cleaning_log (
   location_id TEXT,
   station_name TEXT,
   message TEXT,
-  details JSONB,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)")
-dbExecute(con, "CREATE TABLE IF NOT EXISTS data_quality_log (
-  id SERIAL PRIMARY KEY,
-  table_name TEXT,
-  location_id TEXT,
-  operation_type TEXT,
-  field_name TEXT,
-  affected_rows INTEGER,
-  reason TEXT,
-  old_value TEXT,
-  new_value TEXT,
-  operation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  details JSONB
 )")
 
 log_operation <- function(level, location, message, details = NULL) {
@@ -157,7 +157,7 @@ log_operation <- function(level, location, message, details = NULL) {
 
 session_id <- paste0("CHECK_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", random_string("", 6))
 
-log_to_db <- function(message, level, category, location_id = NULL, station_name = NULL, details = NULL) {
+log_to_db <- function(level, station_name, message, location_id = NULL, category = "check", details = NULL) {
   if (is.null(message)) {
     message <- "No message provided"
   }
@@ -206,7 +206,7 @@ log_to_db <- function(message, level, category, location_id = NULL, station_name
               message))
 }
 
-log_to_db("Starting data quality checks", "INFO", "system")
+log_to_db("INFO", "system", "Starting data quality checks")
 
 message("Reading daily data table...")
 daily_detail <- tbl(con, "daily_detail")
@@ -216,6 +216,19 @@ hourly_detail <- tbl(con, "hourly_detail")
 
 message("Reading location table...")
 locations <- tbl(con, "location")
+
+get_station_name <- function(loc_id) {
+  tryCatch({
+    result <- dbGetQuery(con, sprintf("SELECT \"Istasyon_modified\" FROM location WHERE \"Id\" = %s", 
+                                     dbQuoteString(con, as.character(loc_id))))
+    if (nrow(result) > 0) {
+      return(result$Istasyon_modified[1])
+    }
+    return(paste0("Unknown_Station_", loc_id))
+  }, error = function(e) {
+    return(paste0("Unknown_Station_", loc_id))
+  })
+}
 
 report <- locations %>%
   mutate(station_data = ifelse(!is.na(Sehir) & !is.na(Plaka) & !is.na(Bolge) & !is.na(Istasyon_original) & !is.na(Id) & !is.na(Istasyon_modified), 1, 0)) %>%
@@ -255,15 +268,19 @@ missing_locations_is_empty <- missing_locations %>% tally() %>% pull(n) == 0
 
 if (!missing_locations_is_empty) {
   log_to_db(
+    "ERROR",
+    "location_check",
     paste0("Missing locations found in the location table: ", missing_locations),
-    "ERROR", 
-    "location_check"
+    NULL,  
+    "location_check" 
   )
 } else {
   log_to_db(
+    "INFO",
+    "location_check", 
     "No missing locations found in the location table",
-    "INFO", 
-    "location_check"
+    NULL,  
+    "location_check" 
   )
 }
 
@@ -355,7 +372,8 @@ for (i in seq_len(as.integer(locations_count))) {
       dq <- tidy_air_quality_data(daily_detail_for_location, "daily_detail", FALSE, con, TRUE)
       report[report$station == location$Istasyon_modified, "daily_negative_values"] <- dq$negative_values
       report[report$station == location$Istasyon_modified, "daily_invalid_pm"] <- dq$invalid_pm
-      log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f daily records", dq$cleaned_count))
+      log_to_db("INFO", location$Istasyon_modified, sprintf("Processing %.0f daily records", dq$cleaned_count), 
+                location$Id)  
 
       if (nrow(daily_data) != daily_detail_for_location_count && (nrow(daily_data) != total_daily_data_count)) {
         log_to_db("ERROR", location$Istasyon_modified, "Daily data file row count mismatch.")
@@ -384,15 +402,16 @@ for (i in seq_len(as.integer(locations_count))) {
       previous_cleanings <- tryCatch({
         dbGetQuery(con, sprintf("
           SELECT 
-            MAX(operation_time) as last_cleaned_at,
+            MAX(timestamp) as last_cleaned_at,
             COUNT(*)::integer as clean_operations,
-            SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END)::integer as pm_fixes,
-            SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END)::integer as negative_fixes,
-            SUM(CASE WHEN reason = 'invalid_time_format' THEN affected_rows ELSE 0 END)::integer as time_fixes
-          FROM data_quality_log
+            SUM(CASE WHEN CAST(details->>'field_name' AS TEXT) = 'PM10,PM25' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as pm_fixes,
+            SUM(CASE WHEN CAST(details->>'reason' AS TEXT) = 'negative_values' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as negative_fixes,
+            SUM(CASE WHEN CAST(details->>'reason' AS TEXT) = 'invalid_time_format' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as time_fixes
+          FROM data_cleaning_log
           WHERE location_id = %s 
-          AND table_name = 'daily_detail'
-          AND operation_type = 'nullify'
+          AND category = 'DATA_QUALITY'
+          AND CAST(details->>'table_name' AS TEXT) = 'daily_detail'
+          AND CAST(details->>'operation_type' AS TEXT) = 'nullify'
           GROUP BY location_id",
           dbQuoteString(con, as.character(location$Id))
         ))
@@ -411,7 +430,7 @@ for (i in seq_len(as.integer(locations_count))) {
             last_cleaned,
             as.integer(previous_cleanings$pm_fixes),
             as.integer(previous_cleanings$negative_fixes)
-          ))
+          ), location$Id) 
           
           report[report$station == location$Istasyon_modified, "daily_negative_values"] <- 
             report[report$station == location$Istasyon_modified, "daily_negative_values"] + as.integer(previous_cleanings$negative_fixes)
@@ -510,7 +529,7 @@ for (i in seq_len(as.integer(locations_count))) {
       hourly_detail_for_location_count <- hourly_detail_for_location %>% tally() %>% pull(n)
       
       if (hourly_detail_for_location_count == 0) {
-        log_to_db("WARN", location$Istasyon_modified, sprintf("No hourly data found in database"))
+        log_to_db("WARN", location$Istasyon_modified, sprintf("No hourly data found in database"), location$Id)
       } else {
         hourly_quality_check <- tidy_air_quality_data(
           hourly_detail_for_location, 
@@ -564,15 +583,16 @@ for (i in seq_len(as.integer(locations_count))) {
       previous_hourly_cleanings <- tryCatch({
         dbGetQuery(con, sprintf("
           SELECT 
-            MAX(operation_time) as last_cleaned_at,
+            MAX(timestamp) as last_cleaned_at,
             COUNT(*)::integer as clean_operations,
-            SUM(CASE WHEN field_name = 'PM10,PM25' THEN affected_rows ELSE 0 END)::integer as pm_fixes,
-            SUM(CASE WHEN reason = 'negative_values' THEN affected_rows ELSE 0 END)::integer as negative_fixes,
-            SUM(CASE WHEN field_name = 'all' AND reason = 'invalid_time_format' THEN affected_rows ELSE 0 END)::integer as time_fixes
-          FROM data_quality_log
+            SUM(CASE WHEN CAST(details->>'field_name' AS TEXT) = 'PM10,PM25' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as pm_fixes,
+            SUM(CASE WHEN CAST(details->>'reason' AS TEXT) = 'negative_values' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as negative_fixes,
+            SUM(CASE WHEN CAST(details->>'field_name' AS TEXT) = 'all' AND CAST(details->>'reason' AS TEXT) = 'invalid_time_format' THEN CAST(details->>'affected_rows' AS INTEGER) ELSE 0 END)::integer as time_fixes
+          FROM data_cleaning_log
           WHERE location_id = %s 
-          AND table_name = 'hourly_detail'
-          AND operation_type = 'nullify'
+          AND category = 'DATA_QUALITY'
+          AND CAST(details->>'table_name' AS TEXT) = 'hourly_detail'
+          AND CAST(details->>'operation_type' AS TEXT) = 'nullify'
           GROUP BY location_id",
           dbQuoteString(con, as.character(location$Id))
         ))
@@ -612,7 +632,7 @@ write_xlsx(report, report_file)
 
 dbDisconnect(con)
 
-log_to_db("INFO", "system", "Data checks completed successfully")
+log_to_db("INFO", "system", "Data checks completed successfully", NULL, "system")
 
 message("Data checks completed successfully")
 
