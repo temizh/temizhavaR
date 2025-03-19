@@ -3,6 +3,7 @@ library(netstat)
 library(wdman)
 library(DBI)
 library(stringr)
+library(temizhavaR)
 
 
 wdman::selenium(port = 4445L, retcommand = TRUE)
@@ -45,7 +46,7 @@ safeClick <- function(driver, element) {
 
 
 initializeDatabase <- function() {
-  mydb <- create_postgres_conn()
+  mydb <- temizhavaR:::create_postgres_conn()
   dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (
     \"Id\" SERIAL PRIMARY KEY,
     \"Bolge\" TEXT,
@@ -82,7 +83,6 @@ clickClearButton <- function(driver, parent_div_id, button_title) {
     safeClick(driver, clear_button)
     Sys.sleep(1)  
     
-    # Ensure dropdown is reset
     dropdown <- findElementWithRetry(driver, 'id', parent_div_id)
     safeClick(driver, dropdown)  
     Sys.sleep(1)  
@@ -184,12 +184,36 @@ selectDropdownOption <- function(driver, dropdown_id, option_text, max_retries =
   stop(sprintf("Failed to select '%s' in dropdown '%s' after %d retries", option_text, dropdown_id, max_retries))
 }
 
-
+logStationAddition <- function(db, message, year = format(Sys.Date(), "%Y")) {
+  tryCatch({
+    if (!dbIsValid(db)) stop("Database connection is invalid.")
+    
+    query <- "INSERT INTO data_cleaning_log 
+              (session_id, script_name, log_level, category, message, details) 
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb)"
+    
+    session_id <- paste0("STATION_ADD_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+    details <- jsonlite::toJSON(list(year = year), auto_unbox = TRUE)
+    
+    dbExecute(db, query, params = list(
+      session_id, 
+      "1_Retrieve_Station_Info.R", 
+      "INFO", 
+      "STATION_ADDITION", 
+      message, 
+      details
+    ))
+    
+    message(paste("Station addition logged:", message))
+  }, error = function(e) {
+    message("Error logging station addition to database: ", e$message)
+  })
+}
 
 ########## MAIN SCRIPT ##########
 retrieveStationInfo <- function() {
   tryCatch({
-    selenium_server <- rsDriver(browser = "chrome", port = 4445L, chromever = "latest", extraCapabilities = list(
+    selenium_server <- rsDriver(browser = "chrome", port = 4445L, chromever = NULL, extraCapabilities = list(
       chromeOptions = list(
         args = c('--headless', '--disable-gpu', '--window-size=1280,800', '--no-sandbox', '--disable-dev-shm-usage')
       )
@@ -204,10 +228,27 @@ retrieveStationInfo <- function() {
 
     mydb <- initializeDatabase()
 
+    dbExecute(mydb, "CREATE TABLE IF NOT EXISTS data_cleaning_log (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      session_id TEXT,
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      script_name TEXT,
+      log_level TEXT,
+      category TEXT,
+      location_id TEXT,
+      station_name TEXT,
+      message TEXT,
+      details JSONB
+    )")
 
-    source("../extdata/plaka_list.R")
+    source("extdata/plaka_list.R")
     all_cities <- names(plaka_list)
     processed_cities <- c()
+    
+    new_stations <- list()
+    all_new_stations <- c() 
+    current_year <- format(Sys.Date(), "%Y")
 
     bolge_list <- fetchRegionListWithRetry(driver, 'dropdown12-contentDataDowloadNew', ".k-reset li")
 
@@ -230,6 +271,8 @@ retrieveStationInfo <- function() {
         if (sehir %in% processed_cities) next
         print(paste("Processing sehir:", sehir))
         processed_cities <- c(processed_cities, sehir)
+        
+        city_new_stations <- c()
 
         selectDropdownOption(driver, 'dropdown1-contentDataDowloadNew', sehir)
 
@@ -250,19 +293,67 @@ retrieveStationInfo <- function() {
         print(paste("Fetched station list with", length(istasyon_list), "items"))
         print(paste("Stations in", sehir, ":", istasyon_list))
 
+        existing_stations <- getExistingStations(mydb)
+        
         for (istasyon in istasyon_list) {
           print(paste("Processing istasyon:", istasyon))
+          
+          station_exists <- FALSE
+          if (nrow(existing_stations) > 0) {
+            station_exists <- any(
+              existing_stations$Istasyon_original == istasyon & 
+              existing_stations$Sehir == sehir
+            )
+          }
+          
+          if (station_exists) {
+            print(paste("Station", istasyon, "already exists in", sehir, "- skipping"))
+            next
+          }
+          
           plaka <- plaka_list[[sehir]]
           istasyon_modified  <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
           
           insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified)
+          print(paste("Added new station:", istasyon, "in", sehir))
+          
+          city_new_stations <- c(city_new_stations, istasyon)
+          all_new_stations <- c(all_new_stations, paste(sehir, istasyon, sep=": "))
+          new_stations[[paste(sehir, istasyon, sep="-")]] <- list(
+            city = sehir,
+            station = istasyon,
+            modified_name = istasyon_modified
+          )
         }
+        
         clickClearButton(driver, "dropdown1-contentDataDowloadNew", "Temizle")
       }
       clickClearButton(driver, "dropdown12-contentDataDowloadNew", "Temizle")
     }
 
-    city_count <- dbGetQuery(mydb, "SELECT COUNT(DISTINCT Sehir) AS city_count FROM location")$city_count
+    total_new_stations <- length(new_stations)
+    if (total_new_stations > 0) {
+      stations_by_city <- tapply(
+        names(new_stations),
+        sapply(new_stations, function(x) x$city),
+        function(x) sub("^[^-]+-", "", x)
+      )
+      
+      city_summaries <- sapply(names(stations_by_city), function(city) {
+        paste0(city, ": ", paste(stations_by_city[[city]], collapse=", "))
+      })
+      
+      summary_message <- paste0(
+        "Total ", total_new_stations, " new station(s) added for year ", current_year, ". ",
+        "New stations by city: ", paste(city_summaries, collapse="; ")
+      )
+      logStationAddition(mydb, summary_message, current_year)
+    } else {
+      summary_message <- paste0("No new stations found for year ", current_year)
+      logStationAddition(mydb, summary_message, current_year)
+    }
+
+    city_count <- dbGetQuery(mydb, 'SELECT COUNT(DISTINCT "Sehir") AS city_count FROM location')$city_count
     print(paste("Total unique cities in database:", city_count))
 
     dbDisconnect(mydb)
@@ -275,5 +366,15 @@ retrieveStationInfo <- function() {
   })
 }
 
-# Call the function
+getExistingStations <- function(db) {
+  tryCatch({
+    if (!dbIsValid(db)) stop("Database connection is invalid.")
+    existing_stations <- dbGetQuery(db, "SELECT \"Istasyon_original\", \"Sehir\" FROM location")
+    return(existing_stations)
+  }, error = function(e) {
+    message("Error fetching existing stations: ", e$message)
+    return(data.frame(Istasyon_original=character(), Sehir=character()))
+  })
+}
+
 retrieveStationInfo()
