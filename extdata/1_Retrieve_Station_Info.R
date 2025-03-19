@@ -66,7 +66,7 @@ insertLocation <- function(db, bolge, sehir, plaka, istasyon, istasyon_modified)
     dbExecute(db, "BEGIN TRANSACTION")
     
     dbExecute(db, "INSERT INTO location (\"Bolge\", \"Sehir\", \"Plaka\", \"Istasyon_original\", \"Istasyon_modified\") 
-              VALUES (?, ?, ?, ?, ?)",
+              VALUES ($1, $2, $3, $4, $5)",
               params = list(bolge, sehir, plaka, istasyon, istasyon_modified))
     
     dbExecute(db, "COMMIT")
