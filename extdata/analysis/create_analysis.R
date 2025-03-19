@@ -14,6 +14,7 @@ setwd(script_path)
 
 # Load functions (relative to the script's location)
 source("create_daily_intermediate_analysis.R")
+source("create_daily_analysis_views.R")
 
 # Restore the previous working directory
 setwd(old_wd)
@@ -37,3 +38,6 @@ dbDisconnect(con)
 
 # Create intermediate analysis
 create_daily_intermediate_analysis(start_year, end_year, schema_name)
+
+# Create views
+create_daily_analysis_views(start_year, end_year, schema_name)

@@ -4,16 +4,16 @@
 \alias{calculate_city_average}
 \title{Calculate the city average of available data}
 \usage{
-calculate_city_average(averages, parameter, percentages, stations)
+calculate_city_average(data, parameter, cities, threshold)
 }
 \arguments{
-\item{averages}{A grouped data frame containing the averages (in tbl format)}
+\item{data}{The data with necessary columns (in tbl format)}
 
 \item{parameter}{The parameter to calculate the average for}
 
-\item{percentages}{A data frame containing the percentages (in tbl format)}
+\item{cities}{The cities data}
 
-\item{stations}{A data frame containing the stations (in tbl format)}
+\item{threshold}{The threshold for the percentage}
 }
 \description{
 Calculate the city average of available data

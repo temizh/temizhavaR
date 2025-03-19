@@ -1,21 +1,36 @@
 #' Calculate the city average of available data
 #'
-#' @param averages A grouped data frame containing the averages (in tbl format)
+#' @param data The data with necessary columns (in tbl format)
 #' @param parameter The parameter to calculate the average for
-#' @param percentages A data frame containing the percentages (in tbl format)
-#' @param stations A data frame containing the stations (in tbl format)
+#' @param cities The cities data
+#' @param threshold The threshold for the percentage
 #' @export
 
 
-calculate_city_average <- function(averages, parameter, percentages, stations, threshold) {
-  data <- averages %>%
-    left_join(percentages, by = c("Istasyon", "Yıl")) %>%
-    left_join(stations, by = "Istasyon") %>%
+calculate_city_average <- function(data, parameter, cities, threshold) {
+  data <- data %>%
+    left_join(cities, by = "Istasyon") %>%
     filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold) %>%
-    group_by(Yıl, Sehir) %>%
-    summarise(
-      result = mean(.data[[paste0(parameter, "_Ortalaması")]], na.rm = TRUE)  # Calculate average
-    )
+    select(Sehir, Yıl, .data[[paste0(parameter, "_Ortalaması")]])
 
-  return(data)
+  data <- data %>%
+    group_by(Sehir, Yıl) %>%
+    summarise(
+      result = mean(.data[[paste0(parameter, "_Ortalaması")]], na.rm = TRUE)
+    ) %>%
+    select(Sehir, Yıl, result)
+
+  # widen the data by year
+  wide <- data %>%
+    pivot_wider(names_from = Yıl, values_from = result, values_fill = NA)
+
+  # Identify year columns dynamically (assuming years are 4-digit numbers starting with 20)
+  year_cols <- colnames(wide) %>%
+    grep("^20\\d{2}$", ., value = TRUE) %>%
+    sort()
+
+  wide <- wide %>%
+    select(Sehir, all_of(year_cols), everything())  # Order columns
+
+  return(wide)
 }

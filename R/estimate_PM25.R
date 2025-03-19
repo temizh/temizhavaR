@@ -19,7 +19,7 @@ estimate_PM25 <- function(data, data_in_year) {
     mutate(PM10_percentage = (available_PM10_entries / total_entries) * 100) %>%  # Calculate percentage
     
     # Estimate PM2.5
-    mutate(result = ifelse(PM25_percentage >= 75, PM25_average, ifelse(PM10_percentage >= 75, PM10_average * 0.6667, NA))) %>%
+    mutate(result = ifelse(PM25_percentage >= 75, PM25_average, ifelse(PM10_percentage >= 90, PM10_average * 0.6667, NA))) %>%
     
     select(-c(total_entries, available_PM25_entries, available_PM10_entries, PM25_average, PM10_average, PM25_percentage, PM10_percentage))  # Remove intermediate columns
 

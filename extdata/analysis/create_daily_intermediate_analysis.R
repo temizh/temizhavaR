@@ -172,10 +172,6 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
   message("Saving data...")
   compute(analysed_data, in_schema(schema_name, "daily_intermediate_analysis"), temporary = FALSE)
 
-  # Test
-  test <- tbl(con, in_schema(schema_name, "daily_intermediate_analysis"))
-  glimpse(test)
-
   # Close conection
   dbDisconnect(con)
   message("Intermediate analysis for daily data is created.")
