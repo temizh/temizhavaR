@@ -18,37 +18,6 @@ create_location_table <- function(mydb) {
     );"
   
   dbExecute(mydb, location_sql)
-  
-  alter_sql <- "
-    DO $$ 
-    BEGIN
-      -- Backup existing data
-      CREATE TEMP TABLE location_backup AS 
-      SELECT \"Bolge\", \"Sehir\", \"Plaka\", \"Istasyon_modified\"
-      FROM location;
-      
-      -- Drop existing table
-      DROP TABLE location;
-      
-      -- Recreate table with proper structure
-      CREATE TABLE location (
-        \"Id\" SERIAL PRIMARY KEY,
-        \"Bolge\" TEXT,
-        \"Sehir\" TEXT,
-        \"Plaka\" TEXT,
-        \"Istasyon_modified\" TEXT UNIQUE
-      );
-      
-      -- Restore data
-      INSERT INTO location (\"Bolge\", \"Sehir\", \"Plaka\",\"Istasyon_modified\")
-      SELECT \"Bolge\", \"Sehir\", \"Plaka\", \"Istasyon_modified\"
-      FROM location_backup;
-      
-      -- Clean up
-      DROP TABLE location_backup;
-    END $$;"
-  
-  dbExecute(mydb, alter_sql)
 }
 
 create_detail_tables <- function(mydb) {
@@ -99,10 +68,58 @@ create_detail_tables <- function(mydb) {
   })
 }
 
+create_indexes <- function(mydb) {
+  index_statements <- c(
+    # Time-based indexes
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_tarih ON hourly_detail(\"Tarih\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_tarih ON daily_detail(\"Tarih\")",
+    
+    # Location indexes
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_location ON hourly_detail(\"location_id\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_location ON daily_detail(\"location_id\")",
+    "CREATE INDEX IF NOT EXISTS idx_location_sehir ON location(\"Sehir\")",
+    "CREATE INDEX IF NOT EXISTS idx_location_bolge ON location(\"Bolge\")",
+    
+    # Composite indexes
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_loc_time ON hourly_detail(\"location_id\", \"Tarih\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_loc_time ON daily_detail(\"location_id\", \"Tarih\")",
+    
+    # Pollutant indexes - daily
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_pm10 ON daily_detail(\"PM10\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_pm25 ON daily_detail(\"PM25\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_so2 ON daily_detail(\"SO2\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_co ON daily_detail(\"CO\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_no2 ON daily_detail(\"NO2\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_nox ON daily_detail(\"NOX\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_no ON daily_detail(\"NO\")",
+    "CREATE INDEX IF NOT EXISTS idx_daily_detail_o3 ON daily_detail(\"O3\")",
+    
+    # Pollutant indexes - hourly
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_pm10 ON hourly_detail(\"PM10\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_pm25 ON hourly_detail(\"PM25\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_so2 ON hourly_detail(\"SO2\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_co ON hourly_detail(\"CO\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_no2 ON hourly_detail(\"NO2\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_nox ON hourly_detail(\"NOX\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_no ON hourly_detail(\"NO\")",
+    "CREATE INDEX IF NOT EXISTS idx_hourly_detail_o3 ON hourly_detail(\"O3\")"
+  )
+  
+  for(sql in index_statements) {
+    tryCatch({
+      dbExecute(mydb, sql)
+    }, error = function(e) {
+      message("Error creating index: ", sql, "\nError message: ", e$message)
+    })
+  }
+  
+  message("Database indexes creation completed")
+}
+
 create_SQL_schema <- function() {
   init.temizhavaR()
   
-  mydb <- create_postgres_conn()
+  mydb <- temizhavaR:::create_postgres_conn()
   if(is.null(mydb) || !dbIsValid(mydb)) {
     stop("Could not create database connection.")
   }
@@ -113,6 +130,7 @@ create_SQL_schema <- function() {
   
   create_location_table(mydb)
   create_detail_tables(mydb)
+  create_indexes(mydb)  
   
   message("Schema creation process completed")
 }
