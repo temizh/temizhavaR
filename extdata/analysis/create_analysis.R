@@ -4,6 +4,9 @@ library(DBI)
 library(tidyr)
 library(pillar)
 library(dbplyr)
+library(slider)
+library(googledrive)
+library(googlesheets4)
 
 # Save the current working directory
 old_wd <- getwd()
@@ -14,7 +17,10 @@ setwd(script_path)
 
 # Load functions (relative to the script's location)
 source("create_daily_intermediate_analysis.R")
+source("create_hourly_intermediate_analysis.R")
 source("create_daily_analysis_views.R")
+source("create_AQI_analysis.R")
+source("save_views_to_drive.R")
 
 # Restore the previous working directory
 setwd(old_wd)
@@ -25,7 +31,10 @@ end_year <- 2024
 
 timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-schema_name <- paste0("analysis_", timestamp)
+#schema_name <- paste0("analysis_", timestamp)
+schema_name <- "analysis_20252003"
+
+folder_id <- "1Z5SlS15_2nBez3d40Vtg3X9xWhozP129"
 
 # Database
 con <- create_postgres_conn()
@@ -37,7 +46,16 @@ dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con
 dbDisconnect(con)
 
 # Create intermediate analysis
-create_daily_intermediate_analysis(start_year, end_year, schema_name)
+# create_daily_intermediate_analysis(start_year, end_year, schema_name)
+#create_hourly_intermediate_analysis(start_year, end_year, schema_name)
 
 # Create views
-create_daily_analysis_views(start_year, end_year, schema_name)
+# create_daily_analysis_views(start_year, end_year, schema_name)
+
+# Calculate AQI
+if(FALSE) {
+  create_AQI_analysis(start_year, end_year, schema_name)
+}
+
+# Save views to drive as XLSX
+save_views_to_drive(schema_name, folder_id)
