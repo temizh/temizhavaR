@@ -203,7 +203,36 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
  
     click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[1]/div/div/div/button')
-    Sys.sleep(3) 
+    # Increase wait time and log directory contents for debugging
+    timeout <- 60
+    start_wait <- Sys.time()
+    downloaded <- FALSE
+    while(difftime(Sys.time(), start_wait, units="secs") < timeout) {
+      indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
+      log_message(paste("Waiting for detail file... Found files:", paste(indirilen_dosyalar, collapse=", ")))
+      if(length(indirilen_dosyalar) > 0) {
+        downloaded <- TRUE
+        break
+      }
+      Sys.sleep(2)
+    }
+    if (!downloaded) {
+      log_message(paste("No detail data file found for station:", istasyon))
+      missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
+    } else {
+      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
+      log_message(paste("Detail file found:", mevcut_dosya))
+      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
+        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+        yeni_dosya_adi <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
+        yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
+        file.rename(mevcut_dosya, yeni_dosya_yolu)
+        log_message(paste("Detail data successfully downloaded and renamed to:", yeni_dosya_adi))
+      } else {
+        log_message(paste("Detail data download failed for station:", istasyon))
+        missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
+      }
+    }
 
     error_status <- check_page_errors(remDr)
     if (error_status$error) {
@@ -367,69 +396,111 @@ selectDropdownOption <- function(driver, dropdown_xpath, option_text, max_retrie
 #' check_page_errors(remDr, "download")
 #'
 check_page_errors <- function(remDr, action = "general") {
-    Sys.sleep(1)
+  Sys.sleep(1)
     
-    selenium_error <- tryCatch({
-      if (action == "download") {
-        download_found <- wait_for_element(remDr, 
-          "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel", 
-          type = "css")
-
-        if (!download_found) {
-          error_found <- wait_for_element(remDr, 
-            "//*[contains(text(), 'veri bulunamadı') or contains(text(), 'İşlem Eksik')]", 
-            type = "xpath")
-          
-          if (error_found) {
-            return(list(error = TRUE, message = "No data available for this period"))
-          } else {
-            return(list(error = TRUE, message = "Download button not found and no error message"))
-          }
+  selenium_error <- tryCatch({
+    if (action == "download") {
+      download_found <- wait_for_element(remDr, 
+        "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel", 
+        type = "css")
+      
+      if (!download_found) {
+        error_found <- wait_for_element(remDr, 
+          "//*[contains(text(), 'veri bulunamadı') or contains(text(), 'İşlem Eksik')]", 
+          type = "xpath")
+        
+        if (error_found) {
+          return(list(error = TRUE, message = "No data available for this period"))
+        } else {
+          return(list(error = TRUE, message = "Download button not found and no error message"))
         }
       }
-      return(list(error = FALSE))
-    }, error = function(e) {
-      if (grepl("NoSuchElement", e$message)) {
-        return(list(error = TRUE, message = "Required elements not found - No data available"))
-      }
-      return(list(error = TRUE, message = e$message))
-    })
+    }
+    return(list(error = FALSE))
+  }, error = function(e) {
+    if (grepl("NoSuchElement", e$message)) {
+      return(list(error = TRUE, message = "Required elements not found - No data available"))
+    }
+    return(list(error = TRUE, message = e$message))
+  })
     
-    toast_warning <- tryCatch({
-      selectors <- c(
-        "#toast-container .toast-warning",
-        ".toast.toast-warning",
-        "div.toast-warning",
-        "div.toast-message"
-      )
-      
-      for (selector in selectors) {
-        elements <- remDr$findElements("css selector", selector)
-        if (length(elements) > 0) {
-          message <- tryCatch({
-            elements[[1]]$getElementText()[[1]]
-          }, error = function(e) "Toast warning detected")
-          return(list(error = TRUE, message = message))
+  toast_warning <- tryCatch({
+    # Wait a moment for toast messages to appear
+    Sys.sleep(2)
+    
+    selectors <- c(
+      "#toast-container .toast-warning",
+      ".toast.toast-warning",
+      "div.toast-warning",
+      "div.toast-message",
+      ".k-notification-warning",
+      ".toast-bottom-right .toast-warning",
+      "[role='alert']",
+      ".k-notification .k-notification-content"
+    )
+    
+    for (selector in selectors) {
+      cat("Checking for toast selector:", selector, "\n")
+      elements <- remDr$findElements("css selector", selector)
+      if (length(elements) > 0) {
+        cat("Found toast element with selector:", selector, "\n")
+        message <- tryCatch({
+          text <- elements[[1]]$getElementText()[[1]]
+          cat("Toast text:", text, "\n")
+          text
+        }, error = function(e) {
+          cat("Could not get toast text:", e$message, "\n")
+          "Toast warning detected"
+        })
+        
+        if (is.null(message) || message == "") {
+          message <- "Empty toast warning detected"
         }
+        
+        return(list(error = TRUE, message = message))
       }
+    }
+    
+    # Try alternative approach with JavaScript
+    js_result <- tryCatch({
+      script <- "return document.querySelector('.toast-warning, .k-notification-warning, [role=\"alert\"]')?.innerText || '';"
+      toast_text <- remDr$executeScript(script)[[1]]
       
-      error_text <- remDr$findElements("xpath", 
-        "//*[contains(text(), 'veri bulunamadı') or contains(text(), 'İşlem Eksik')]")
-      if (length(error_text) > 0) {
-        return(list(error = TRUE, message = "No data available message found"))
+      if (!is.null(toast_text) && toast_text != "") {
+        cat("Found toast via JavaScript:", toast_text, "\n")
+        return(list(error = TRUE, message = toast_text))
       }
-      
-      return(list(error = FALSE))
     }, error = function(e) {
-      cat("Error checking toast:", e$message, "\n")
-      return(list(error = FALSE))
+      cat("JavaScript toast check failed:", e$message, "\n")
+      NULL
     })
     
-    return(list(
-      error = selenium_error$error || toast_warning$error,
-      message = if(selenium_error$error) selenium_error$message else toast_warning$message
-    ))
-  }
+    if (!is.null(js_result) && js_result$error) {
+      return(js_result)
+    }
+    
+    error_text <- remDr$findElements("xpath", 
+      "//*[contains(text(), 'veri bulunamadı') or contains(text(), 'İşlem Eksik')]")
+    if (length(error_text) > 0) {
+      text_content <- tryCatch({
+        error_text[[1]]$getElementText()[[1]]
+      }, error = function(e) "No data available message found")
+      
+      cat("Error text found:", text_content, "\n")
+      return(list(error = TRUE, message = text_content))
+    }
+    
+    return(list(error = FALSE))
+  }, error = function(e) {
+    cat("Error checking toast:", e$message, "\n")
+    return(list(error = FALSE))
+  })
+    
+  return(list(
+    error = selenium_error$error || toast_warning$error,
+    message = if(selenium_error$error) selenium_error$message else if(toast_warning$error) toast_warning$message else ""
+  ))
+}
 
 
 
@@ -534,24 +605,3 @@ get_dropdown_options <- function(remDr, css_selector) {
 }
 
 
-
-#' Clean text for better matching
-#'
-#' @param text Text to clean
-#' @return Cleaned text
-clean_text <- function(text) {
-  text <- gsub("ş", "s", text)
-  text <- gsub("Ş", "S", text)
-  text <- gsub("ı", "i", text)
-  text <- gsub("İ", "I", text)
-  text <- gsub("ğ", "g", text)
-  text <- gsub("Ğ", "G", text)
-  text <- gsub("ü", "u", text)
-  text <- gsub("Ü", "U", text)
-  text <- gsub("ö", "o", text)
-  text <- gsub("Ö", "O", text)
-  text <- gsub("ç", "c", text)
-  text <- gsub("Ç", "C", text)
-  
-  return(text)
-}
