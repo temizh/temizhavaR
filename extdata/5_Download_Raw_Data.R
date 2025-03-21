@@ -110,7 +110,8 @@ download_check <- function(city_dir, istasyon_modified, data_type, startdate, en
 
 
 download_temizhava_data <- function(mode = "default", one_station = NULL,
-                                    startdate = NULL, enddate = NULL, year = NULL, start_year = NULL) {
+                                    startdate = NULL, enddate = NULL, year = NULL, start_year = NULL,
+                                    selected_region = NULL) {
   tryCatch({
     clear_file_cache()
   }, error = function(e) {
@@ -143,7 +144,7 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
     dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
-  conn <- create_postgres_conn()
+  conn <- temizhavaR:::create_postgres_conn()
   if (is.null(conn)) {
     stop("Failed to connect to PostgreSQL database")
   }
@@ -156,6 +157,15 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
       stop(sprintf("Station '%s' not found in the database", one_station))
     }
     cat(sprintf("Processing single station: %s\n", one_station))
+  }
+  
+  if (!is.null(selected_region)) {
+    location <- location[location$Bolge == selected_region, ]
+    if (nrow(location) == 0) {
+      stop(sprintf("No stations found for region '%s'", selected_region))
+    }
+    cat(sprintf("Processing only stations in region: %s (%d stations)\n", 
+               selected_region, nrow(location)))
   }
 
   if (nrow(location) == 0) {
@@ -306,7 +316,7 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
     })
   }
 
-  wait_for_element <- function(remDr, selector, type = "css", timeout = 10, interval = 0.5) {
+  wait_for_element <- function(remDr, selector, type = "css", timeout = 3, interval = 0.5) {
     start_time <- Sys.time()
     while(difftime(Sys.time(), start_time, units="secs") < timeout) {
       elements <- tryCatch({
@@ -554,9 +564,22 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
 }
 
 
-download_temizhava_data(startdate = "01.01.2024", enddate = "01.01.2025")
+download_temizhava_data(startdate = "01.01.2014", enddate = "01.01.2024")
 
 # download_temizhava_data(mode = "yearly", year = 2023)
 
  # Decade mode starting from 2010
 # download_temizhava_data(mode = "decade", start_year = 2010)
+
+# Example usage
+# Download all stations
+# download_temizhava_data(startdate = "01.01.2024", enddate = "01.01.2025")
+
+# Download only stations in a specific region
+# download_temizhava_data(startdate = "01.01.2024", enddate = "01.01.2025", selected_region = "Marmara THM")
+
+# Download a specific year for a specific region
+# download_temizhava_data(mode = "yearly", year = 2023, selected_region = "Ege THM")
+
+# Stop the driver server after downloads finish
+remote_driver$server$stop()
