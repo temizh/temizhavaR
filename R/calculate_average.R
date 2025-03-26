@@ -5,10 +5,11 @@
 #' @export
 
 
-calculate_average <- function(data, parameter) {
+calculate_average <- function(data, parameter, data_in_year) {
   data <- data %>%
     summarise(
-      result = mean(.data[[parameter]], na.rm = TRUE)  # Calculate average
+      #result = mean(.data[[parameter]], na.rm = TRUE)  # Calculate average
+      result = sum(.data[[parameter]], na.rm = TRUE) / data_in_year  # Calculate average
     )
 
   return(data)

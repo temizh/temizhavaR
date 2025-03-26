@@ -4,7 +4,7 @@
 \alias{calculate_average}
 \title{Calculate the average of available data}
 \usage{
-calculate_average(data, parameter)
+calculate_average(data, parameter, data_in_year)
 }
 \arguments{
 \item{data}{A grouped data frame containing the data (in tbl format)}

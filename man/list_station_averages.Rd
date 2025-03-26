@@ -4,7 +4,13 @@
 \alias{list_station_averages}
 \title{List station averages}
 \usage{
-list_station_averages(data, parameter, data_threshold, threshold_direction)
+list_station_averages(
+  data,
+  parameter,
+  data_threshold,
+  threshold_direction,
+  threshold = 0
+)
 }
 \arguments{
 \item{data}{The data with necessary columns (in tbl format)}

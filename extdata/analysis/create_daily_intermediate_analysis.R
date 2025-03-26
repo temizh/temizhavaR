@@ -32,7 +32,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("PM10_Veri_Mevcudiyeti" = result)
 
   PM10_Ortalaması <- grouped_data %>%
-    calculate_average("PM10") %>%
+    calculate_average("PM10", data_in_year) %>%
     rename("PM10_Ortalaması" = result)
 
   PM10_45_Altı_Veri_Sayısı <- grouped_data %>%
@@ -49,7 +49,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("PM25_Veri_Mevcudiyeti" = result)
 
   PM25_Ortalaması <- grouped_data %>%
-    calculate_average("PM25") %>%
+    calculate_average("PM25", data_in_year) %>%
     rename("PM25_Ortalaması" = result)
 
   PM25_15_Üstü_Veri_Sayısı <- grouped_data %>%
@@ -70,7 +70,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("SO2_Veri_Mevcudiyeti" = result)
 
   SO2_Ortalaması <- grouped_data %>%
-    calculate_average("SO2") %>%
+    calculate_average("SO2", data_in_year) %>%
     rename("SO2_Ortalaması" = result)
 
   SO2_40_Üstü_Veri_Sayısı <- grouped_data %>%
@@ -87,7 +87,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("NO2_Veri_Mevcudiyeti" = result)
 
   NO2_Ortalaması <- grouped_data %>%
-    calculate_average("NO2") %>%
+    calculate_average("NO2", data_in_year) %>%
     rename("NO2_Ortalaması" = result)
 
   NO2_25_Üstü_Veri_Sayısı <- grouped_data %>%
@@ -100,7 +100,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("NOX_Veri_Mevcudiyeti" = result)
 
   NOX_Ortalaması <- grouped_data %>%
-    calculate_average("NOX") %>%
+    calculate_average("NOX", data_in_year) %>%
     rename("NOX_Ortalaması" = result)
 
   # O3 ----------------------------
@@ -109,7 +109,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("O3_Veri_Mevcudiyeti" = result)
 
   O3_Ortalaması <- grouped_data %>%
-    calculate_average("O3") %>%
+    calculate_average("O3", data_in_year) %>%
     rename("O3_Ortalaması" = result)
 
   O3_Kış_Veri_Mevcudiyeti <- grouped_data %>%
@@ -126,7 +126,7 @@ create_daily_intermediate_analysis <- function(start_year, end_year, schema_name
     rename("CO_Veri_Mevcudiyeti" = result)
 
   CO_Ortalaması <- grouped_data %>%
-    calculate_average("CO") %>%
+    calculate_average("CO", data_in_year) %>%
     rename("CO_Ortalaması" = result)
 
   # Combine results

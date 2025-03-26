@@ -50,28 +50,28 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   PM10_5 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Ortalaması) %>%
-    list_station_averages("PM10", data_threshold = 0, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   PM10_6 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Ortalaması) %>%
-    list_station_averages("PM10", data_threshold = 40, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 40, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   PM10_7 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Ortalaması) %>%
-    list_station_averages("PM10", data_threshold = 40, threshold_direction = "Altı") %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 40, threshold_direction = "Altı", threshold = 90) %>%
     sql_render()
 
   PM10_8 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Ortalaması) %>%
-    list_station_averages("PM10", data_threshold = 15, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 15, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   PM10_9 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Ortalaması) %>%
-    list_station_averages("PM10", data_threshold = 15, threshold_direction = "Altı") %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 15, threshold_direction = "Altı", threshold = 90) %>%
     sql_render()
 
   PM10_10 <- intermediate_analysis %>%
@@ -125,18 +125,18 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   PM25_7 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Ortalaması) %>%
-    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, PM25_Ortalaması, PM25_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   PM25_8 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Ortalaması) %>%
-    list_station_averages("PM25", data_threshold = 5, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, PM25_Ortalaması, PM25_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM25", data_threshold = 5, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   PM25_9 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Ortalaması) %>%
-    list_station_averages("PM25", data_threshold = 5, threshold_direction = "Altı") %>%
+    select(Istasyon, Yıl, PM25_Ortalaması, PM25_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM25", data_threshold = 5, threshold_direction = "Altı", threshold = 90) %>%
     sql_render()
 
   PM25_10 <- intermediate_analysis %>%
@@ -151,16 +151,32 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     list_station_exceedance("PM25", threshold = 90, data_threshold = 15, threshold_direction = "Altı") %>%
     sql_render()
 
-  PM25_13 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Tamamlanmış) %>%
+  PM25_13_1 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
-    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü") %>%
+    rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
-  PM25_14 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Veri_Mevcudiyeti, PM25_Tamamlanmış) %>%
+  PM25_13_2 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
-    calculate_city_average("PM25", cities = cities, threshold = 0) %>%
+    rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 75) %>%
+    sql_render()
+
+  PM25_14_1 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış) %>%
+    rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
+    calculate_city_average("PM25", cities = cities, threshold = 90) %>%
+    sql_render()
+
+  PM25_14_2 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış) %>%
+    rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
+    calculate_city_average("PM25", cities = cities, threshold = 75) %>%
     sql_render()
 
   # SO2 ----------------------------
@@ -190,8 +206,8 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   SO2_4 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, SO2_Ortalaması) %>%
-    list_station_averages("SO2", data_threshold = 0, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, SO2_Ortalaması, SO2_Veri_Mevcudiyeti) %>%
+    list_station_averages("SO2", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   SO2_7 <- intermediate_analysis %>%
@@ -211,7 +227,7 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
 
   SO2_11 <- intermediate_analysis %>%
     select(Istasyon, Yıl, SO2_Veri_Mevcudiyeti, SO2_Ortalaması) %>%
-    list_station_averages("SO2", data_threshold = 20, threshold_direction = "Üstü") %>%
+    list_station_averages("SO2", data_threshold = 20, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   # NO2 ----------------------------
@@ -246,18 +262,18 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   NO2_6 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, NO2_Ortalaması) %>%
-    list_station_averages("NO2", data_threshold = 0, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, NO2_Ortalaması, NO2_Veri_Mevcudiyeti) %>%
+    list_station_averages("NO2", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   NO2_7 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, NO2_Ortalaması) %>%
-    list_station_averages("NO2", data_threshold = 40, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, NO2_Ortalaması, NO2_Veri_Mevcudiyeti) %>%
+    list_station_averages("NO2", data_threshold = 40, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   NO2_8 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, NO2_Ortalaması) %>%
-    list_station_averages("NO2", data_threshold = 10, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, NO2_Ortalaması, NO2_Veri_Mevcudiyeti) %>%
+    list_station_averages("NO2", data_threshold = 10, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   NO2_9 <- intermediate_analysis %>%
@@ -292,8 +308,8 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   NOX_4 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, NOX_Ortalaması) %>%
-    list_station_averages("NOX", data_threshold = 30, threshold_direction = "Üstü") %>%
+    select(Istasyon, Yıl, NOX_Ortalaması, NOX_Veri_Mevcudiyeti) %>%
+    list_station_averages("NOX", data_threshold = 30, threshold_direction = "Üstü", threshold = 90) %>%
     sql_render()
 
   # O3 ----------------------------
@@ -388,8 +404,10 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_9", " AS ", PM25_9))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_10", " AS ", PM25_10))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_12", " AS ", PM25_12))
-  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_13", " AS ", PM25_13))
-  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_14", " AS ", PM25_14))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_13_1", " AS ", PM25_13_1))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_13_2", " AS ", PM25_13_2))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_14_1", " AS ", PM25_14_1))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_14_2", " AS ", PM25_14_2))
 
   # SO2 ----------------------------
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_1", " AS ", SO2_1))

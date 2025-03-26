@@ -31,10 +31,11 @@ end_year <- 2024
 
 timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-#schema_name <- paste0("analysis_", timestamp)
-schema_name <- "analysis_20252003"
+schema_name <- paste0("analysis_", timestamp)
 
-folder_id <- "1Z5SlS15_2nBez3d40Vtg3X9xWhozP129"
+# Google Drive
+# Create a folder in Google Drive and get the folder ID
+folder_id <- "18S4q7pMEuKOAhdL8MMkuaiCVHaOgauPN"
 
 # Database
 con <- create_postgres_conn()
@@ -46,11 +47,11 @@ dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con
 dbDisconnect(con)
 
 # Create intermediate analysis
-# create_daily_intermediate_analysis(start_year, end_year, schema_name)
-#create_hourly_intermediate_analysis(start_year, end_year, schema_name)
+create_daily_intermediate_analysis(start_year, end_year, schema_name)
+# create_hourly_intermediate_analysis(start_year, end_year, schema_name)
 
 # Create views
-# create_daily_analysis_views(start_year, end_year, schema_name)
+create_daily_analysis_views(start_year, end_year, schema_name)
 
 # Calculate AQI
 if(FALSE) {
