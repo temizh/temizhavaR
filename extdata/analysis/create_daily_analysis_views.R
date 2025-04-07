@@ -49,9 +49,14 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     count_stations("PM10", 75) %>%
     sql_render()
 
-  PM10_5 <- intermediate_analysis %>%
+  PM10_5_1 <- intermediate_analysis %>%
     select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
     list_station_averages("PM10", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
+    sql_render()
+
+  PM10_5_2 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM10_Ortalaması, PM10_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM10", data_threshold = 0, threshold_direction = "Üstü", threshold = 75) %>%
     sql_render()
 
   PM10_6 <- intermediate_analysis %>%
@@ -88,9 +93,14 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
 
   # PM10_13 ???
 
-  PM10_14 <- intermediate_analysis %>%
+  PM10_14_1 <- intermediate_analysis %>%
     select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM10_Ortalaması) %>%
     calculate_city_average("PM10", cities = cities, threshold = 90) %>%
+    sql_render()
+
+  PM10_14_2 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM10_Ortalaması) %>%
+    calculate_city_average("PM10", cities = cities, threshold = 75) %>%
     sql_render()
 
   # PM25 ----------------------------
@@ -124,9 +134,14 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     count_stations("PM25", 75) %>%
     sql_render()
 
-  PM25_7 <- intermediate_analysis %>%
+  PM25_7_1 <- intermediate_analysis %>%
     select(Istasyon, Yıl, PM25_Ortalaması, PM25_Veri_Mevcudiyeti) %>%
     list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
+    sql_render()
+
+  PM25_7_2 <- intermediate_analysis %>%
+    select(Istasyon, Yıl, PM25_Ortalaması, PM25_Veri_Mevcudiyeti) %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 75) %>%
     sql_render()
 
   PM25_8 <- intermediate_analysis %>%
@@ -152,31 +167,35 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
     sql_render()
 
   PM25_13_1 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti) %>%
+    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti, PM25_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Ikincil_Veri_Mevcudiyeti" = "PM25_Veri_Mevcudiyeti") %>%
     rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
-    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 90) %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 90, second_threshold = 75) %>%
     sql_render()
 
   PM25_13_2 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti) %>%
+    select(Istasyon, Yıl, PM25_Tamamlanmış, PM10_Veri_Mevcudiyeti, PM25_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Ikincil_Veri_Mevcudiyeti" = "PM25_Veri_Mevcudiyeti") %>%
     rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
-    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 75) %>%
+    list_station_averages("PM25", data_threshold = 0, threshold_direction = "Üstü", threshold = 75, second_threshold = 75) %>%
     sql_render()
 
   PM25_14_1 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış) %>%
+    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış, PM25_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Ikincil_Veri_Mevcudiyeti" = "PM25_Veri_Mevcudiyeti") %>%
     rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
-    calculate_city_average("PM25", cities = cities, threshold = 90) %>%
+    calculate_city_average("PM25", cities = cities, threshold = 90, second_threshold = 75) %>%
     sql_render()
 
   PM25_14_2 <- intermediate_analysis %>%
-    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış) %>%
+    select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM25_Tamamlanmış, PM25_Veri_Mevcudiyeti) %>%
     rename("PM25_Ortalaması" = "PM25_Tamamlanmış") %>%
+    rename("PM25_Ikincil_Veri_Mevcudiyeti" = "PM25_Veri_Mevcudiyeti") %>%
     rename("PM25_Veri_Mevcudiyeti" = "PM10_Veri_Mevcudiyeti") %>%
-    calculate_city_average("PM25", cities = cities, threshold = 75) %>%
+    calculate_city_average("PM25", cities = cities, threshold = 75, second_threshold = 75) %>%
     sql_render()
 
   # SO2 ----------------------------
@@ -383,14 +402,16 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_4_1", " AS ", PM10_4_1))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_3_2", " AS ", PM10_3_2))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_4_2", " AS ", PM10_4_2))
-  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_5", " AS ", PM10_5))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_5_1", " AS ", PM10_5_1))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_5_2", " AS ", PM10_5_2))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_6", " AS ", PM10_6))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_7", " AS ", PM10_7))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_8", " AS ", PM10_8))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_9", " AS ", PM10_9))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_10", " AS ", PM10_10))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_12", " AS ", PM10_12))
-  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_14", " AS ", PM10_14))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_14_1", " AS ", PM10_14_1))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_14_2", " AS ", PM10_14_2))
 
   # PM25 ----------------------------
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_1", " AS ", PM25_1))
@@ -399,7 +420,8 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name) {
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_4", " AS ", PM25_4))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_5", " AS ", PM25_5))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_6", " AS ", PM25_6))
-  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_7", " AS ", PM25_7))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_7_1", " AS ", PM25_7_1))
+  dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_7_2", " AS ", PM25_7_2))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_8", " AS ", PM25_8))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_9", " AS ", PM25_9))
   dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_10", " AS ", PM25_10))

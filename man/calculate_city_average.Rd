@@ -4,7 +4,13 @@
 \alias{calculate_city_average}
 \title{Calculate the city average of available data}
 \usage{
-calculate_city_average(data, parameter, cities, threshold)
+calculate_city_average(
+  data,
+  parameter,
+  cities,
+  threshold,
+  second_threshold = 0
+)
 }
 \arguments{
 \item{data}{The data with necessary columns (in tbl format)}

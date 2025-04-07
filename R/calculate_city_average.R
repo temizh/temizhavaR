@@ -7,10 +7,21 @@
 #' @export
 
 
-calculate_city_average <- function(data, parameter, cities, threshold) {
+calculate_city_average <- function(data, parameter, cities, threshold, second_threshold = 0) {
   data <- data %>%
-    left_join(cities, by = "Istasyon") %>%
-    filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold) %>%
+    left_join(cities, by = "Istasyon")
+    # filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold) %>%
+    # select(Sehir, Yıl, .data[[paste0(parameter, "_Ortalaması")]])
+
+  if (second_threshold > 0) {
+    data <- data %>%
+      filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold | .data[[paste0(parameter, "_Ikincil_Veri_Mevcudiyeti")]] > second_threshold)
+  } else if (threshold > 0) {
+    data <- data %>%
+      filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold)
+  }
+
+  data <- data %>%
     select(Sehir, Yıl, .data[[paste0(parameter, "_Ortalaması")]])
 
   data <- data %>%

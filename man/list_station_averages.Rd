@@ -9,7 +9,8 @@ list_station_averages(
   parameter,
   data_threshold,
   threshold_direction,
-  threshold = 0
+  threshold = 0,
+  second_threshold = 0
 )
 }
 \arguments{

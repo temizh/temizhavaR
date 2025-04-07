@@ -6,7 +6,7 @@
 #' @param threshold_direction The direction of the data threshold
 #' @export
 
-list_station_averages <- function(data, parameter, data_threshold, threshold_direction, threshold = 0) {
+list_station_averages <- function(data, parameter, data_threshold, threshold_direction, threshold = 0, second_threshold = 0) {
   # Filter the data
   if(threshold_direction == "Üstü") {
     filtered_data <- data %>%
@@ -18,7 +18,11 @@ list_station_averages <- function(data, parameter, data_threshold, threshold_dir
     stop("threshold_direction must be either 'Üstü' or 'Altı'")
   }
 
-  if(threshold > 0) {
+  if(second_threshold > 0) {
+    filtered_data <- filtered_data %>%
+      filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold | .data[[paste0(parameter, "_Ikincil_Veri_Mevcudiyeti")]] > second_threshold)
+  }
+  else if (threshold > 0) {
     filtered_data <- filtered_data %>%
       filter(.data[[paste0(parameter, "_Veri_Mevcudiyeti")]] > threshold)
   }

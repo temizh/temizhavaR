@@ -56,9 +56,13 @@ save_views_to_drive <- function(schema_name, folder_id) {
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_4_2")),
     description = "PM10 %75 veri alınan istasyon sayısı"
   )
-  PM10$PM10_5 <- create_analysis_excel(
-    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5")),
-    description = "Her bir istasyonun yıllık PM10 ortalaması "
+  PM10$PM10_5_1 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5_1")),
+    description = "Her bir istasyonun yıllık PM10 ortalaması (90% üstü veri mevcudiyeti)"
+  )
+  PM10$PM10_5_2 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5_2")),
+    description = "Her bir istasyonun yıllık PM10 ortalaması (75% üstü veri mevcudiyeti)"
   )
   PM10$PM10_6 <- create_analysis_excel(
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_6")),
@@ -84,9 +88,13 @@ save_views_to_drive <- function(schema_name, folder_id) {
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_12")),
     description = "Günlük PM10 ortalaması 45 µg/m3'ün altı istasyonların listesi ve gün sayısı"
   )
-  PM10$PM10_14 <- create_analysis_excel(
-    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_14")),
-    description = "İl PM10 yıllık ortalaması"
+  PM10$PM10_14_1 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_14_1")),
+    description = "İl PM10 yıllık ortalaması (90% üstü veri mevcudiyeti)"
+  )
+  PM10$PM10_14_2 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_14_2")),
+    description = "İl PM10 yıllık ortalaması (75% üstü veri mevcudiyeti)"
   )
 
   # PM25 ----------------------------
@@ -115,9 +123,13 @@ save_views_to_drive <- function(schema_name, folder_id) {
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_6")),
     description = "PM25 %75 veri alınan istasyon sayısı"
   )
-  PM25$PM25_7 <- create_analysis_excel(
-    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7")),
-    description = "Her bir istasyonun yıllık PM25 ortalaması"
+  PM25$PM25_7_1 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7_1")),
+    description = "Her bir istasyonun yıllık PM25 ortalaması (90% üstü veri mevcudiyeti)"
+  )
+  PM25$PM25_7_2 <- create_analysis_excel(
+    data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7_2")),
+    description = "Her bir istasyonun yıllık PM25 ortalaması (75% üstü veri mevcudiyeti)"
   )
   PM25$PM25_8 <- create_analysis_excel(
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_8")),
@@ -137,22 +149,22 @@ save_views_to_drive <- function(schema_name, folder_id) {
   )
   PM25$PM25_13_1 <- create_analysis_excel(
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_13_1")),
-    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %90'ın üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilecek hesaplanan PM2.5 yıllık ortalamaları",
+    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %90'ın üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilerek hesaplanan PM2.5 yıllık ortalamaları",
     additional = list(
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5")), description = "Her bir istasyonun yıllık PM10 ortalaması"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7")), description = "Her bir istasyonun yıllık PM25 ortalaması"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_1")), description = "PM10 Veri alınan istasyon listesi"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_1")), description = "PM25 Veri alınan istasyon listesi")
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5_1")), description = "Her bir istasyonun yıllık PM10 ortalaması (90% üstü veri mevcudiyeti)"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7_2")), description = "Her bir istasyonun yıllık PM25 ortalaması (75% üstü veri mevcudiyeti)"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_1")), description = "PM10 Veri mevcudiyeti"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_1")), description = "PM25 Veri mevcudiyeti")
     )
   )
   PM25$PM25_13_2 <- create_analysis_excel(
     data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_13_2")),
-    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %75'ın üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilecek hesaplanan PM2.5 yıllık ortalamaları",
+    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %75'ın üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilerek hesaplanan PM2.5 yıllık ortalamaları",
     additional = list(
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5")), description = "Her bir istasyonun yıllık PM10 ortalaması"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7")), description = "Her bir istasyonun yıllık PM25 ortalaması"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_1")), description = "PM10 Veri alınan istasyon listesi"),
-      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_1")), description = "PM25 Veri alınan istasyon listesi")
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_5_2")), description = "Her bir istasyonun yıllık PM10 ortalaması (75% üstü veri mevcudiyeti)"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_7_2")), description = "Her bir istasyonun yıllık PM25 ortalaması (75% üstü veri mevcudiyeti)"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_1")), description = "PM10 Veri mevcudiyeti"),
+      list(data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM25_1")), description = "PM25 Veri mevcudiyeti")
     )
   )
   PM25$PM25_14_1 <- create_analysis_excel(

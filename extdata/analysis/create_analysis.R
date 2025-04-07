@@ -35,7 +35,7 @@ schema_name <- paste0("analysis_", timestamp)
 
 # Google Drive
 # Create a folder in Google Drive and get the folder ID
-folder_id <- "18S4q7pMEuKOAhdL8MMkuaiCVHaOgauPN"
+folder_id <- "1Bnigk-THJINJ6pcpmwEVI8iAZ43gzTE9"
 
 # Database
 con <- create_postgres_conn()
