@@ -107,7 +107,8 @@ fetchRegionListWithRetry <- function(driver, dropdown_id, item_selector, max_ret
       region_list <- region_list[!grepl("Bölge Seçiniz|OPEN", region_list)]
       region_list <- unique(region_list)  
       
-      print(paste("Fetched region list with", length(region_list), "items"))
+      print(paste("Fetched region list with", length(region_list), "items:", 
+                  paste(region_list, collapse=", ")))
       
       if (length(region_list) > 0) {
         return(region_list)
@@ -162,14 +163,17 @@ fetchStationListWithRetry <- function(driver, dropdown_id, item_selector, max_re
 selectDropdownOption <- function(driver, dropdown_id, option_text, max_retries = 5) {
   for (attempt in 1:max_retries) {
     tryCatch({
+      print(paste("Attempting to select", option_text, "in dropdown", dropdown_id))
       dropdown <- findElementWithRetry(driver, 'id', dropdown_id)
       safeClick(driver, dropdown)
       Sys.sleep(1)
 
-      option <- findElementWithRetry(driver, 'xpath', sprintf("//li[contains(text(), '%s')]", option_text))
+      xpath <- sprintf("//li[normalize-space(text())='%s']", option_text)
+      option <- findElementWithRetry(driver, 'xpath', xpath)
       safeClick(driver, option)
       Sys.sleep(2)
       
+      print(paste("Successfully selected", option_text))
       return(TRUE)
     }, error = function(e) {
       if (grepl("stale element reference", e$message)) {
@@ -251,10 +255,25 @@ retrieveStationInfo <- function() {
     current_year <- format(Sys.Date(), "%Y")
 
     bolge_list <- fetchRegionListWithRetry(driver, 'dropdown12-contentDataDowloadNew', ".k-reset li")
+    bolge_list <- c(bolge_list, "None") 
+
+    bolge_list <- bolge_list[!grepl("Bölge Seçiniz|OPEN", bolge_list)]
+    bolge_list <- unique(bolge_list)
+    
+    print(paste("Processing regions:", paste(bolge_list, collapse=", ")))
 
     for (bolge in bolge_list) {
       print(paste("Processing bolge:", bolge))
+      # Use the original bolge name for selection
       selectDropdownOption(driver, 'dropdown12-contentDataDowloadNew', bolge)
+      
+      # Convert "None" to "Other" only when inserting into database
+      bolge_for_db <- ifelse(bolge == "None", "Other", bolge)
+      
+      # Add debug output for None/Other regions
+      if (bolge == "None") {
+        print(paste("Found 'None' region, will store as 'Other' in database"))
+      }
 
       sehir_dropdown <- findElementWithRetry(driver, 'id', 'dropdown1-contentDataDowloadNew')
       safeClick(driver, sehir_dropdown)
@@ -314,8 +333,15 @@ retrieveStationInfo <- function() {
           plaka <- plaka_list[[sehir]]
           istasyon_modified  <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
           
-          insertLocation(mydb, bolge, sehir, plaka, istasyon, istasyon_modified)
-          print(paste("Added new station:", istasyon, "in", sehir))
+          # Add extra debug for None/Other regions
+          if (bolge == "None") {
+            print(paste("Inserting station from 'None' region as 'Other':", 
+                        sehir, istasyon, bolge_for_db))
+          }
+          
+          # Use bolge_for_db instead of bolge when inserting to database
+          insertLocation(mydb, bolge_for_db, sehir, plaka, istasyon, istasyon_modified)
+          print(paste("Added new station:", istasyon, "in", sehir, "with region", bolge_for_db))
           
           city_new_stations <- c(city_new_stations, istasyon)
           all_new_stations <- c(all_new_stations, paste(sehir, istasyon, sep=": "))
