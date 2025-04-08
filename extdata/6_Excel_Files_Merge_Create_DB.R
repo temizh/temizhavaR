@@ -51,7 +51,8 @@ remove_duplicates <- function(df) {
 read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data_dict = NULL, 
                                start_hour = 0, end_hour = 23,
                                start_meridiem = NULL, end_meridiem = NULL,
-                               time_format = "24h", all_files = FALSE
+                               time_format = "24h", all_files = FALSE,
+                               verbose = TRUE, bolge = NULL
                                ) {
   
   if (time_format == "AMPM") {
@@ -73,7 +74,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     }
   }
   
-  db <- create_postgres_conn()
+  db <- temizhavaR:::create_postgres_conn()
   
   validate_date <- function(date_str) {
     tryCatch({
@@ -96,7 +97,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
   if (delete_previous) {
     dbExecute(db, "DELETE FROM daily_detail")
     dbExecute(db, "DELETE FROM hourly_detail")
-    cat("Previous data cleared from tables\n")
+    if (verbose) cat("Previous data cleared from tables\n")
   }
 
   if (!is.null(overwrite_data_dict)) {
@@ -168,9 +169,67 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
   
   data_dir <-  getOption("temizhavaR.base_dir")
 
-
-
-
+  # Modified helper function to determine target table based on filename and file content
+  determine_target_table <- function(file) {
+    # First try to verify if it's actually a summary file regardless of filename
+    is_summary <- tryCatch({
+      # Try different ranges to catch summary headers
+      possible_ranges <- c("A1:D5", "A1:E5", "B1:D1")
+      
+      for (range in possible_ranges) {
+        header_content <- readxl::read_excel(file, range = range, col_names = FALSE)
+        header_text <- paste(as.character(unlist(header_content)), collapse = " ")
+        
+        # Check for common summary indicators
+        if (any(grepl("özet|min.*değer|max.*değer|ortalama|minimum|maximum|average", 
+                      tolower(header_text), perl = TRUE))) {
+          return(NA_character_)
+        }
+      }
+      
+      FALSE
+    }, error = function(e) FALSE)
+    
+    if (is_summary) {
+      cat("Summary file detected (from content) in", basename(file), 
+          "- skipping file for detail processing.\n")
+      return(NA_character_)
+    }
+    
+    # Then check filename patterns
+    if (grepl("ozet", tolower(basename(file)))) {
+      cat("Summary file detected (from filename) in", basename(file), 
+          "- skipping file for detail processing.\n")
+      return(NA_character_)
+    }
+    
+    # Determine if daily or hourly
+    table <- dplyr::case_when(
+      stringr::str_detect(tolower(file), "gunluk|daily") ~ "daily_detail",
+      stringr::str_detect(tolower(file), "saatlik|hourly") ~ "hourly_detail",
+      TRUE ~ NA_character_
+    )
+    
+    # If still unsure, try to determine from content
+    if (is.na(table)) {
+      tryCatch({
+        first_rows <- readxl::read_excel(file, n_max = 5, col_names = FALSE)
+        content <- paste(as.character(unlist(first_rows)), collapse = " ")
+        
+        if (any(grepl("günlük|daily", tolower(content)))) {
+          table <- "daily_detail"
+        } else if (any(grepl("saatlik|hourly", tolower(content)))) {
+          table <- "hourly_detail"
+        }
+      }, error = function(e) NULL)
+    }
+    
+    if (is.na(table)) {
+      cat("Could not determine if file is daily or hourly:", basename(file), "\n")
+    }
+    
+    return(table)
+  }
 
   if (is.null(pattern)){
     pattern = "\\.xlsx$"
@@ -212,16 +271,15 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
   batch_size <- 5000  
   
   for (file in files) {
-    if (str_detect(file, "Konya-Selçuklu-Belediye")) {
-      cat("Skipping file:", file, "as no data is available\n")
-      next
+    if (verbose) {
+      if (str_detect(file, "Konya-Selçuklu-Belediye")) {
+        cat("Skipping file:", file, "as no data is available\n")
+      }
     }
+    if (str_detect(file, "Konya-Selçuklu-Belediye")) next
     
-    target_table <- case_when(
-      str_detect(file, "gunluk_detay|_daily") ~ "daily_detail",
-      str_detect(file, "saatlik_detay|_hourly") ~ "hourly_detail",
-      TRUE ~ NA_character_
-    )
+    # Determine the target table based on both filename and file contents
+    target_table <- determine_target_table(file)
     
     if (is.na(target_table)) {
       cat("Skipping file:", file, "\n")
@@ -230,6 +288,38 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     
     station_extracted <- str_extract(basename(file), ".*(?=_gunluk|_saatlik)")
     if (is.na(station_extracted)) next
+    station_in_file <- NA
+    if (grepl("_detay_", file)) {
+      station_in_file <- tryCatch({
+        value <- readxl::read_excel(file, range = "B1:D1", col_names = FALSE)
+        vec <- trimws(as.character(value[1,]))
+        station <- vec[which(nzchar(vec))[1]]
+        # replace / with _, remove space and dot
+        station <- gsub("/", "_", station)
+        station <- gsub(" ", "", station)
+        station <- gsub("\\.", "", station)
+        station
+      }, error = function(e) NA)
+    }
+    
+    if (!is.na(station_in_file)) {
+      station_extracted <- station_in_file
+    }
+    
+    if (is.na(station_extracted)) {
+      cat("Could not extract station name from file:", file, "\n")
+      next
+    }
+    
+    if (!is.null(bolge)) {
+      station_info <- location_tbl %>% 
+        filter(Istasyon_modified == station_extracted) %>% 
+        collect()
+      if (nrow(station_info) == 0 || !any(tolower(station_info$Bolge) == tolower(bolge))) {
+        cat("Skipping station due to bolge mismatch:", station_extracted, "\n")
+        next
+      }
+    }
     
     raw_data <- tryCatch({
       df <- read_excel(file, col_names = FALSE) %>%
@@ -393,13 +483,22 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     
     if (!should_process) next
 
-    location_match <- location_tbl %>%
-      filter(Istasyon_modified == station_extracted) %>%
-      collect()
+    ## Modified location lookup using ILIKE for case-insensitive match on Bolge
+    if (!is.null(bolge)) {
+      location_match <- location_tbl %>% 
+        filter(Istasyon_modified == station_extracted, Bolge %ilike% !!bolge) %>% 
+        collect()
+    } else {
+      location_match <- location_tbl %>% 
+        filter(Istasyon_modified == station_extracted) %>% 
+        collect()
+    }
     
     if (nrow(location_match) == 0) {
       cat("No matching location found for station:", station_extracted, "\n")
       next
+    } else {
+      cat("Found location match for station:", station_extracted, "\n")
     }
     
     raw_data <- raw_data %>%
@@ -458,80 +557,86 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     print(colSums(!is.na(processed_data[measurement_cols])))
 
     if (nrow(processed_data) > 0 && !all(is.na(processed_data$Tarih))) {
-      tryCatch({
-        table_check_query <- sprintf(
-          "SELECT column_name, data_type 
-           FROM information_schema.columns 
-           WHERE table_name = '%s'",
-          target_table
-        )
-        columns <- dbGetQuery(db, table_check_query)
-        cat("Table schema:", "\n")
-        print(columns)
-        
-        constraint_name <- paste0(target_table, "_station_date_unique")
-        constraint_query <- sprintf(
-          "DO $$ 
-           BEGIN 
-             IF NOT EXISTS (
-               SELECT 1 FROM pg_constraint WHERE conname = '%s'
-             ) THEN 
-               ALTER TABLE %s ADD CONSTRAINT %s 
-               UNIQUE (\"Istasyon_modified\", \"Tarih\"); 
-             END IF; 
-           END $$;",
-          constraint_name, target_table, constraint_name
-        )
-        dbExecute(db, constraint_query)
-        
-        temp_table_name <- paste0("temp_", target_table, "_", format(Sys.time(), "%Y%m%d%H%M%S"))
-        clone_table_query <- sprintf(
-          "CREATE TABLE %s (LIKE %s INCLUDING ALL)",
-          temp_table_name, target_table
-        )
-        dbExecute(db, clone_table_query)
-        
-        dbAppendTable(db, temp_table_name, processed_data)
-        
-        measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "location_id")
-        available_cols <- intersect(names(processed_data), measurement_cols)
-        update_cols <- paste(sprintf('"%s" = EXCLUDED."%s"', available_cols, available_cols), 
-                            collapse = ", ")
-        
-        upsert_query <- sprintf(
-          'INSERT INTO %s 
-           SELECT * FROM %s
-           ON CONFLICT ("Istasyon_modified", "Tarih") 
-           DO UPDATE SET %s',
-          target_table, temp_table_name, update_cols
-        )
-        
-        cat("\nExecuting upsert query...\n")
-        dbExecute(db, upsert_query)
-        
-        dbExecute(db, sprintf("DROP TABLE %s", temp_table_name))
-        
-        index_query <- sprintf(
-          "CREATE INDEX IF NOT EXISTS %s_idx ON %s (\"Istasyon_modified\", \"Tarih\")",
-          target_table, target_table
-        )
-        dbExecute(db, index_query)
-        
+      success <- FALSE
+      for (attempt in 1:3) {
+        tryCatch({
+          table_check_query <- sprintf(
+            "SELECT column_name, data_type 
+             FROM information_schema.columns 
+             WHERE table_name = '%s'",
+            target_table
+          )
+          columns <- dbGetQuery(db, table_check_query)
+          cat("Table schema:", "\n")
+          print(columns)
+          
+          constraint_name <- paste0(target_table, "_station_date_unique")
+          constraint_query <- sprintf(
+            "DO $$ 
+             BEGIN 
+               IF NOT EXISTS (
+                 SELECT 1 FROM pg_constraint WHERE conname = '%s'
+               ) THEN 
+                 ALTER TABLE %s ADD CONSTRAINT %s 
+                 UNIQUE (\"Istasyon_modified\", \"Tarih\"); 
+               END IF; 
+             END $$;",
+            constraint_name, target_table, constraint_name
+          )
+          dbExecute(db, constraint_query)
+          
+          temp_table_name <- paste0("temp_", target_table, "_", format(Sys.time(), "%Y%m%d%H%M%S"))
+          clone_table_query <- sprintf(
+            "CREATE TABLE %s (LIKE %s INCLUDING ALL)",
+            temp_table_name, target_table
+          )
+          dbExecute(db, clone_table_query)
+          
+          dbAppendTable(db, temp_table_name, processed_data)
+          
+          measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "location_id")
+          available_cols <- intersect(names(processed_data), measurement_cols)
+          update_cols <- paste(sprintf('"%s" = EXCLUDED."%s"', available_cols, available_cols), collapse = ", ")
+          
+          upsert_query <- sprintf(
+            'INSERT INTO %s 
+             SELECT * FROM %s
+             ON CONFLICT ("Istasyon_modified", "Tarih") 
+             DO UPDATE SET %s',
+            target_table, temp_table_name, update_cols
+          )
+          
+          cat("\nExecuting upsert query...\n")
+          dbExecute(db, upsert_query)
+          
+          dbExecute(db, sprintf("DROP TABLE %s", temp_table_name))
+          
+          index_query <- sprintf(
+            "CREATE INDEX IF NOT EXISTS %s_idx ON %s (\"Istasyon_modified\", \"Tarih\")",
+            target_table, target_table
+          )
+          dbExecute(db, index_query)
+          
+          success <- TRUE
+        }, error = function(e) {
+          cat("\nError inserting data for file:", basename(file), "Attempt", attempt, "\n")
+          cat("Error message:", conditionMessage(e), "\n")
+          if (attempt < 3) {
+            start_str <- format(as.Date(min_date), "%d.%m.%Y")
+            end_str <- format(as.Date(max_date), "%d.%m.%Y")
+            cat("Redownloading file for station:", station_extracted, "\n")
+            download_single_station(station_extracted, start_str, end_str)
+            Sys.sleep(5)
+          } else {
+            cat("Final attempt failed for file:", basename(file), "\n")
+          }
+        })
+        if (success) break
+      }
+      if (success) {
         rows_written <- rows_written + nrow(processed_data)
         cat("\n✅ SUCCESSFULLY inserted/updated data from:", basename(file), "\n")
-      }, error = function(e) {
-        cat("\n\n======== ERROR INSERTING DATA ========\n")
-        cat("Error inserting data for file:", basename(file), "\n")
-        cat("Error message:", conditionMessage(e), "\n")
-        cat("-------------------------------------\n")
-        cat("Data sample:\n")
-        print(head(processed_data))
-        cat("\nColumn types:\n")
-        print(sapply(processed_data, class))
-        cat("=====================================\n\n")
-      })
-    } else {
-      cat("\n⚠️ SKIPPING file due to invalid data:", basename(file), "\n")
+      }
     }
   }
   
@@ -556,17 +661,18 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 # rows_written <- read_and_write_data(pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx")
 # rows_written <- read_and_write_data(pattern = "\\.xlsx$", delete_previous = FALSE)
 
-# rows_written <- read_and_write_data(
-#   pattern = "_2024-2025\\.xlsx$", 
-#   delete_previous = FALSE
-# )
-
-
 rows_written <- read_and_write_data(
   pattern = "\\.xlsx$", 
-  delete_previous = TRUE,
-  all_files = TRUE
+  delete_previous = FALSE,
+  bolge = "Other"
 )
+
+
+# rows_written <- read_and_write_data(
+#   pattern = "\\.xlsx$", 
+#   delete_previous = FALSE,
+#   all_files = TRUE
+# )
 # overwrite_dict <- list(
 #   "Adana-Seyhan" = c("2021-02-20", "2021-02-21")
 # )
