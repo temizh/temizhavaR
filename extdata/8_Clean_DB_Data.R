@@ -136,21 +136,21 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE) {
       LIMIT 5", temp_table)
     print(dbGetQuery(con, invalid_pm_samples_sql))
 
-    cat("\nSample of records with invalid NOx relationships:\n")
-    invalid_nox_samples_sql <- sprintf("
-      SELECT \"Tarih\", location_id_text as location_id, \"Istasyon_modified\",
-             \"NO\", \"NO2\", \"NOX\", 
-             ROUND((\"NO\" + \"NO2\")::numeric, 2) as sum_no_no2,
-             ROUND((\"NOX\" * 0.5)::numeric, 2) as min_expected,
-             ROUND((\"NOX\" * 1.5)::numeric, 2) as max_expected
-      FROM %s
-      WHERE \"NO\" IS NOT NULL 
-        AND \"NO2\" IS NOT NULL 
-        AND \"NOX\" IS NOT NULL
-        AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5
-      ORDER BY ABS((\"NO\" + \"NO2\") - \"NOX\") DESC
-      LIMIT 5", temp_table)
-    print(dbGetQuery(con, invalid_nox_samples_sql))
+    # cat("\nSample of records with invalid NOx relationships:\n")
+    # invalid_nox_samples_sql <- sprintf("
+    #   SELECT \"Tarih\", location_id_text as location_id, \"Istasyon_modified\",
+    #          \"NO\", \"NO2\", \"NOX\", 
+    #          ROUND((\"NO\" + \"NO2\")::numeric, 2) as sum_no_no2,
+    #          ROUND((\"NOX\" * 0.5)::numeric, 2) as min_expected,
+    #          ROUND((\"NOX\" * 1.5)::numeric, 2) as max_expected
+    #   FROM %s
+    #   WHERE \"NO\" IS NOT NULL 
+    #     AND \"NO2\" IS NOT NULL 
+    #     AND \"NOX\" IS NOT NULL
+    #     AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5
+    #   ORDER BY ABS((\"NO\" + \"NO2\") - \"NOX\") DESC
+    #   LIMIT 5", temp_table)
+    # print(dbGetQuery(con, invalid_nox_samples_sql))
 
     # If checking hourly data, also show samples with wrong time format
     if (check_hourly) {
@@ -200,32 +200,32 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE) {
     
     dbExecute(con, filter_sql_pm)
     
-    # After PM relationship check, add NOx relationship check
-    cat("Checking for invalid NOx relationships...\n")
-    invalid_nox_sql <- sprintf("
-      SELECT COUNT(*) as n
-      FROM %s
-      WHERE \"NO\" IS NOT NULL 
-        AND \"NO2\" IS NOT NULL 
-        AND \"NOX\" IS NOT NULL
-        AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", temp_table)
+    # # After PM relationship check, add NOx relationship check
+    # cat("Checking for invalid NOx relationships...\n")
+    # invalid_nox_sql <- sprintf("
+    #   SELECT COUNT(*) as n
+    #   FROM %s
+    #   WHERE \"NO\" IS NOT NULL 
+    #     AND \"NO2\" IS NOT NULL 
+    #     AND \"NOX\" IS NOT NULL
+    #     AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", temp_table)
     
-    invalid_nox <- as.numeric(dbGetQuery(con, invalid_nox_sql)$n)
+    # invalid_nox <- as.numeric(dbGetQuery(con, invalid_nox_sql)$n)
     
-    # Add NOx validation to the filters
-    filter_sql_nox <- sprintf("
-      UPDATE %s
-      SET 
-        \"NO\" = NULL,
-        \"NO2\" = NULL,
-        \"NOX\" = NULL
-      WHERE \"NO\" IS NOT NULL 
-        AND \"NO2\" IS NOT NULL 
-        AND \"NOX\" IS NOT NULL
-        AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", 
-      temp_table)
+    # # Add NOx validation to the filters
+    # filter_sql_nox <- sprintf("
+    #   UPDATE %s
+    #   SET 
+    #     \"NO\" = NULL,
+    #     \"NO2\" = NULL,
+    #     \"NOX\" = NULL
+    #   WHERE \"NO\" IS NOT NULL 
+    #     AND \"NO2\" IS NOT NULL 
+    #     AND \"NOX\" IS NOT NULL
+    #     AND (\"NO\" + \"NO2\") NOT BETWEEN \"NOX\" * 0.5 AND \"NOX\" * 1.5", 
+    #   temp_table)
     
-    dbExecute(con, filter_sql_nox)
+    # dbExecute(con, filter_sql_nox)
     
     # Create cleaned table after all updates
     create_cleaned_sql <- sprintf("CREATE TEMPORARY TABLE %s_cleaned AS SELECT * FROM %s", 
@@ -269,7 +269,7 @@ tidy_air_quality_data <- function(tbl_db, table_name, check_hourly = FALSE) {
       time_duplicates = time_duplicates,
       negative_values = negative_count_sql,
       invalid_pm = invalid_pm,
-      invalid_nox = invalid_nox,
+      # invalid_nox = invalid_nox,
       wrong_time = wrong_time
     ))
     
@@ -286,7 +286,7 @@ random_string <- function(prefix = "", n = 10) {
 
 
 # Function to clean and analyze tables
-process_table <- function(con, table_name, check_hourly = FALSE, update_original = TRUE) {
+process_table <- function(con, table_name, check_hourly = FALSE) {
   tryCatch({
     cat(sprintf("\nProcessing %s...\n", table_name))
     
@@ -306,7 +306,7 @@ process_table <- function(con, table_name, check_hourly = FALSE, update_original
     cat("Sample data (first 3 rows):\n")
     print(tbl_db %>% head(3) %>% collect())
     
-    result <- tidy_air_quality_data(tbl_db, table_name, check_hourly, con, update_original)
+    result <- tidy_air_quality_data(tbl_db, table_name, check_hourly)
     
     # Calculate execution time
     end_time <- Sys.time()
@@ -321,7 +321,7 @@ process_table <- function(con, table_name, check_hourly = FALSE, update_original
     cat("Timestamp duplicates found:", result$time_duplicates, "\n")
     cat("Records with negative values:", result$negative_values, "\n")
     cat("Records where PM2.5 > PM10:", result$invalid_pm, "\n")
-    cat("Records where NO + NO2 not within ±50% of NOx:", result$invalid_nox, "\n")
+    # cat("Records where NO + NO2 not within ±50% of NOx:", result$invalid_nox, "\n")
     
     if (check_hourly) {
       cat("Records with incorrect time format (not :00:56):", result$wrong_time, "\n")
@@ -343,11 +343,12 @@ process_table <- function(con, table_name, check_hourly = FALSE, update_original
 # Main execution with error handling
 tryCatch({
   cat("Connecting to database...\n")
-  con <- create_postgres_conn()
+    con <- temizhavaR:::create_postgres_conn()
+
   
-  # Add update_original parameter to process_table calls
-  process_table(con, "hourly_detail", check_hourly = TRUE, update_original = TRUE)
-  process_table(con, "daily_detail", check_hourly = FALSE, update_original = TRUE)
+  
+  process_table(con, "hourly_detail", check_hourly = TRUE)
+  process_table(con, "daily_detail", check_hourly = FALSE)
 }, error = function(e) {
   log_error("Main execution error", e)
 }, finally = {
