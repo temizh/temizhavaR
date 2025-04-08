@@ -5,7 +5,7 @@ library(readxl)
 library(stringr)
 library(dplyr)
 library(dbplyr)
-
+library(lubridate)
 
 
 #' Convert 12-hour time to 24-hour format
@@ -33,7 +33,11 @@ remove_duplicates <- function(df) {
   df <- df %>%
     group_by(Istasyon_modified, Tarih) %>%
     arrange(desc(Tarih)) %>%  
-    slice(1) %>%  
+    # check if values are the same then romove duplicate and assign value, if values are different remove duplicate and assign NA
+    mutate(across(c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"), 
+                   ~ ifelse(n_distinct(.) > 1, NA, first(.)))) %>%
+    # remove duplicates
+    distinct() %>%
     ungroup()
   
   after_count <- nrow(df)
@@ -338,13 +342,25 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       names(df) <- combined_header
       df <- df[-c(1, 2), ]
       
+      # df <- df %>%
+      #   mutate(
+      #     Tarih = case_when(
+      #       grepl("^[0-9.]+$", Tarih) ~ as.POSIXct("1900-01-01", tz="UTC") + 
+      #         (as.numeric(Tarih) - 2) * 86400,
+      #       TRUE ~ as.POSIXct(strptime(Tarih, "%d.%m.%Y %H:%M:%S"), tz="UTC")
+      #     )
+      #   )
+
+      # Convert date format to POSIXct
       df <- df %>%
         mutate(
-          Tarih = case_when(
-            grepl("^[0-9.]+$", Tarih) ~ as.POSIXct("1900-01-01", tz="UTC") + 
-              (as.numeric(Tarih) - 2) * 86400,
-            TRUE ~ as.POSIXct(strptime(Tarih, "%d.%m.%Y %H:%M:%S"), tz="UTC")
-          )
+          Tarih = as.POSIXct(as.numeric(Tarih) * 86400, origin="1899-12-30", tz="UTC")
+        )
+
+      # Convert to Istanbul timezone (force)
+      df <- df %>%
+        mutate(
+          Tarih = force_tz(Tarih, tzone = "Europe/Istanbul"),
         )
       
       measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")
@@ -578,7 +594,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                  SELECT 1 FROM pg_constraint WHERE conname = '%s'
                ) THEN 
                  ALTER TABLE %s ADD CONSTRAINT %s 
-                 UNIQUE (\"Istasyon_modified\", \"Tarih\"); 
+                 UNIQUE (\"Istasyon_modified\", \"Tarih\");
                END IF; 
              END $$;",
             constraint_name, target_table, constraint_name
@@ -601,7 +617,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
           upsert_query <- sprintf(
             'INSERT INTO %s 
              SELECT * FROM %s
-             ON CONFLICT ("Istasyon_modified", "Tarih") 
+             ON CONFLICT (\"Istasyon_modified\", \"Tarih\")
              DO UPDATE SET %s',
             target_table, temp_table_name, update_cols
           )
@@ -663,8 +679,8 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 
 rows_written <- read_and_write_data(
   pattern = "\\.xlsx$", 
-  delete_previous = FALSE,
-  bolge = "Other"
+  delete_previous = TRUE,
+  # bolge = "Other"
 )
 
 
