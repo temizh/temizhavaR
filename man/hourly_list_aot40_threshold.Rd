@@ -14,7 +14,7 @@ hourly_list_aot40_threshold(start_dates, end_dates, threshold = 90)
 \item{threshold}{The threshold percentage for data availability (default is 90).}
 }
 \value{
-A data frame with columns: Istasyon, aot40_measured, measured_hours, aot40_estimated, period.
+A data frame with columns: Istasyon_modified, aot40_measured, measured_hours, aot40_estimated, period.
 }
 \description{
 This function calculates the AOT40 for a specified period and filters stations

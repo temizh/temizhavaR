@@ -7,7 +7,7 @@
 calculate_rolling_8hour_avg_CO()
 }
 \value{
-A \code{data.frame} containing the station name (\code{Istasyon}), timestamp (\code{Tarih}), and
+A \code{data.frame} containing the station name (\code{Istasyon_modified}), timestamp (\code{Tarih}), and
 the calculated 8-hour rolling average for CO (\code{CO_8hour_avg}).
 }
 \description{

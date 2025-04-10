@@ -25,7 +25,7 @@ calculate_aot40_vegetation_and_forest_protection(
 \item{period}{A label for the period (e.g., "May-Jul" or "Apr-Sep") to distinguish the results.}
 }
 \value{
-A data frame with columns: Istasyon, period, total_AOT40, exceeds_thresholds.
+A data frame with columns: Istasyon_modified, period, total_AOT40, exceeds_thresholds.
 }
 \description{
 This function calculates the total AOT40 values for vegetation protection based on the hourly ozone data.

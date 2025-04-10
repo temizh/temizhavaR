@@ -7,22 +7,18 @@
 download_check(city_dir, istasyon_modified, data_type, startdate, enddate)
 }
 \arguments{
-\item{data_type}{The type of data to download ("hourly" or "daily").}
+\item{city_dir}{The directory where city data is stored.}
 
-\item{startdate}{The start date for the data download (format: "DD.MM.YYYY").}
+\item{istasyon_modified}{The modified station name (with spaces/dots/slashes removed).}
 
-\item{enddate}{The end date for the data download (format: "DD.MM.YYYY").}
+\item{data_type}{The type of data to check ("hourly" or "daily").}
 
-\item{bolge}{The region to select.}
+\item{startdate}{The start date for the data (format: "DD.MM.YYYY").}
 
-\item{sehir}{The city to select.}
-
-\item{istasyon}{The station to select.}
-
-\item{result_dir}{The directory where the downloaded data will be saved.}
+\item{enddate}{The end date for the data (format: "DD.MM.YYYY").}
 }
 \value{
-None. Downloads the data and saves it to the specified directory.
+TRUE if files are missing or invalid (need downloading), FALSE if all files exist and are valid.
 }
 \description{
 Download check
