@@ -4,7 +4,7 @@
 \alias{wait_for_element}
 \title{Wait for an element to appear on the page}
 \usage{
-wait_for_element(remDr, selector, type = "css", timeout = 4, interval = 0.5)
+wait_for_element(remDr, selector, type = "css", timeout = 10, interval = 0.5)
 }
 \arguments{
 \item{remDr}{The remote driver object for the Selenium web browser.}
