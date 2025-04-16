@@ -12,7 +12,7 @@ initializeDatabase <- function() {
         cat("Warning: temizhavaR.base_dir option is not set. Using current directory.\n")
     }
     
-    mydb <- create_postgres_conn()
+    mydb <- temizhavaR:::create_postgres_conn()
     
     dbExecute(mydb, "CREATE TABLE IF NOT EXISTS location (
                         \"Istasyon_modified\" TEXT PRIMARY KEY,
@@ -24,10 +24,90 @@ initializeDatabase <- function() {
                         \"LONGTD\" REAL,
                         \"LATTD\" REAL,
                         \"Air_Quality_Station_Area\" TEXT,
-                        \"PM10ISTASYON\" TEXT)")
+                        \"PM10ISTASYON\" TEXT,
+                        \"iso3166_2\" TEXT)")
                         
     
     return(mydb)
+}
+
+get_iso3166_2 <- function(province_name) {
+    if (!exists("plaka_list")) {
+        source_file <- file.path(dirname(getwd()), "extdata/plaka_list.R")
+        source(source_file)
+    }
+    
+    plaka_code <- plaka_list[[province_name]]
+    
+    if (!is.null(plaka_code)) {
+        return(paste0("TR-", plaka_code))
+    } else {
+        return(NA)
+    }
+}
+
+update_iso3166_2_codes <- function(mydb) {
+    possible_paths <- c(
+        file.path(getwd(), "extdata/plaka_list.R"),
+        file.path(dirname(getwd()), "temizhavaR/extdata/plaka_list.R")
+            )
+    
+    source_file <- NULL
+    for (path in possible_paths) {
+        if (file.exists(path)) {
+            source_file <- path
+            cat("Found plaka_list.R at:", source_file, "\n")
+            break
+        }
+    }
+    
+    if (is.null(source_file)) {
+        stop("Could not find plaka_list.R file. Searched in: ", paste(possible_paths, collapse=", "))
+    }
+    
+    source(source_file)
+    
+    tryCatch({
+        dbExecute(mydb, "ALTER TABLE location ADD COLUMN iso3166_2 TEXT")
+        cat("Added iso3166_2 column to location table\n")
+    }, error = function(e) {
+        cat("Note: iso3166_2 column might already exist\n")
+    })
+    
+    columns_info <- dbGetQuery(mydb, "
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'location'")
+    column_names <- tolower(columns_info$column_name)
+    
+    has_sehir_column <- "sehir" %in% column_names
+    
+    if (has_sehir_column) {
+        cat("Using Sehir column to determine ISO-3166-2 codes\n")
+        
+        sehir_col_name <- columns_info$column_name[tolower(columns_info$column_name) == "sehir"]
+        
+        for (province_name in names(plaka_list)) {
+            iso_code <- paste0("TR-", plaka_list[[province_name]])
+            
+            dbExecute(mydb, 
+                     paste0('UPDATE location SET "iso3166_2" = $1 
+                      WHERE LOWER("', sehir_col_name, '") = LOWER($2)'),
+                     params = list(iso_code, province_name))
+        }
+    } else {
+        cat("Sehir column not found.")
+        
+    }
+    
+    missing_iso <- dbGetQuery(mydb, 'SELECT "Istasyon_modified", "Air_Quality_Station_Area" 
+                                     FROM location 
+                                     WHERE "iso3166_2" IS NULL')
+    
+    if (nrow(missing_iso) > 0) {
+        cat("\nLocations without ISO-3166-2 codes:", nrow(missing_iso), "\n")
+        print(missing_iso)
+    }
 }
 
 normalize_text <- function(text) {
@@ -102,7 +182,7 @@ matchStationTypes <- function() {
     } else {
         script_dir <- getwd()
     }
-    station_file <- file.path(script_dir, "extdata/station_types.xlsx")
+    station_file <- file.path(script_dir, "/station_types.xlsx")
     if (!file.exists(station_file)) {
         stop("Station types file not found:", station_file)
     }
@@ -118,6 +198,9 @@ matchStationTypes <- function() {
     }, error = function(e) {
         cat("Note: PM10ISTASYON column might already exist\n")
     })
+    
+    update_iso3166_2_codes(mydb)
+    
     existing_stations <- dbGetQuery(mydb, "
         SELECT column_name 
         FROM information_schema.columns 
@@ -169,7 +252,7 @@ matchStationTypes <- function() {
         }
     }
 
-    turkey_csv_file <- file.path(script_dir, "extdata/Turkey_Stations.csv")
+    turkey_csv_file <- file.path(script_dir, "/Turkey_Stations.csv")
     if (file.exists(turkey_csv_file) && length(unmatched_stations) > 0) {
         turkey_stations <- read.csv(turkey_csv_file, stringsAsFactors = FALSE)
         for (station_name in unmatched_stations) {

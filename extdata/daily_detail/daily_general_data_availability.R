@@ -90,9 +90,9 @@ analyze_parameter_combination <- function(parameters, data_type = "daily",
     
     if (nrow(param_data) > 0) {
       wide_data <- param_data %>%
-        mutate(Value = ifelse(percentage >= threshold, floor(percentage), 0)) %>%
+        mutate(Value = ifelse(percentage >= threshold, "X", "-")) %>%
         select(Istasyon_modified, location_id, year, Value) %>%
-        pivot_wider(names_from = year, values_from = Value, values_fill = 0)
+        pivot_wider(names_from = year, values_from = Value, values_fill = "-")
       
       overall_stats <- param_data %>%
         group_by(Istasyon_modified) %>%
@@ -124,7 +124,7 @@ analyze_parameter_combination <- function(parameters, data_type = "daily",
   result$location_id <- NA
   
   for (year in year_columns) {
-    result[[year]] <- 0
+    result[[year]] <- "-"
     
     for (station in all_stations) {
       availabilities <- sapply(parameter_data, function(df) {
@@ -137,26 +137,21 @@ analyze_parameter_combination <- function(parameters, data_type = "daily",
           val <- df[station_row, year]
           if (is.list(val)) val <- val[[1]]
           if (is.null(val)) return(0)
-          as.numeric(val)
+          if (val == "X") return(100) else return(0)
         }, error = function(e) {
           return(0)
         })
         
-        val <- ifelse(is.na(year_val), 0, year_val)
-        return(val)
+        return(year_val)
       })
       
-      if (any(availabilities >= threshold)) {
-        valid_avail <- availabilities[availabilities > 0]
-        if (length(valid_avail) > 0) {
-          mean_availability <- floor(mean(valid_avail))
-          result[result$Istasyon_modified == station, year] <- mean_availability
-        }
+      if (all(availabilities >= threshold)) {
+        result[result$Istasyon_modified == station, year] <- "X"
       }
     }
   }
   
-  result$`Eşiği Geçen Yıl Sayısı` <- apply(result[, year_columns], 1, function(x) sum(x > 0))
+  result$`Eşiği Geçen Yıl Sayısı` <- apply(result[, year_columns], 1, function(x) sum(x == "X"))
   
   result <- result %>% 
     filter(`Eşiği Geçen Yıl Sayısı` >= min_years) %>%
@@ -206,6 +201,11 @@ create_parameter_view <- function(conn, view_name, data, export_excel = FALSE,
     data <- data %>%
       rename(overall = `Eşiği Geçen Yıl Sayısı`)
     
+    year_cols <- names(data)[!names(data) %in% c("Istasyon_modified", "location_id", "overall")]
+    for (col in year_cols) {
+      data[[col]] <- as.character(data[[col]])
+    }
+    
     view_name <- tolower(view_name)
     temp_table_name <- paste0("temp_", view_name)
     
@@ -226,9 +226,9 @@ create_parameter_view <- function(conn, view_name, data, export_excel = FALSE,
 }
 
 process_parameter_combinations <- function(parameter_list, data_type = "daily", 
-                                        threshold = 90, min_years = 5,
-                                        season = NULL, until_year = 2023,
-                                        min_combination_size = 1, 
+                                        threshold = 90, min_years = 0,
+                                        season = NULL, until_year = 2024,
+                                        min_combination_size = 2, 
                                         max_combination_size = length(parameter_list),
                                         export_excel = FALSE,
                                         export_google = FALSE,
@@ -258,6 +258,31 @@ process_parameter_combinations <- function(parameter_list, data_type = "daily",
     }
     
     view_name <- generate_view_name(params, data_type, threshold)
+    
+    if (export_google && !is.null(google_folder_id)) {
+      existing_files <- drive_ls(as_id(google_folder_id))
+      if (view_name %in% existing_files$name) {
+        message(sprintf("Skipping %s - already exists in Google Drive", view_name))
+        next
+      }
+    } else if (export_excel) {
+      file_path <- file.path(output_dir, paste0(view_name, ".xlsx"))
+      if (file.exists(file_path)) {
+        message(sprintf("Skipping %s - already exists in local files", view_name))
+        next
+      }
+    } else {
+      view_exists <- dbGetQuery(conn, sprintf("
+        SELECT EXISTS (
+          SELECT FROM information_schema.views 
+          WHERE table_schema = 'public' 
+          AND table_name = '%s'
+        )", tolower(view_name)))
+      if (view_exists[1,1]) {
+        message(sprintf("Skipping %s - view already exists in database", view_name))
+        next
+      }
+    }
     
     result <- analyze_parameter_combination(
       parameters = params,
@@ -293,10 +318,10 @@ process_parameter_combinations(
   data_type = "daily",
   threshold = 90,
   min_years = 0,
-  until_year = 2023,
+  until_year = 2024,
   min_combination_size = 2,
   max_combination_size = 8,
   export_google = TRUE,
-  google_folder_id = "1pMfjB_2C6Z0BUCglduSXQZexmh9nQ1rH"
+  google_folder_id = "133DjFJif6D-h0YuGdrOW4YHbOMppfPis"
 )
 

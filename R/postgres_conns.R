@@ -1,8 +1,13 @@
 #' @keywords internal
 #' Create a PostgreSQL database connection
 #' @return A PostgreSQL connection object
-#' @importFrom RPostgres Postgres
+#' @importFrom RPostgres Postgres dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery
 #' @export
+library(DBI)  
+library(RPostgres)
+library(magrittr)  
+library(dbplyr)  
+
 create_postgres_conn <- function() {
   tryCatch({
 
@@ -36,6 +41,7 @@ create_postgres_conn <- function() {
     return(NULL)
   })
 }
+
 
 #' @keywords internal
 #' Get the list of tables in the PostgreSQL database
@@ -117,23 +123,12 @@ get_table_row_count <- function(conn, table_name) {
         stop("Unable to establish database connection")
       }
     }
-    tbl(conn, table_name) %>%
-      summarise(n = n()) %>%
-      pull(n)
+    dplyr::tbl(conn, table_name) %>%
+      dplyr::summarise(n = n()) %>%
+      dplyr::pull(n)
   }, error = function(e) {
     message("Error getting row count: ", e$message)
     return(NULL)
   })
 }
 
-# Test 
-# conn <- create_postgres_conn()
-# get_postgres_tables(conn)
-
-# daily_count <- get_table_row_count(conn, "daily_detail")
-# hourly_count <- get_table_row_count(conn, "hourly_detail")
-
-# print(paste("Daily detail rows:", daily_count))
-# print(paste("Hourly detail rows:", hourly_count))
-
-# disconnect_postgres(conn)

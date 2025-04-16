@@ -1,22 +1,25 @@
 library(stringr)
 library(readxl)
 
-
 #' Download check
 #'
-#' @param bolge The region to select.
-#' @param sehir The city to select.
-#' @param istasyon The station to select.
-#' @param data_type The type of data to download ("hourly" or "daily").
-#' @param startdate The start date for the data download (format: "DD.MM.YYYY").
-#' @param enddate The end date for the data download (format: "DD.MM.YYYY").
-#' @param result_dir The directory where the downloaded data will be saved.
-#' @return None. Downloads the data and saves it to the specified directory.
+#' @param city_dir The directory where city data is stored.
+#' @param istasyon_modified The modified station name (with spaces/dots/slashes removed).
+#' @param data_type The type of data to check ("hourly" or "daily").
+#' @param startdate The start date for the data (format: "DD.MM.YYYY").
+#' @param enddate The end date for the data (format: "DD.MM.YYYY").
+#' @return TRUE if files are missing or invalid (need downloading), FALSE if all files exist and are valid.
 #' @export
 
-
 download_check <- function(city_dir, istasyon_modified, data_type, startdate, enddate) {
-  # No need to modify istasyon name here since we're now using the one from location table
+  # Check if required packages are available
+  if (!requireNamespace("readxl", quietly = TRUE)) {
+    stop("Package 'readxl' is required but not installed. Please install it with install.packages('readxl')")
+  }
+  if (!requireNamespace("stringr", quietly = TRUE)) {
+    stop("Package 'stringr' is required but not installed. Please install it with install.packages('stringr')")
+  }
+
   start_date <- as.Date(startdate, format="%d.%m.%Y")
   end_date <- as.Date(enddate, format="%d.%m.%Y")
   
@@ -36,7 +39,6 @@ download_check <- function(city_dir, istasyon_modified, data_type, startdate, en
     stop("Invalid data_type. Must be 'hourly' or 'daily'")
   }
   
-  # Get existing files
   existing_files <- list.files(city_dir)
   
   cat(sprintf("\nChecking %s data files for station: %s\n", data_type, istasyon_modified))
@@ -53,21 +55,56 @@ download_check <- function(city_dir, istasyon_modified, data_type, startdate, en
         return(FALSE)
       }
       station_in_file <- NA
-      if (data_type == "hourly") {
-        station_in_file <- tryCatch({
-          read_excel(full_path, range = "B1", col_names = FALSE)[[1,1]]
-        }, error = function(e) NA)
-      } else if (data_type == "daily") {
-        station_in_file <- tryCatch({
-          read_excel(full_path, range = "A2", col_names = FALSE)[[1,1]]
-        }, error = function(e) NA)
-        station_in_file <- sub("^İstasyon:\\s*", "", station_in_file)
-      }
-      station_in_file_modified <- str_replace_all(station_in_file, c(" " = "", "\\." = "", "/" = "_"))
-      if (station_in_file_modified != istasyon_modified) {
-        cat(sprintf("File %s has mismatched station name: %s, expected: %s\n", file, station_in_file_modified, istasyon_modified))
+      tryCatch({
+        if (data_type == "hourly") {
+          if (grepl("_detay_", file)) {
+            # For saatlik detay, station name is in range B1:D1
+            station_in_file <- tryCatch({
+              value <- readxl::read_excel(full_path, range = "B1:D1", col_names = FALSE)
+              vec <- as.character(value[1,])
+              vec[which(nzchar(trimws(vec)))[1]]
+            }, error = function(e) NA)
+          } else if (grepl("_ozet_", file)) {
+            # For saatlik özet, station name is in range A2:L2, and has a prefix "İstasyon:"
+            station_in_file <- tryCatch({
+              value <- readxl::read_excel(full_path, range = "A2:L2", col_names = FALSE)
+              vec <- as.character(value[1,])
+              vec <- sub("^İstasyon:\\s*", "", vec)
+              vec[which(nzchar(trimws(vec)))[1]]
+            }, error = function(e) NA)
+          }
+        } else if (data_type == "daily") {
+          if (grepl("_detay_", file)) {
+            # For günlük detay, station name is in cell A2
+            station_in_file <- tryCatch({
+              value <- readxl::read_excel(full_path, range = "A2", col_names = FALSE)[[1,1]]
+              as.character(value)[1]
+            }, error = function(e) NA)
+          } else if (grepl("_ozet_", file)) {
+            # For günlük özet, station name is in range A2:L2, with "İstasyon:" prefix to remove
+            station_in_file <- tryCatch({
+              value <- readxl::read_excel(full_path, range = "A2:L2", col_names = FALSE)
+              vec <- as.character(value[1,])
+              vec <- sub("^İstasyon:\\s*", "", vec)
+              vec[which(nzchar(trimws(vec)))[1]]
+            }, error = function(e) NA)
+          }
+        }
+        if (is.na(station_in_file) || station_in_file == "") {
+          cat(sprintf("No station name found in file: %s\n", file))
+          return(FALSE)
+        }
+        station_in_file_modified <- stringr::str_replace_all(station_in_file, 
+          c(" " = "", "\\." = "", "/" = "_"))
+        if (station_in_file_modified != istasyon_modified) {
+          cat(sprintf("File %s has mismatched station name: %s, expected: %s\n",
+                      file, station_in_file_modified, istasyon_modified))
+          return(FALSE)
+        }
+      }, error = function(e) {
+        cat(sprintf("Error reading Excel file %s: %s\n", file, e$message))
         return(FALSE)
-      }
+      })
       return(TRUE)
     } else {
       cat(sprintf("Missing file: %s\n", file))
