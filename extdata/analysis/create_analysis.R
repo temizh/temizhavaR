@@ -4,6 +4,7 @@ library(DBI)
 library(tidyr)
 library(pillar)
 library(dbplyr)
+library(dplyr)
 library(slider)
 library(googledrive)
 library(googlesheets4)
@@ -19,6 +20,7 @@ setwd(script_path)
 source("create_daily_intermediate_analysis.R")
 source("create_hourly_intermediate_analysis.R")
 source("create_daily_analysis_views.R")
+source("create_hourly_analysis_views.R")
 source("create_AQI_analysis.R")
 source("save_views_to_drive.R")
 
@@ -31,11 +33,12 @@ end_year <- 2024
 
 timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
 
-schema_name <- paste0("analysis_", timestamp)
+# schema_name <- paste0("analysis_", timestamp)
+schema_name <- "aot_analysis_2"
 
 # Google Drive
 # Create a folder in Google Drive and get the folder ID
-folder_id <- "1Bnigk-THJINJ6pcpmwEVI8iAZ43gzTE9"
+folder_id <- "1ODA3VAy5zMIkgRAwyidA2S0XJS3pJ7tV"
 
 # Database
 con <- create_postgres_conn()
@@ -47,11 +50,12 @@ dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con
 dbDisconnect(con)
 
 # Create intermediate analysis
-create_daily_intermediate_analysis(start_year, end_year, schema_name)
-# create_hourly_intermediate_analysis(start_year, end_year, schema_name)
+# create_daily_intermediate_analysis(start_year, end_year, schema_name)
+create_hourly_intermediate_analysis(start_year, end_year, schema_name)
 
 # Create views
-create_daily_analysis_views(start_year, end_year, schema_name)
+# create_daily_analysis_views(start_year, end_year, schema_name)
+create_hourly_analysis_views(start_year, end_year, schema_name)
 
 # Calculate AQI
 if(FALSE) {

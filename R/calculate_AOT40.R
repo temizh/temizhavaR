@@ -5,21 +5,20 @@
 #' @export
 
 
-calculate_AOT40 <- function(data, parameter, months) {
+calculate_AOT40 <- function(data, parameter, months, days) {
 
   data <- data %>%
-    filter(Saat > 8 & Saat < 20) %>%
+    filter(Saat > 8 & Saat <= 20) %>%
     filter(Ay %in% months) %>%
     group_by(Tarih, .add = TRUE) %>%
     summarise(
-      AOT40 = sum(ifelse(.data[[parameter]] > 40, .data[[parameter]] - 40, 0)),
+      AOT40 = sum(ifelse(.data[[parameter]] > 80, .data[[parameter]] - 80, 0)),
       .groups = "drop_last"
     ) %>%
     summarise(
-      result = sum(AOT40, na.rm = TRUE),
+      result = sum(AOT40, na.rm = TRUE) * days * 12 / n(),
       .groups = "drop_last"
     )
 
   return(data)
 }
-

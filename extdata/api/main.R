@@ -14,13 +14,12 @@ if (file.exists(env_file)) {
   stop(".env file not found at: ", env_file)
 }
 
-
 # Read the environment variables
 api_port <- Sys.getenv("API_PORT")
 
 # Load the API
-source("server.R")
+source("extdata/api/server.R")
 
 # Start the server
 backend <- BackendRserve$new()
-backend$start(app, http_port = as.numeric(api_port))
+backend$start(app, http_port = as.numeric(api_port), http_host = "0.0.0.0")

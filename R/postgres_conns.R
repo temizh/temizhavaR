@@ -1,13 +1,13 @@
-#' @keywords internal
-#' Create a PostgreSQL database connection
-#' @return A PostgreSQL connection object
-#' @importFrom RPostgres Postgres dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery
-#' @export
 library(DBI)  
 library(RPostgres)
 library(magrittr)  
 library(dbplyr)  
 
+#' @keywords internal
+#' Create a PostgreSQL database connection
+#' @return A PostgreSQL connection object
+#' @importFrom RPostgres Postgres dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery
+#' @export
 create_postgres_conn <- function() {
   tryCatch({
 

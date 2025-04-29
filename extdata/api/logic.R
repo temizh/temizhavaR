@@ -1,8 +1,9 @@
 library(DBI)
 library(dplyr)
 library(openxlsx)
+library(temizhavaR)
 
-source("db_connect.R")  # Load database connection
+source("extdata/api/db_connect.R")  # Load database connection
 
 # Function to get data from the database with nessesary filters
 get_data <- function(frequency = "daily",
@@ -69,4 +70,58 @@ get_data <- function(frequency = "daily",
   data <- data %>% select("Tarih", "Tarih&Saat", "Istasyon_modified", all_of(parameters)) # nolint
 
   return(data)
+}
+
+# Function to activate analysis calculations
+create_analysis <- function(start_year, end_year, schema_name = NULL, folder_id = NULL, 
+                            daily_intermediate = TRUE, hourly_intermediate = TRUE,
+                            daily_views = TRUE, hourly_views = TRUE,
+                            aqi_analysis = TRUE, save_to_drive = TRUE) {
+  # Shema name
+  if(is.null(schema_name)) {
+    timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+    schema_name <- paste0("analysis_", timestamp)
+  }
+  
+  # Load functions (relative to the script's location)
+  source("extdata/analysis/create_daily_intermediate_analysis.R")
+  source("extdata/analysis/create_hourly_intermediate_analysis.R")
+  source("extdata/analysis/create_daily_analysis_views.R")
+  source("extdata/analysis/create_AQI_analysis.R")
+  source("extdata/analysis/save_views_to_drive.R")
+
+  con <- create_postgres_conn()
+
+  # Ensure schema exists (create if not)
+  dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con, schema_name)))
+
+  # Disconnect
+  dbDisconnect(con)
+
+  # Create intermediate analysis
+  if(daily_intermediate) {
+    create_daily_intermediate_analysis(start_year, end_year, schema_name)
+  }
+  if(hourly_intermediate) {
+    create_hourly_intermediate_analysis(start_year, end_year, schema_name)
+  }
+  # Create views
+  if(daily_views) {
+    create_daily_analysis_views(start_year, end_year, schema_name)
+  }
+  if(hourly_views) {
+    #create_hourly_analysis_views(start_year, end_year, schema_name)
+  }
+
+  # Calculate AQI
+  if(aqi_analysis) {
+    create_AQI_analysis(start_year, end_year, schema_name)
+  }
+
+  # Save views to drive as XLSX
+  if(save_to_drive && !is.null(folder_id)) {
+    save_views_to_drive(schema_name, folder_id)
+  }
+
+  return()
 }
