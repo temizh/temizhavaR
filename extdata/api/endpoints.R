@@ -84,6 +84,14 @@ get_data_by_config_handler <- function(.req, .res) {
   .res$set_content_type("application/json")
 }
 
+get_stations_handler <- function(.req, .res) {
+
+  data <- get_stations()
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
 create_analysis_handler <- function(.req, .res) {
   print("request is made!")
   # Check if the request body is empty
@@ -99,41 +107,35 @@ create_analysis_handler <- function(.req, .res) {
   print(request_data)
 
   # Extract values from the parsed object
-  start_year <- request_data$start_year
-  end_year <- request_data$end_year
+  start_date <- request_data$start_date
+  end_date <- request_data$end_date
   schema_name <- request_data$schema_name
   folder_id <- request_data$folder_id
-  daily_intermediate <- request_data$daily_intermediate
-  hourly_intermediate <- request_data$hourly_intermediate
-  daily_views <- request_data$daily_views
-  hourly_views <- request_data$hourly_views
+  daily <- request_data$daily
+  hourly <- request_data$hourly
   aqi_analysis <- request_data$aqi_analysis
   save_to_drive <- request_data$save_to_drive
+  parameters <- request_data$parameters
+  stations <- request_data$stations
 
   # Check if the required parameters are provided
-  if (is.null(start_year) || is.null(end_year)) {
+  if (is.null(start_date) || is.null(end_date)) {
     # Respond with a 400 Bad Request error
     raise(HTTPError$bad_request())
   }
 
   create_analysis(
-    start_year = start_year,
-    end_year = end_year,
+    start_date = start_date,
+    end_date = end_date,
     schema_name = schema_name,
     folder_id = folder_id,
-    daily_intermediate = daily_intermediate,
-    hourly_intermediate = hourly_intermediate,
-    daily_views = daily_views,
-    hourly_views = hourly_views,
+    daily = daily,
+    hourly = hourly,
     aqi_analysis = aqi_analysis,
-    save_to_drive = save_to_drive
+    save_to_drive = save_to_drive,
+    parameters = parameters,
+    stations = stations
   )
-
-  # Check if the analysis was successful
-  if (is.null(schema_name)) {
-    # Respond with a 500 Internal Server Error
-    raise(HTTPError$internal_server_error())
-  }
 
   # Respond with a success message
   .res$set_body(jsonlite::toJSON(list(message = "Analysis run successfully."), auto_unbox = TRUE))

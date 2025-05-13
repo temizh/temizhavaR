@@ -2,8 +2,6 @@ library(RestRserve)
 library(dotenv)
 
 # Set working directory to the directory of the current script
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
 base_dir <- getOption("temizhavaR.base_dir")
 
 env_file <- file.path(base_dir, ".env")

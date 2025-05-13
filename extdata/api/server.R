@@ -12,6 +12,7 @@ source("extdata/api/endpoints.R")
 app$add_get(path = "/get_data", FUN = get_data_handler)
 app$add_post(path = "/get_data_by_config", FUN = get_data_by_config_handler)
 app$add_post(path = "/create_analysis", FUN = create_analysis_handler)
+app$add_get(path = "/get_stations", FUN = get_stations_handler)
 
 # Return the API app
 app
