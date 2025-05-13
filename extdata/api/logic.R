@@ -84,6 +84,9 @@ get_stations <- function() {
     select(Bolge, Sehir, Istasyon_modified) %>%
     collect()
 
+  # Structure the data into a nested list
+  # Group by region and city
+  # to match Appsmith's structure
   result <- stations %>%
   group_by(Bolge) %>%
   group_split() %>%
@@ -98,7 +101,7 @@ get_stations <- function() {
         
         list(
           label = city_name,
-          value = paste0("_", city_name),
+          value = paste0(region_name, "_", city_name),
           children = lapply(city_group$Istasyon_modified, function(station) {
             list(
               label = station,
@@ -110,7 +113,7 @@ get_stations <- function() {
     
     list(
       label = region_name,
-      value = paste0("__", region_name),
+      value = paste0("_", region_name),
       children = cities
     )
   })
@@ -162,6 +165,7 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
     create_daily_analysis_views(start_date, end_date, schema_name, parameters)
     send_notification("Daily analysis views created")
   }
+
   if(hourly) {
     create_hourly_intermediate_analysis(start_date, end_date, schema_name, parameters, stations)
     send_notification("Hourly intermediate analysis created")
