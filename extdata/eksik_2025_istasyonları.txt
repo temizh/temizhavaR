@@ -6,8 +6,6 @@ Failed to download daily files for: Hatay - Antakya
 Error downloading daily files for: Kahramanmaraş - Dulkadiroğlu 
 Failed to download daily files for: Konya-Selçuklu-Belediye 
 Failed to download daily files for: Hatay - Vali Kavşağı 
-Failed to download daily files for: Konya-Karatay (Sunaypark) 
 Failed to download daily files for: Kahramanmaraş - Kent Meydanı 
-Failed to download daily files for: Bursa-Kestel (Hilal Parkı) 
 Failed to download daily files for: Konya-Erenköy-Belediye 
 Error downloading daily files for: Ordu - Stadyum 
