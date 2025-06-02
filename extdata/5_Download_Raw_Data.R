@@ -575,7 +575,7 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
 
 # Example usage
 # Download all stations
-download_temizhava_data(startdate = "01.01.2024", enddate = "01.01.2025")
+download_temizhava_data(startdate = "01.01.2014", enddate = "01.01.2025")
 
 # Download only stations in a specific region
 # download_temizhava_data(startdate = "01.01.2024", enddate = "01.01.2025", selected_region = "Marmara THM")

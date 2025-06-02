@@ -4,7 +4,7 @@
 \alias{calculate_AOT40}
 \title{Calculate the AOT40}
 \usage{
-calculate_AOT40(data, parameter, months)
+calculate_AOT40(data, parameter, months, days)
 }
 \arguments{
 \item{data}{A grouped data frame containing the data (in tbl format)}

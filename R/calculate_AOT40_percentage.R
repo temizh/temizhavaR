@@ -5,15 +5,20 @@
 #' @export
 
 
-calculate_AOT40_percentage <- function(data, parameter) {
+calculate_AOT40_percentage <- function(data, parameter, months, days) {
 
-  data <- data %>%
-    filter(Saat > 8 & Saat < 20) %>%
+  filtered_data <- data %>%
+    filter(!is.na(.data[[parameter]])) %>%
+    filter(Saat > 8 & Saat <= 20) %>%
+    filter(Ay %in% months)
+
+  # Calculate the percentage of available data
+  result <- filtered_data %>%
     summarise(
-      result = (sum(ifelse(!is.na(.data[[parameter]]), 1, 0)) / (11 * 365)) * 100,
+      result = (n() / (12 * days)) * 100,
       .groups = "drop_last"
     )
 
-  return(data)
+  return(result)
 }
 

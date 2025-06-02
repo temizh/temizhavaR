@@ -4,7 +4,7 @@
 \alias{calculate_AOT40_percentage}
 \title{Calculate the AOT40 percentage of available data}
 \usage{
-calculate_AOT40_percentage(data, parameter)
+calculate_AOT40_percentage(data, parameter, months, days)
 }
 \arguments{
 \item{data}{A grouped data frame containing the data (in tbl format)}

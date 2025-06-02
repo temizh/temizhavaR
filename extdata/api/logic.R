@@ -1,8 +1,12 @@
 library(DBI)
 library(dplyr)
+library(dbplyr)
 library(openxlsx)
+library(temizhavaR)
+library(jsonlite)
 
-source("db_connect.R")  # Load database connection
+source("extdata/api/db_connect.R")  # Load database connection
+source("extdata/api/websocket_connection.R") # Load WebSocket connection
 
 # Function to get data from the database with nessesary filters
 get_data <- function(frequency = "daily",
@@ -69,4 +73,120 @@ get_data <- function(frequency = "daily",
   data <- data %>% select("Tarih", "Tarih&Saat", "Istasyon_modified", all_of(parameters)) # nolint
 
   return(data)
+}
+
+# Function to get stations from the database
+get_stations <- function() {
+  conn <- create_postgres_conn()
+
+  # Get the stations
+  stations <- tbl(conn, "location") %>%
+    select(Bolge, Sehir, Istasyon_modified) %>%
+    collect()
+
+  # Structure the data into a nested list
+  # Group by region and city
+  # to match Appsmith's structure
+  result <- stations %>%
+  group_by(Bolge) %>%
+  group_split() %>%
+  lapply(function(region_group) {
+    region_name <- unique(region_group$Bolge)
+    
+    cities <- region_group %>%
+      group_by(Sehir) %>%
+      group_split() %>%
+      lapply(function(city_group) {
+        city_name <- unique(city_group$Sehir)
+        
+        list(
+          label = city_name,
+          value = paste0(region_name, "_", city_name),
+          children = lapply(city_group$Istasyon_modified, function(station) {
+            list(
+              label = station,
+              value = station
+            )
+          })
+        )
+      })
+    
+    list(
+      label = region_name,
+      value = paste0("_", region_name),
+      children = cities
+    )
+  })
+
+  # Convert to JSON (pretty print)
+  json_output <- toJSON(result, pretty = TRUE, auto_unbox = TRUE)
+
+  # Disconnect from the database
+  dbDisconnect(conn)
+
+  return(json_output)
+}
+
+# Function to activate analysis calculations
+create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id = NULL, 
+                            daily = TRUE, hourly = TRUE,
+                            aqi_analysis = TRUE, save_to_drive = TRUE,
+                            parameters = c("PM10", "PM25", "NO2", "NOX", "SO2", "CO", "O3"),
+                            stations = c()) {
+  message("Starting analysis...")
+  send_notification("Analysis started")
+
+  message(paste0("Shema name: ", schema_name))
+  # Shema name
+  if(is.null(schema_name) || schema_name == "") {
+    timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+    schema_name <- paste0("analysis_", timestamp)
+  }
+  
+  # Load functions (relative to the script's location)
+  source("extdata/analysis/create_daily_intermediate_analysis.R")
+  source("extdata/analysis/create_hourly_intermediate_analysis.R")
+  source("extdata/analysis/create_daily_analysis_views.R")
+  source("extdata/analysis/create_hourly_analysis_views.R")
+  source("extdata/analysis/create_AQI_analysis.R")
+  source("extdata/analysis/save_views_to_drive.R")
+
+  con <- create_postgres_conn()
+
+  # Ensure schema exists (create if not)
+  dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con, schema_name)))
+
+  # Disconnect
+  dbDisconnect(con)
+
+  if(daily) {
+    create_daily_intermediate_analysis(start_date, end_date, schema_name, parameters, stations)
+    send_notification("Daily intermediate analysis created")
+    create_daily_analysis_views(start_date, end_date, schema_name, parameters)
+    send_notification("Daily analysis views created")
+  }
+
+  if(hourly) {
+    #create_hourly_intermediate_analysis(start_date, end_date, schema_name, parameters, stations)
+    #send_notification("Hourly intermediate analysis created")
+    create_hourly_analysis_views(start_date, end_date, schema_name, parameters)
+    send_notification("Hourly analysis views created")
+  }
+
+  # Calculate AQI
+  if(aqi_analysis) {
+    create_AQI_analysis(start_date, end_date, schema_name)
+    send_notification("AQI analysis created")
+  }
+
+  # Save views to drive as XLSX
+  if(save_to_drive && !is.null(folder_id)) {
+    save_views_to_drive(schema_name, folder_id, parameters)
+    send_notification("Views saved to Google Drive")
+  }
+
+  send_notification("Analysis completed")
+  message("Analysis completed")
+
+  return()
 }

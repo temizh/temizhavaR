@@ -1,4 +1,3 @@
-
 setwd("/home/nadir/Projects/Pranageo/temizhavaR")
 source("/home/nadir/Projects/Pranageo/temizhavaR/.Rprofile", encoding = "UTF-8")
 
