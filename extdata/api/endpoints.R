@@ -1,6 +1,6 @@
 library(RestRserve)
 
-source("logic.R")  # Load logic functions
+source("extdata/api/logic.R")  # Load logic functions
 
 get_data_handler <- function(.req, .res) {
 
@@ -81,5 +81,63 @@ get_data_by_config_handler <- function(.req, .res) {
   data <- get_data(frequency, parameters, start_date, end_date, region, station, station_type) # nolint
 
   .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+get_stations_handler <- function(.req, .res) {
+
+  data <- get_stations()
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+create_analysis_handler <- function(.req, .res) {
+  print("request is made!")
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+  print("request is not empty!")
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  print(request_data)
+
+  # Extract values from the parsed object
+  start_date <- request_data$start_date
+  end_date <- request_data$end_date
+  schema_name <- request_data$schema_name
+  folder_id <- request_data$folder_id
+  daily <- request_data$daily
+  hourly <- request_data$hourly
+  aqi_analysis <- request_data$aqi_analysis
+  save_to_drive <- request_data$save_to_drive
+  parameters <- request_data$parameters
+  stations <- request_data$stations
+
+  # Check if the required parameters are provided
+  if (is.null(start_date) || is.null(end_date)) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  create_analysis(
+    start_date = start_date,
+    end_date = end_date,
+    schema_name = schema_name,
+    folder_id = folder_id,
+    daily = daily,
+    hourly = hourly,
+    aqi_analysis = aqi_analysis,
+    save_to_drive = save_to_drive,
+    parameters = parameters,
+    stations = stations
+  )
+
+  # Respond with a success message
+  .res$set_body(jsonlite::toJSON(list(message = "Analysis run successfully."), auto_unbox = TRUE))
   .res$set_content_type("application/json")
 }

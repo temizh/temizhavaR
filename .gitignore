@@ -2,15 +2,9 @@
 .Rhistory
 .env
 renv/library/
-
 renv
-
-
 .Rprofile 
 .RBuildignore
-
-
-
 .env
-
 logs/
+.secrets
