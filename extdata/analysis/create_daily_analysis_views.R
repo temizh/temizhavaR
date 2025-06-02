@@ -222,17 +222,22 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name, param
       calculate_city_average("PM25", cities = cities, threshold = 75, second_threshold = 75) %>%
       sql_render()
 
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_1", " AS ", SO2_1))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_2_1", " AS ", SO2_2_1))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_3_1", " AS ", SO2_3_1))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_2_2", " AS ", SO2_2_2))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_3_2", " AS ", SO2_3_2))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_4", " AS ", SO2_4))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_7", " AS ", SO2_7))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_8", " AS ", SO2_8))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_9", " AS ", SO2_9))
-    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".SO2_11", " AS ", SO2_11))
-
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_1", " AS ", PM25_1))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_2", " AS ", PM25_2))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_3", " AS ", PM25_3))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_4", " AS ", PM25_4))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_5", " AS ", PM25_5))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_6", " AS ", PM25_6))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_7_1", " AS ", PM25_7_1))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_7_2", " AS ", PM25_7_2))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_8", " AS ", PM25_8))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_9", " AS ", PM25_9))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_10", " AS ", PM25_10))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_12", " AS ", PM25_12))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_13_1", " AS ", PM25_13_1))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_13_2", " AS ", PM25_13_2))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_14_1", " AS ", PM25_14_1))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM25_14_2", " AS ", PM25_14_2))
   }
 
   # SO2 ----------------------------

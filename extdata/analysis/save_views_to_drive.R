@@ -13,7 +13,7 @@ get_view_names <- function(con, schema) {
 
 setup_google_auth <- function(email = NULL) {
   tryCatch({
-    drive_auth(email = email, scopes = "https://www.googleapis.com/auth/drive")
+    drive_auth(cache = ".secrets", email = email, scopes = "https://www.googleapis.com/auth/drive")
     gs4_auth(token = drive_token())
     return(TRUE)
   }, error = function(e) {
@@ -634,6 +634,16 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
     O3$O3_10_2 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_10_2")),
       description = "AOT40 değerini hesaplamak için tanımlanan süre için 1 saatlik değerlerin %90 ve üstü veri alınan istasyon sayısı (Nisan, Eylül)"
+    )
+  }
+  if (!"o3_11" %in% all_views) {
+    message("O3_11 view does not exist.")
+  } else {
+    tmp <- dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_11"))
+    tmp <- tmp %>% mutate_all(as.character)
+    O3$O3_11 <- create_analysis_excel(
+      data = tmp,
+      description = "8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"
     )
   }
   if (!"O3_12" %in% all_views) {

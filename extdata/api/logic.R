@@ -167,8 +167,8 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
   }
 
   if(hourly) {
-    create_hourly_intermediate_analysis(start_date, end_date, schema_name, parameters, stations)
-    send_notification("Hourly intermediate analysis created")
+    #create_hourly_intermediate_analysis(start_date, end_date, schema_name, parameters, stations)
+    #send_notification("Hourly intermediate analysis created")
     create_hourly_analysis_views(start_date, end_date, schema_name, parameters)
     send_notification("Hourly analysis views created")
   }
