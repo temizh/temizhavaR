@@ -92,6 +92,22 @@ get_stations_handler <- function(.req, .res) {
   .res$set_content_type("application/json")
 }
 
+get_intermediate_analysis_handler <- function(.req, .res) {
+
+  data <- get_intermediate_analysis()
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+get_final_analysis_handler <- function(.req, .res) {
+
+  data <- get_final_analysis()
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
 create_analysis_handler <- function(.req, .res) {
   print("request is made!")
   # Check if the request body is empty
@@ -139,5 +155,141 @@ create_analysis_handler <- function(.req, .res) {
 
   # Respond with a success message
   .res$set_body(jsonlite::toJSON(list(message = "Analysis run successfully."), auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+create_intermediate_analysis_handler <- function(.req, .res) {
+
+  print("helo")
+
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  name <- request_data$name
+  analysis <- request_data$analysis
+  data_type <- request_data$data_type
+  pollutant <- request_data$pollutant
+  parameters <- request_data$parameters
+
+  # Check if the required parameters are provided
+  if (is.null(name) || is.null(analysis) || is.null(data_type) || is.null(pollutant)) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  if( is.null(parameters)) {
+    parameters <- {}
+  }
+
+  create_intermediate_analysis(
+    name = name,
+    analysis = analysis,
+    data_type = data_type,
+    pollutant = pollutant,
+    parameters = parameters
+  )
+
+  # Respond with a success message
+  .res$set_body(jsonlite::toJSON(list(message = paste("Intermediate analysis", name, "created successfully.")), auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+delete_intermediate_analysis_handler <- function(.req, .res) {
+
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  name <- request_data$name
+
+  # Check if the required parameters are provided
+  if (is.null(name)) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  delete_intermediate_analysis(name)
+
+  # Respond with a success message
+  .res$set_body(jsonlite::toJSON(list(message = paste("Intermediate analysis", name, "deleted successfully.")), auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+create_final_analysis_handler <- function(.req, .res) {
+
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  name <- request_data$name
+  analysis <- request_data$analysis
+  data <- request_data$data
+  filters <- request_data$filters
+  group_by <- request_data$group_by
+  description <- request_data$description
+
+  # Check if the required parameters are provided
+  if (is.null(name) || is.null(analysis) || is.null(data) || is.null(group_by)) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  if (is.null(filters)) {
+    filters <- list()
+  }
+
+  create_final_analysis(
+    name = name,
+    analysis = analysis,
+    data = data,
+    filters = filters,
+    group_by = group_by,
+    description = description
+  )
+
+  # Respond with a success message
+  .res$set_body(jsonlite::toJSON(list(message = paste("Final analysis", name, "created successfully.")), auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+delete_final_analysis_handler <- function(.req, .res) {
+
+  # Check if the request body is empty
+  if (length(.req$body) == 0) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  # Parse JSON body into an R object
+  request_data <- .req$body
+
+  name <- request_data$name
+
+  # Check if the required parameters are provided
+  if (is.null(name)) {
+    # Respond with a 400 Bad Request error
+    raise(HTTPError$bad_request())
+  }
+
+  delete_final_analysis(name)
+
+  # Respond with a success message
+  .res$set_body(jsonlite::toJSON(list(message = paste("Final analysis", name, "deleted successfully.")), auto_unbox = TRUE))
   .res$set_content_type("application/json")
 }

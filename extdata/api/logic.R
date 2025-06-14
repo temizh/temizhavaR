@@ -127,6 +127,71 @@ get_stations <- function() {
   return(json_output)
 }
 
+get_intermediate_analysis <- function() {
+
+  conn <- create_postgres_conn()
+
+  # Ensure database connection is valid
+  check_db_connection()
+
+  print("Retrieving intermediate analysis data...")
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "intermediate_analysis")) {
+    #return("Table intermediate_analysis does not exist.")
+  }
+
+  print("Table intermediate_analysis exists, proceeding to retrieve data...")
+
+  # Get the intermediate analysis data
+  analysis <- dbGetQuery(conn, "SELECT * FROM intermediate_analysis")
+
+  print("Data retrieved from intermediate_analysis table.")
+  print(analysis)
+
+  # Convert the filters column from JSON to character
+  analysis$parameters <- as.character(analysis$parameters)
+
+  # Convert to JSON format
+  json_output <- toJSON(analysis, pretty = TRUE, auto_unbox = TRUE)
+
+  # Disconnect from the database
+  dbDisconnect(conn)
+
+  print("Intermediate analysis data retrieved successfully.")
+
+  print(json_output)
+
+  return(json_output)
+}
+
+get_final_analysis <- function() {
+  
+  conn <- create_postgres_conn()
+  
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "final_analysis")) {
+    return("Table final_analysis does not exist.")
+  }
+
+  # Get the final analysis data
+  analysis <- dbGetQuery(conn, "SELECT * FROM final_analysis")
+
+  # Convert the filters column from JSON to character
+  analysis$parameters <- as.character(analysis$parameters)
+
+  # Convert to JSON format
+  json_output <- toJSON(analysis, pretty = TRUE, auto_unbox = TRUE)
+
+  # Disconnect from the database
+  dbDisconnect(conn)
+
+  return(json_output)
+}
+
 # Function to activate analysis calculations
 create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id = NULL, 
                             daily = TRUE, hourly = TRUE,
@@ -189,4 +254,82 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
   message("Analysis completed")
 
   return()
+}
+
+create_intermediate_analysis <- function(name, analysis, data_type, pollutant, parameters) {
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "intermediate_analysis")) {
+    return("Table intermediate_analysis does not exist.")
+  }
+
+  # Insert the new analysis into the table
+  dbExecute(conn, "
+    INSERT INTO intermediate_analysis 
+    (name, analysis, data_type, pollutant, parameters, is_default) 
+    VALUES ($1, $2, $3, $4, $5, FALSE)", 
+    params = list(name, analysis, data_type, pollutant, jsonlite::toJSON(parameters, auto_unbox = TRUE))
+  )
+
+  message(paste("Intermediate analysis", name, "created successfully."))
+}
+
+delete_intermediate_analysis <- function(name) {
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "intermediate_analysis")) {
+    return("Table intermediate_analysis does not exist.")
+  }
+
+  # Delete the analysis from the table
+  dbExecute(conn, "
+    DELETE FROM intermediate_analysis 
+    WHERE name = $1 AND is_default = FALSE", 
+    params = list(name)
+  )
+
+  message(paste("Intermediate analysis", name, "deleted successfully."))
+}
+
+create_final_analysis <- function(name, analysis, data, filters, group_by, description) {
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "final_analysis")) {
+    return("Table final_analysis does not exist.")
+  }
+
+  # Insert the new analysis into the table
+  dbExecute(conn, "
+    INSERT INTO final_analysis 
+    (name, analysis, data, filters, group_by, description, is_default) 
+    VALUES ($1, $2, $3, $4, $5, $6, FALSE)", 
+    params = list(name, analysis, data, jsonlite::toJSON(filters, auto_unbox = TRUE), group_by, description)
+  )
+
+  message(paste("Final analysis", name, "created successfully."))
+}
+
+delete_final_analysis <- function(name) {
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "final_analysis")) {
+    return("Table final_analysis does not exist.")
+  }
+
+  # Delete the analysis from the table
+  dbExecute(conn, "
+    DELETE FROM final_analysis 
+    WHERE name = $1 AND is_default = FALSE", 
+    params = list(name)
+  )
+
+  message(paste("Final analysis", name, "deleted successfully."))
 }

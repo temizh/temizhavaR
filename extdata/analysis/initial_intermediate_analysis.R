@@ -55,6 +55,14 @@ analysis <- analysis %>%
     is_default = TRUE
   )) %>%
   rbind(data.frame(
+    name = "PM10_45_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "daily",
+    pollutant = "PM10",
+    parameters = '{"threshold": 45, "direction": "above"}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
     name = "PM10_45_Altı_Veri_Sayısı",
     analysis = "exceedance",
     data_type = "daily",
@@ -68,6 +76,14 @@ analysis <- analysis %>%
     data_type = "daily",
     pollutant = "PM10",
     parameters = '{"threshold": 50, "direction": "above"}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM10_50_Altı_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "daily",
+    pollutant = "PM10",
+    parameters = '{"threshold": 50, "direction": "below"}',
     is_default = TRUE
   ))
 
