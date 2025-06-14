@@ -40,7 +40,7 @@ generate_parameter_combinations <- function(parameter_list) {
 analyze_parameter_combination <- function(parameters, data_type = "daily", 
                                          threshold = 90, min_years = 0,
                                          season = NULL, until_year = 2023,
-                                         conn = NULL) {
+                                         conn = NULL, data_in_year = 365) {
   local_connection <- FALSE
   if (is.null(conn)) {
     conn <- create_postgres_conn()
@@ -54,7 +54,7 @@ analyze_parameter_combination <- function(parameters, data_type = "daily",
     WITH filtered_data AS (
       SELECT 
         d."Istasyon_modified", 
-        EXTRACT(YEAR FROM d."Tarih")::integer AS year,
+        EXTRACT(YEAR FROM d."Tarih" AT TIME ZONE \'Europe/Istanbul\')::integer AS year,
         EXTRACT(MONTH FROM d."Tarih")::integer AS month,
         d."%s",
         l."Id" as location_id
@@ -80,11 +80,11 @@ analyze_parameter_combination <- function(parameters, data_type = "daily",
       filtered_data.year::text as year,
       COUNT(*) AS total_entries,
       SUM(CASE WHEN filtered_data."%s" IS NOT NULL THEN 1 ELSE 0 END) AS available_entries,
-      (SUM(CASE WHEN filtered_data."%s" IS NOT NULL THEN 1 ELSE 0 END)::float / COUNT(*)::float * 100) AS percentage
+      (SUM(CASE WHEN filtered_data."%s" IS NOT NULL THEN 1 ELSE 0 END)::float / %s::float * 100) AS percentage
     FROM filtered_data
     GROUP BY filtered_data."Istasyon_modified", filtered_data.location_id, filtered_data.year
     ORDER BY filtered_data."Istasyon_modified", filtered_data.year
-    ', param, param))
+    ', param, param, data_in_year))
     
     param_data <- dbGetQuery(conn, query)
     
@@ -316,12 +316,12 @@ process_parameter_combinations <- function(parameter_list, data_type = "daily",
 process_parameter_combinations(
   parameter_list = c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3"),
   data_type = "daily",
-  threshold = 90,
+  threshold = 75,
   min_years = 0,
   until_year = 2024,
   min_combination_size = 2,
   max_combination_size = 8,
   export_google = TRUE,
-  google_folder_id = "133DjFJif6D-h0YuGdrOW4YHbOMppfPis"
+  google_folder_id = "1T7kJ7Njze6bUzCsZhx2TjRuI7iLBjWQ9"
 )
 

@@ -161,6 +161,14 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Günlük PM10 ortalaması 45 µg/m3'ün altı istasyonların listesi ve gün sayısı"
     )
   }
+  if(!"pm10_13" %in% all_views) {
+    message("PM10_13 view does not exist.")
+  } else {
+    PM10$PM10_13 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_13")),
+      description = "Günlük PM10 ortalaması 45 µg/m3'ün üstü istasyonların listesi ve gün sayısı"
+    )
+  }
   if(!"pm10_14_1" %in% all_views) {
     message("PM10_14_1 view does not exist.")
   } else {
@@ -323,7 +331,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
 
   # SO2 ----------------------------
   SO2 <- list()
-  if (!"SO2_1" %in% all_views) {
+  if (!"so2_1" %in% all_views) {
     message("SO2_1 view does not exist.")
   } else {
     SO2$SO2_1 <- create_analysis_excel(
@@ -331,7 +339,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "SO2 Veri alınan istasyon listesi"
     )
   }
-  if (!"SO2_2_1" %in% all_views) {
+  if (!"so2_2_1" %in% all_views) {
     message("SO2_2_1 view does not exist.")
   } else {
     SO2$SO2_2_1 <- create_analysis_excel(
@@ -339,7 +347,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "SO2 %90 veri alınan istasyon listesi"
     )
   }
-  if (!"SO2_3_1" %in% all_views) {
+  if (!"so2_3_1" %in% all_views) {
     message("SO2_3_1 view does not exist.")
   } else {
     SO2$SO2_3_1 <- create_analysis_excel(
@@ -347,7 +355,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "SO2 %90 veri alınan istasyon sayısı"
     )
   }
-  if (!"SO2_2_2" %in% all_views) {
+  if (!"so2_2_2" %in% all_views) {
     message("SO2_2_2 view does not exist.")
   } else {
     SO2$SO2_2_2 <- create_analysis_excel(
@@ -355,7 +363,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "SO2 %75 veri alınan istasyon listesi"
     )
   }
-  if (!"SO2_3_2" %in% all_views) {
+  if (!"so2_3_2" %in% all_views) {
     message("SO2_3_2 view does not exist.")
   } else {
     SO2$SO2_3_2 <- create_analysis_excel(
@@ -363,7 +371,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "SO2 %75 veri alınan istasyon sayısı"
     )
   }
-  if (!"SO2_4" %in% all_views) {
+  if (!"so2_4" %in% all_views) {
     message("SO2_4 view does not exist.")
   } else {
     SO2$SO2_4 <- create_analysis_excel(
@@ -371,7 +379,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Her bir istasyonun yıllık SO2 ortalaması"
     )
   }
-  if (!"SO2_7" %in% all_views) {
+  if (!"so2_7" %in% all_views) {
     message("SO2_7 view does not exist.")
   } else {
     SO2$SO2_7 <- create_analysis_excel(
@@ -379,7 +387,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Günlük SO2 ortalaması 40 µg/m3'ün üstündeki istasyonların listesi ve gün sayısı"
     )
   }
-  if (!"SO2_8" %in% all_views) {
+  if (!"so2_8" %in% all_views) {
     message("SO2_8 view does not exist.")
   } else {
     SO2$SO2_8 <- create_analysis_excel(
@@ -387,7 +395,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Günlük SO2 ortalaması 125 µg/m3'ün üstündeki istasyonların listesi ve gün sayısı"
     )
   }
-  if (!"SO2_9" %in% all_views) {
+  if (!"so2_9" %in% all_views) {
     message("SO2_9 view does not exist.")
   } else {
     SO2$SO2_9 <- create_analysis_excel(
@@ -395,7 +403,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Günlük ortalaması 125 µg/m3'ü 3 defadan fazla aşan istasyonlar ve kaç defa aştıkları"
     )
   }
-  if (!"SO2_11" %in% all_views) {
+  if (!"so2_11" %in% all_views) {
     message("SO2_11 view does not exist.")
   } else {
     SO2$SO2_11 <- create_analysis_excel(
@@ -406,7 +414,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
 
   # NO2 ----------------------------
   NO2 <- list()
-  if (!"NO2_1" %in% all_views) {
+  if (!"no2_1" %in% all_views) {
     message("NO2_1 view does not exist.")
   } else {
     NO2$NO2_1 <- create_analysis_excel(
@@ -414,7 +422,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 Veri alınan istasyon listesi"
     )
   }
-  if (!"NO2_2_1" %in% all_views) {
+  if (!"no2_2_1" %in% all_views) {
     message("NO2_2_1 view does not exist.")
   } else {
     NO2$NO2_2_1 <- create_analysis_excel(
@@ -422,7 +430,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 %90 veri alınan istasyon listesi"
     )
   }
-  if (!"NO2_3_1" %in% all_views) {
+  if (!"no2_3_1" %in% all_views) {
     message("NO2_3_1 view does not exist.")
   } else {
     NO2$NO2_3_1 <- create_analysis_excel(
@@ -430,7 +438,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 %90 veri alınan istasyon sayısı"
     )
   }
-  if (!"NO2_2_2" %in% all_views) {
+  if (!"no2_2_2" %in% all_views) {
     message("NO2_2_2 view does not exist.")
   } else {
     NO2$NO2_2_2 <- create_analysis_excel(
@@ -438,7 +446,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 %75 veri alınan istasyon listesi"
     )
   }
-  if (!"NO2_3_2" %in% all_views) {
+  if (!"no2_3_2" %in% all_views) {
     message("NO2_3_2 view does not exist.")
   } else {
     NO2$NO2_3_2 <- create_analysis_excel(
@@ -446,7 +454,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 %75 veri alınan istasyon sayısı"
     )
   }
-  if (!"NO2_5" %in% all_views) {
+  if (!"no2_5" %in% all_views) {
     message("NO2_5 view does not exist.")
   } else {
     NO2$NO2_5 <- create_analysis_excel(
@@ -454,7 +462,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Günlük ortalaması 25  µg/m3'ü 3 defadan fazla aşan istasyonlar ve kaç defa aştıkları"
     )
   }
-  if (!"NO2_6" %in% all_views) {
+  if (!"no2_6" %in% all_views) {
     message("NO2_6 view does not exist.")
   } else {
     NO2$NO2_6 <- create_analysis_excel(
@@ -462,7 +470,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Her bir istasyonun yıllık NO2 ortalaması"
     )
   }
-  if (!"NO2_7" %in% all_views) {
+  if (!"no2_7" %in% all_views) {
     message("NO2_7 view does not exist.")
   } else {
     NO2$NO2_7 <- create_analysis_excel(
@@ -470,7 +478,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Yıllık NO2 ortalaması 25 µg/m3'ün üstündeki istasyonların listesi ve ortalamaları"
     )
   }
-  if (!"NO2_8" %in% all_views) {
+  if (!"no2_8" %in% all_views) {
     message("NO2_8 view does not exist.")
   } else {
     NO2$NO2_8 <- create_analysis_excel(
@@ -478,7 +486,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Yıllık NO2 ortalaması 10 µg/m3'ün üstündeki istasyonların listesi ve ortalamaları"
     )
   }
-  if (!"NO2_9" %in% all_views) {
+  if (!"no2_9" %in% all_views) {
     message("NO2_9 view does not exist.")
   } else {
     NO2$NO2_9 <- create_analysis_excel(
@@ -489,7 +497,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
 
   # NOX ----------------------------
   NOX <- list()
-  if (!"NOX_1" %in% all_views) {
+  if (!"nox_1" %in% all_views) {
     message("NOX_1 view does not exist.")
   } else {
     NOX$NOX_1 <- create_analysis_excel(
@@ -497,7 +505,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NOX Veri alınan istasyon listesi"
     )
   }
-  if (!"NOX_2_1" %in% all_views) {
+  if (!"nox_2_1" %in% all_views) {
     message("NOX_2_1 view does not exist.")
   } else {
     NOX$NOX_2_1 <- create_analysis_excel(
@@ -505,7 +513,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NOX %90 veri alınan istasyon listesi"
     )
   }
-  if (!"NOX_3_1" %in% all_views) {
+  if (!"nox_3_1" %in% all_views) {
     message("NOX_3_1 view does not exist.")
   } else {
     NOX$NOX_3_1 <- create_analysis_excel(
@@ -513,7 +521,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NOX %90 veri alınan istasyon sayısı"
     )
   }
-  if (!"NOX_2_2" %in% all_views) {
+  if (!"nox_2_2" %in% all_views) {
     message("NOX_2_2 view does not exist.")
   } else {
     NOX$NOX_2_2 <- create_analysis_excel(
@@ -521,7 +529,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NOX %75 veri alınan istasyon listesi"
     )
   }
-  if (!"NOX_3_2" %in% all_views) {
+  if (!"nox_3_2" %in% all_views) {
     message("NOX_3_2 view does not exist.")
   } else {
     NOX$NOX_3_2 <- create_analysis_excel(
@@ -529,7 +537,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NOX %75 veri alınan istasyon sayısı"
     )
   }
-  if (!"NOX_4" %in% all_views) {
+  if (!"nox_4" %in% all_views) {
     message("NOX_4 view does not exist.")
   } else {
     NOX$NOX_4 <- create_analysis_excel(
@@ -540,7 +548,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
 
   # O3 ----------------------------
   O3 <- list()
-  if (!"O3_1" %in% all_views) {
+  if (!"o3_1" %in% all_views) {
     message("O3_1 view does not exist.")
   } else {
     O3$O3_1 <- create_analysis_excel(
@@ -548,7 +556,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "O3 Veri alınan istasyon listesi"
     )
   }
-  if (!"O3_2" %in% all_views) {
+  if (!"o3_2" %in% all_views) {
     message("O3_2 view does not exist.")
   } else {
     O3$O3_2 <- create_analysis_excel(
@@ -556,7 +564,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "O3 Veri alınan istasyon sayısı"
     )
   }
-  if (!"O3_3" %in% all_views) {
+  if (!"o3_3" %in% all_views) {
     message("O3_3 view does not exist.")
   } else {
     O3$O3_3 <- create_analysis_excel(
@@ -564,7 +572,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "O3 %90 veri alınan istasyon listesi"
     )
   }
-  if (!"O3_4" %in% all_views) {
+  if (!"o3_4" %in% all_views) {
     message("O3_4 view does not exist.")
   } else {    
     O3$O3_4 <- create_analysis_excel(
@@ -572,7 +580,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "O3 %90 veri alınan istasyon sayısı"
     )
   }
-  if (!"O3_5" %in% all_views) {
+  if (!"o3_5" %in% all_views) {
     message("O3_5 view does not exist.")
   } else {
     O3$O3_5 <- create_analysis_excel(
@@ -580,7 +588,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Yaz boyunca O3 %90 ve üstü veri alınan istasyon listesi "
     )
   }
-  if (!"O3_6" %in% all_views) {
+  if (!"o3_6" %in% all_views) {
     message("O3_6 view does not exist.")
   } else {
     O3$O3_6 <- create_analysis_excel(
@@ -588,7 +596,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Yaz boyunca %90 ve üstü veri alınan istasyon sayısı"
     )
   }
-  if (!"O3_7" %in% all_views) {
+  if (!"o3_7" %in% all_views) {
     message("O3_7 view does not exist.")
   } else {
     O3$O3_7 <- create_analysis_excel(
@@ -596,7 +604,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Kış boyunca O3 %75 ve üstü veri alınan istasyon listesi"
     )
   }
-  if (!"O3_8" %in% all_views) {
+  if (!"o3_8" %in% all_views) {
     message("O3_8 view does not exist.")
   } else {
     O3$O3_8 <- create_analysis_excel(
@@ -646,7 +654,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"
     )
   }
-  if (!"O3_12" %in% all_views) {
+  if (!"o3_12" %in% all_views) {
     message("O3_12 view does not exist.")
   } else {
     O3$O3_12 <- create_analysis_excel(
@@ -654,7 +662,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Mayıs ayından Temmuz ayına kadar AOT40 değerlerinin toplamı"
     )
   }
-  if (!"O3_13" %in% all_views) {
+  if (!"o3_13" %in% all_views) {
     message("O3_13 view does not exist.")
   } else {
     O3$O3_13 <- create_analysis_excel(
@@ -665,7 +673,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
 
   # CO ----------------------------
   CO <- list()
-  if (!"CO_1" %in% all_views) {
+  if (!"co_1" %in% all_views) {
     message("CO_1 view does not exist.")
   } else {
     CO$CO_1 <- create_analysis_excel(
@@ -673,7 +681,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "CO Veri alınan istasyon listesi"
     )
   }
-  if (!"CO_2" %in% all_views) {
+  if (!"co_2" %in% all_views) {
     message("CO_2 view does not exist.")
   } else {
     CO$CO_2 <- create_analysis_excel(
@@ -681,7 +689,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "CO %90 veri alınan istasyon listesi"
     )
   }
-  if (!"CO_3" %in% all_views) {
+  if (!"co_3" %in% all_views) {
     message("CO_3 view does not exist.")
   } else {
     CO$CO_3 <- create_analysis_excel(

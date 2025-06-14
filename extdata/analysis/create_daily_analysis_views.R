@@ -94,7 +94,10 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name, param
       list_station_exceedance("PM10", threshold = 90, data_threshold = 45, threshold_direction = "Altı") %>%
       sql_render()
 
-    # PM10_13 ???
+    PM10_13 <- intermediate_analysis %>%
+      select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM10_45_Üstü_Veri_Sayısı) %>%
+      list_station_exceedance("PM10", threshold = 90, data_threshold = 45, threshold_direction = "Üstü") %>%
+      sql_render()
 
     PM10_14_1 <- intermediate_analysis %>%
       select(Istasyon, Yıl, PM10_Veri_Mevcudiyeti, PM10_Ortalaması) %>%
@@ -120,6 +123,7 @@ create_daily_analysis_views <- function(start_year, end_year, schema_name, param
     dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_9", " AS ", PM10_9))
     dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_10", " AS ", PM10_10))
     dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_12", " AS ", PM10_12))
+    dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_13", " AS ", PM10_13))
     dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_14_1", " AS ", PM10_14_1))
     dbExecute(con, paste0("CREATE VIEW ", schema_name, ".PM10_14_2", " AS ", PM10_14_2))
   }

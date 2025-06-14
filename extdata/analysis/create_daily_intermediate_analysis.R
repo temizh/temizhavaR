@@ -53,6 +53,10 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
       calculate_exceedance("PM10", 45, "below") %>%
       rename("PM10_45_Altı_Veri_Sayısı" = result)
 
+    PM10_45_Üstü_Veri_Sayısı <- grouped_data %>%
+      calculate_exceedance("PM10", 45, "above") %>%
+      rename("PM10_45_Üstü_Veri_Sayısı" = result)
+
     PM10_50_Üstü_Veri_Sayısı <- grouped_data %>%
       calculate_exceedance("PM10", 50, "above") %>%
       rename("PM10_50_Üstü_Veri_Sayısı" = result)
@@ -61,6 +65,7 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
       left_join(PM10_Veri_Mevcudiyeti, by = c("Istasyon", "Yıl")) %>%
       left_join(PM10_Ortalaması, by = c("Istasyon", "Yıl")) %>%
       left_join(PM10_45_Altı_Veri_Sayısı, by = c("Istasyon", "Yıl")) %>%
+      left_join(PM10_45_Üstü_Veri_Sayısı, by = c("Istasyon", "Yıl")) %>%
       left_join(PM10_50_Üstü_Veri_Sayısı, by = c("Istasyon", "Yıl"))
   }
 

@@ -3,14 +3,18 @@ library(dplyr)
 library(dbplyr)
 library(DBI)
 library(openxlsx)
+library(lubridate)
 
 get_data <- function() {
   con <- create_postgres_conn()
 
+  DBI::dbExecute(con, "SET TIME ZONE 'Europe/Istanbul'")
+
   data <- tbl(con, "hourly_detail") %>%
+    # mutate(Tarih = force_tz(Tarih, tzone = "UTC")) %>%
     filter(Tarih >= "2024-01-01" & Tarih <= "2025-01-01") %>%
     rename(Istasyon = "Istasyon_modified") %>%
-    filter(Istasyon == "Eskişehir-Vişnepark") %>%
+    filter(Istasyon == "Bursa-UludağÜniv-MTHM") %>%
     mutate(Yıl = year(Tarih)) %>%
     mutate(Ay = month(Tarih)) %>%
     mutate(Gün = day(Tarih)) %>%
@@ -18,6 +22,8 @@ get_data <- function() {
     mutate(Dakika = minute(Tarih)) %>%
     mutate(Saat = ifelse(Dakika > 30, Saat + 1, Saat)) %>%
     select(Istasyon, Yıl, Ay, Gün, Tarih, Saat, O3)
+
+  message("Data loaded successfully")
 
   data
 }
@@ -29,6 +35,12 @@ test_rolling_hours <- function() {
   rolling_hours <- 8
 
   data <- data %>%
+    mutate(
+      tmp_date = ifelse(Saat == 0, Tarih - days(1), Tarih),
+      Gün = day(tmp_date),
+      Ay = month(tmp_date),
+      Yıl = year(tmp_date)
+    ) %>%
     distinct(Istasyon, Yıl, Ay, Gün, Tarih, .keep_all = TRUE) %>%
     mutate (
       avg_8hr = sql(paste0('AVG("O3") OVER (PARTITION BY "Istasyon" ORDER BY "Tarih" ROWS BETWEEN ', (rolling_hours - 1), ' PRECEDING AND CURRENT ROW)'))
@@ -37,12 +49,18 @@ test_rolling_hours <- function() {
     mutate(max_8hr = max(avg_8hr, na.rm = TRUE)) %>%
     mutate(exceeds = ifelse(max_8hr > 120, TRUE, FALSE)) %>%
     ungroup() %>%
-    select(Tarih, Yıl, O3, avg_8hr, max_8hr, exceeds)
+    select(Tarih, Yıl, Ay, Gün, Saat, O3, avg_8hr, max_8hr, exceeds) %>%
+    collect()
 
   result <- data %>%
     filter(max_8hr > 120) %>%
     group_by(Yıl) %>%
-    summarise(result = n()/24, .groups = "drop")
+    summarise(
+      sum = n(),
+      result = n()/24, .groups = "drop"
+    )
+
+  data$Tarih <- format(data$Tarih, tz = "Etc/GMT-3", usetz = FALSE)
 
   # write to xlxs file
   write.xlsx(data, "extdata/test_rolling_hours.xlsx", rowNames = FALSE)
@@ -81,4 +99,5 @@ test_aot <- function() {
   write.xlsx(result, "extdata/test_aot_result.xlsx", rowNames = FALSE)
 }
 
-test_aot()
+# test_aot()
+test_rolling_hours()
