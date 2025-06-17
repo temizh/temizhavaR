@@ -134,22 +134,15 @@ get_intermediate_analysis <- function() {
   # Ensure database connection is valid
   check_db_connection()
 
-  print("Retrieving intermediate analysis data...")
-
   # Check if the table exists
   if (!dbExistsTable(conn, "intermediate_analysis")) {
-    #return("Table intermediate_analysis does not exist.")
+    return("Table intermediate_analysis does not exist.")
   }
-
-  print("Table intermediate_analysis exists, proceeding to retrieve data...")
 
   # Get the intermediate analysis data
   analysis <- dbGetQuery(conn, "SELECT * FROM intermediate_analysis")
 
-  print("Data retrieved from intermediate_analysis table.")
-  print(analysis)
-
-  # Convert the filters column from JSON to character
+  # Convert the parameters column from JSON to character
   analysis$parameters <- as.character(analysis$parameters)
 
   # Convert to JSON format
@@ -158,17 +151,13 @@ get_intermediate_analysis <- function() {
   # Disconnect from the database
   dbDisconnect(conn)
 
-  print("Intermediate analysis data retrieved successfully.")
-
-  print(json_output)
-
   return(json_output)
 }
 
 get_final_analysis <- function() {
   
   conn <- create_postgres_conn()
-  
+
   # Ensure database connection is valid
   check_db_connection()
 
@@ -181,7 +170,7 @@ get_final_analysis <- function() {
   analysis <- dbGetQuery(conn, "SELECT * FROM final_analysis")
 
   # Convert the filters column from JSON to character
-  analysis$parameters <- as.character(analysis$parameters)
+  analysis$filters <- as.character(analysis$filters)
 
   # Convert to JSON format
   json_output <- toJSON(analysis, pretty = TRUE, auto_unbox = TRUE)
