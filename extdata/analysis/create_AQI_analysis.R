@@ -17,8 +17,7 @@ create_AQI_analysis <- function(start_year, end_year, schema_name) {
   # Prepare data
   data <- data %>%
     rename(Istasyon = "Istasyon_modified") %>%
-    select(-Tarih) %>%
-    rename(Tarih = "Tarih_ist") %>%
+    rename(Tarih = "Tarih_NOTZ") %>%
     mutate(Yıl = year(Tarih)) %>%
     filter(Yıl >= start_year & Yıl <= end_year) %>%
     filter(Istasyon %in% c("Eskişehir-Vişnepark"))
@@ -51,4 +50,4 @@ create_AQI_analysis <- function(start_year, end_year, schema_name) {
   message("AQI analysis are created.")
 }
 
-create_AQI_analysis(2014, 2024, "aqi_new")
+# create_AQI_analysis(2014, 2024, "aqi_new")

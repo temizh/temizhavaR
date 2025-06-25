@@ -7,7 +7,11 @@
 
 create_analysis_excel <- function(data, description, additional = list()) {
   # add new column to data in front
-  data <- cbind(Task = "", data)
+  if (nrow(data) == 0) {
+    data <- data.frame(Task = c(""))
+  } else {
+    data <- cbind(Task = "", data)
+  }
   data[1, "Task"] <- description
 
   legend <- list()

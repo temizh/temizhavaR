@@ -9,7 +9,6 @@ calculate_rolling_exceedance(
   parameter,
   threshold,
   rolling_hours,
-  con,
   period = "Day",
   months = NULL
 )
