@@ -245,6 +245,52 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
   return()
 }
 
+run_analysis <- function(start_date, end_date, schema_name = NULL, folder_id = NULL, save_to_drive = FALSE, analysis = c(), stations = c()) {
+
+  # Shema name
+  if(is.null(schema_name) || schema_name == "") {
+    timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+    schema_name <- paste0("analysis_", timestamp)
+  }
+
+  print("A")
+  # Save configuration to the database
+  conn <- create_postgres_conn()
+  # create table if doesn't exist
+  if (!dbExistsTable(conn, "analysis_config")) {
+    dbExecute(conn, "
+      CREATE TABLE analysis_config (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        schema_name TEXT NOT NULL,
+        folder_id TEXT,
+        save_to_drive BOOLEAN DEFAULT FALSE,
+        analysis JSONB,
+        stations JSONB
+      )")
+  }
+  print("B")
+
+  # Insert the analysis configuration into the table
+  dbExecute(conn, "
+    INSERT INTO analysis_config (start_date, end_date, schema_name, folder_id, save_to_drive, analysis, stations) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)", 
+    params = list(start_date, end_date, schema_name, folder_id, save_to_drive, jsonlite::toJSON(analysis, auto_unbox = TRUE), jsonlite::toJSON(stations, auto_unbox = TRUE))
+  )
+
+  # Disconnect from the database
+  dbDisconnect(conn)
+
+  # Run the analysis
+  ###
+
+  send_notification("Analysis completed")
+
+  return()
+}
+
 create_intermediate_analysis <- function(name, analysis, data_type, pollutant, parameters) {
   # Ensure database connection is valid
   check_db_connection()
@@ -321,4 +367,26 @@ delete_final_analysis <- function(name) {
   )
 
   message(paste("Final analysis", name, "deleted successfully."))
+}
+
+get_analysis_configs <- function() {
+  # Ensure database connection is valid
+  check_db_connection()
+
+  # Check if the table exists
+  if (!dbExistsTable(conn, "analysis_config")) {
+    return("Table analysis_config does not exist.")
+  }
+
+  # Get the analysis configurations
+  configs <- dbGetQuery(conn, "SELECT * FROM analysis_config")
+
+  # Convert the analysis and stations columns from JSON to character
+  configs$analysis <- as.character(configs$analysis)
+  configs$stations <- as.character(configs$stations)
+
+  # Convert to JSON format
+  json_output <- toJSON(configs, pretty = TRUE, auto_unbox = TRUE)
+
+  return(json_output)
 }

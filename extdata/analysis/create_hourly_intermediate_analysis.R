@@ -10,7 +10,7 @@ create_hourly_intermediate_analysis <- function(start_date, end_date, schema_nam
   message("Connecting to the database...")
   con <- create_postgres_conn()
 
-  data <- tbl(con, "hourly_detail_zcleaned_seasonal")
+  data <- tbl(con, "hourly_detail_zcleaned_seasonal_2024")
 
   start_date <- as.POSIXct(start_date)
   end_date <- as.POSIXct(end_date)

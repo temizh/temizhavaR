@@ -127,11 +127,8 @@ create_analysis_handler <- function(.req, .res) {
   end_date <- request_data$end_date
   schema_name <- request_data$schema_name
   folder_id <- request_data$folder_id
-  daily <- request_data$daily
-  hourly <- request_data$hourly
-  aqi_analysis <- request_data$aqi_analysis
+  analysis <- request_data$analysis
   save_to_drive <- request_data$save_to_drive
-  parameters <- request_data$parameters
   stations <- request_data$stations
 
   # Check if the required parameters are provided
@@ -140,16 +137,13 @@ create_analysis_handler <- function(.req, .res) {
     raise(HTTPError$bad_request())
   }
 
-  create_analysis(
+  run_analysis(
     start_date = start_date,
     end_date = end_date,
     schema_name = schema_name,
     folder_id = folder_id,
-    daily = daily,
-    hourly = hourly,
-    aqi_analysis = aqi_analysis,
+    analysis = analysis,
     save_to_drive = save_to_drive,
-    parameters = parameters,
     stations = stations
   )
 
@@ -291,5 +285,13 @@ delete_final_analysis_handler <- function(.req, .res) {
 
   # Respond with a success message
   .res$set_body(jsonlite::toJSON(list(message = paste("Final analysis", name, "deleted successfully.")), auto_unbox = TRUE))
+  .res$set_content_type("application/json")
+}
+
+get_analysis_configs_handler <- function(.req, .res) {
+
+  data <- get_analysis_configs()
+
+  .res$set_body(jsonlite::toJSON(data, auto_unbox = TRUE))
   .res$set_content_type("application/json")
 }

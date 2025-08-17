@@ -331,6 +331,283 @@ analysis <- analysis %>%
     is_default = TRUE
   ))
 
+# PM25 final analysis
+message("Adding PM25 final analysis...")
+analysis <- analysis %>%
+  rbind(data.frame(
+    name = "PM25_1",
+    analysis = "list",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 0
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 veri alınan istasyon listesi",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_2",
+    analysis = "count",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 0
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 veri alınan istasyon sayısı",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_3",
+    analysis = "list",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 %90 ve üstü veri alınan istasyon listesi",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_4",
+    analysis = "count",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 %90 ve üstü veri alınan istasyon sayısı",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_5",
+    analysis = "list",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 %75 ve üstü veri alınan istasyon listesi",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_6",
+    analysis = "count",
+    data = "PM25_Veri_Mevcudiyeti",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 %75 ve üstü veri alınan istasyon sayısı",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_7_1",
+    analysis = "list",
+    data = "PM25_Ortalaması",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Her bir istasyonun yıllık PM25 ortalaması (90% üstü veri mevcudiyeti)",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_7_2",
+    analysis = "list",
+    data = "PM25_Ortalaması",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Her bir istasyonun yıllık PM25 ortalaması (75% üstü veri mevcudiyeti)",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_8",
+    analysis = "list",
+    data = "PM25_Ortalaması",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      ),
+      list(
+        filter = "PM25_Ortalaması",
+        direction = "above",
+        value = 15
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Yıllık PM25 ortalaması 15 µg/m3'ün üstündeki istasyonların listesi ve ortalamaları",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_9",
+    analysis = "list",
+    data = "PM25_Ortalaması",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      ),
+      list(
+        filter = "PM25_Ortalaması",
+        direction = "below",
+        value = 15
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Yıllık PM25 ortalaması 15 µg/m3'ün altında olan istasyonların listesi ve ortalamaları",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_10",
+    analysis = "list",
+    data = "PM25_15_Üstü_Veri_Sayısı",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Günlük PM25 ortalaması 15 µg/m3'ün üstündeki istasyonların listesi ve gün sayısı",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_12",
+    analysis = "list",
+    data = "PM25_15_Altı_Veri_Sayısı",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "Günlük PM25 ortalaması 15 µg/m3'ün altında olan istasyonların listesi ve gün sayısı",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_13_1",
+    analysis = "list",
+    data = "PM25_Tamamlanmış",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      ),
+      list(
+        filter = "PM10_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %90'ın üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilerek hesaplanan PM2.5 yıllık ortalamaları",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_13_2",
+    analysis = "list",
+    data = "PM25_Tamamlanmış",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      ),
+      list(
+        filter = "PM10_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      )
+    ), auto_unbox = TRUE),
+    group_by = "station",
+    description = "PM25 veri yüzdesi %75'in altında olan ve PM10 veri yüzdesi %75'in üstü istasyonlar için istasyonların PM10 yıllık ortalamalarından 0,6667 faktörü ile çarpılarak elde edilerek hesaplanan PM2.5 yıllık ortalamaları",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_14_1",
+    analysis = "list",
+    data = "PM25_Tamamlanmış",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      ),
+      list(
+        filter = "PM10_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 90
+      )
+    ), auto_unbox = TRUE),
+    group_by = "city",
+    description = "Tamamlanmış PM25 İl yıllık ortalamaları 90% PM10 veri alınan istasyonlar için",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "PM25_14_2",
+    analysis = "list",
+    data = "PM25_Tamamlanmış",
+    filters = toJSON(list(
+      list(
+        filter = "PM25_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      ),
+      list(
+        filter = "PM10_Veri_Mevcudiyeti",
+        direction = "above",
+        value = 75
+      )
+    ), auto_unbox = TRUE),
+    group_by = "city",
+    description = "Tamamlanmış PM25 İl yıllık ortalamaları 75% PM10 veri alınan istasyonlar için",
+    is_default = TRUE
+  ))
+
+# SO2 final analysis
+message("Adding SO2 final analysis...")
+
 
 # Save analysis to database
 message("Saving final analysis to database...")

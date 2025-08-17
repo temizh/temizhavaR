@@ -1,0 +1,21 @@
+services:
+  r-api:
+    build: ./extdata/api
+    ports:
+      - "8000:8000"
+    restart: always
+
+  r-websocket:
+    build: ./extdata/api/websocket
+    ports:
+      - "9000:9000"
+    restart: always
+
+  appsmith:
+    image: appsmith/appsmith-ce
+    container_name: temizhava-appsmith
+    ports:
+      - "8080:80"
+    volumes:
+      - ~/Projects/Pranageo/appsmith/stacks:/appsmith-stacks
+    restart: always

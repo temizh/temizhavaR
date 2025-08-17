@@ -19,6 +19,7 @@ app$add_post(path = "/create_intermediate_analysis", FUN = create_intermediate_a
 app$add_post(path = "/delete_intermediate_analysis", FUN = delete_intermediate_analysis_handler)
 app$add_post(path = "/create_final_analysis", FUN = create_final_analysis_handler)
 app$add_post(path = "/delete_final_analysis", FUN = delete_final_analysis_handler)
+app$add_get(path = "/get_analysis_configs", FUN = get_analysis_configs_handler)
 
 # Return the API app
 app
