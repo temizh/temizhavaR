@@ -346,6 +346,6 @@ find_station_duplicates <- function(pattern = "\\.xlsx$", data_dir) {
   invisible(results)
 }
 
-# find_station_duplicates()
+# find_station_duplicates(data_dir = "../TemizHava_base_dir")
 #  specific pattern:
-# find_station_duplicates(pattern = "saatlik_detay.*\\.xlsx$")
+# find_station_duplicates(pattern = "saatlik_detay.*\\.xlsx$", data_dir = "./TemizHava_base_dir/")

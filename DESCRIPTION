@@ -19,4 +19,9 @@ Imports:
     DBI,
     dbplyr,
     RPostgres,
-    tidyr
+    tidyr,
+    wdman (>= 0.2.5)
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown

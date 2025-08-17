@@ -183,7 +183,7 @@ download_temizhava_data <- function(mode = "default", one_station = NULL,
 
  
   remote_driver <- rsDriver(browser = "chrome", port = 4445L, chromever = NULL, verbose = FALSE
-                            , extraCapabilities = eCaps)
+                            , extraCapabilities = eCaps, phantomver = NULL)
   
   remDr <- remote_driver$client
   remDr$maxWindowSize()
