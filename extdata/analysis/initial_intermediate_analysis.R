@@ -165,7 +165,32 @@ analysis <- analysis %>%
     pollutant = "SO2",
     parameters = '{"threshold": 125, "direction": "above"}',
     is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "SO2_Saatlik_Veri_Mevcudiyeti",
+    analysis = "percentage",
+    data_type = "hourly",
+    pollutant = "SO2",
+    parameters = "{}",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "SO2_350_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "SO2",
+    parameters = '{"threshold": 350, "direction": "above"}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "SO2_3_Ardışık_500_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "SO2",
+    parameters = '{"threshold": 500, "direction": "above", "consecutive": 3}',
+    is_default = TRUE
   ))
+
 
 # NO2 intermediate analysis
 message("Adding NO2 intermediate analysis...")
@@ -193,7 +218,24 @@ analysis <- analysis %>%
     pollutant = "NO2",
     parameters = '{"threshold": 25, "direction": "above"}',
     is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "NO2_200_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "NO2",
+    parameters = '{"threshold": 200, "direction": "above"}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "NO2_3_Ardışık_400_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "NO2",
+    parameters = '{"threshold": 400, "direction": "above", "consecutive": 3}',
+    is_default = TRUE
   ))
+
 
 # NOX intermediate analysis
 message("Adding NOX intermediate analysis...")
@@ -249,7 +291,80 @@ analysis <- analysis %>%
     pollutant = "O3",
     parameters = '{"months": [4, 5, 6, 7, 8, 9]}',
     is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_AOT40_Mayıs_Temmuz_Veri_Mevcudiyeti",
+    analysis = "aot40_percentage",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"months": [5, 6, 7], "days": 92}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_AOT40_Nisan_Eylül_Veri_Mevcudiyeti",
+    analysis = "aot40_percentage",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"months": [4, 5, 6, 7, 8, 9], "days": 183}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_8_Saat_Ortalama_Günlük_120_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"threshold": 120, "direction": "above", "rolling": 8}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Mayıs_Temmuz_AOT40",
+    analysis = "aot40",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"months": [5, 6, 7]}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Nisan_Eylül_AOT40",
+    analysis = "aot40",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"months": [4, 5, 6, 7, 8, 9]}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Nisan_Eylül_1_Saat_Ortalama_Günlük_180_Üstü_Veri_Sayı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"threshold": 180, "direction": "above", "rolling": 1, "months": [4, 5, 6, 7, 8, 9]}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Nisan_Eylül_1_Saat_Ortalama_Günlük_240_Üstü_Veri_Sayı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"threshold": 240, "direction": "above", "rolling": 1, "months": [4, 5, 6, 7, 8, 9]}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Nisan_Eylül_8_Saat_Ortalama_Günlük_120_Üstü_Veri_Sayı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"threshold": 120, "direction": "above", "rolling": 8, "months": [4, 5, 6, 7, 8, 9]}',
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "O3_Nisan_Eylül_1_Saat_Ortalama_Aylık_120_Üstü_Veri_Sayı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "O3",
+    parameters = '{"threshold": 120, "direction": "above", "rolling": 1, "months": [4, 5, 6, 7, 8, 9]}',
+    is_default = TRUE
   ))
+
 
 # CO intermediate analysis
 message("Adding CO intermediate analysis...")
@@ -268,6 +383,14 @@ analysis <- analysis %>%
     data_type = "daily",
     pollutant = "CO",
     parameters = "{}",
+    is_default = TRUE
+  )) %>%
+  rbind(data.frame(
+    name = "CO_8_Saat_Ortalama_Günlük_10_Üstü_Veri_Sayısı",
+    analysis = "exceedance",
+    data_type = "hourly",
+    pollutant = "CO",
+    parameters = '{"threshold": 10, "direction": "above", "rolling": 8}',
     is_default = TRUE
   ))
 

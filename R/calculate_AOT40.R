@@ -7,18 +7,20 @@
 
 calculate_AOT40 <- function(data, parameter, months, days) {
 
+
+  print("E")
   data <- data %>%
     filter(Saat > 8 & Saat <= 20) %>%
     filter(Ay %in% months) %>%
     group_by(Tarih, .add = TRUE) %>%
-    summarise(
+    mutate(
       AOT40 = sum(ifelse(.data[[parameter]] > 80, .data[[parameter]] - 80, 0)),
-      .groups = "drop_last"
     ) %>%
+    ungroup() %>%
+    group_by(Istasyon, Yıl) %>%
     summarise(
-      result = sum(AOT40, na.rm = TRUE) * days * 12 / n(),
-      .groups = "drop_last"
+      result = sum(AOT40, na.rm = TRUE) * days * 12 / n()
     )
-
+  print("F")
   return(data)
 }

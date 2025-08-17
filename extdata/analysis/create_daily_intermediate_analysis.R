@@ -11,14 +11,16 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
   message("Connecting to the database...")
   con <- create_postgres_conn()
 
-  data <- tbl(con, "daily_detail")
+  data <- tbl(con, "daily_detail_zcleaned_seasonal")
 
   # Prepare data
   data <- data %>%
     rename(Istasyon = "Istasyon_modified") %>%
+    rename(Tarih = "Tarih_NOTZ") %>%
     mutate(Yıl = year(Tarih)) %>%
     mutate(Ay = month(Tarih)) %>%
-    mutate(Gün = day(Tarih)) 
+    mutate(Gün = day(Tarih)) %>%
+    filter(Tarih >= start_date, Tarih <= end_date)
 
   # Filter stations
   if (length(stations) > 0) {

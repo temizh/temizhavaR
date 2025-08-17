@@ -23,6 +23,11 @@ setup_google_auth <- function(email = NULL) {
 
 export_to_google_sheets <- function(ss, data, folder_id, view_name, sheet_name) {
   tryCatch({
+    # Convert integer64 columns to character
+    data <- lapply(data, function(col) {
+      if (inherits(col, "integer64")) as.character(col) else col
+    }) %>% as.data.frame()
+
     sheet_write(data, ss = ss, sheet = sheet_name)
     drive_mv(file = as_id(ss), path = as_id(folder_id))
     message(paste0("Exported ", view_name, " to Google Sheets", "folder_id: ", folder_id))
@@ -78,7 +83,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
   } else {
     PM10$PM10_3_2 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_3_2")),
-      description = "PM10 %90 veri alınan istasyon sayısı"
+      description = "PM10 %75 veri alınan istasyon listesi"
     )
   }
   if(!"pm10_4_1" %in% all_views) {
@@ -86,7 +91,7 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
   } else {
     PM10$PM10_4_1 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".PM10_4_1")),
-      description = "PM10 %75 veri alınan istasyon listesi"
+      description = "PM10 %90 veri alınan istasyon sayısı"
     )
   }
   if(!"pm10_4_2" %in% all_views) {
@@ -379,6 +384,22 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Her bir istasyonun yıllık SO2 ortalaması"
     )
   }
+  if (!"so2_5" %in% all_views) {
+    message("SO2_5 view does not exist.")
+  } else {
+    SO2$SO2_5 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".SO2_5")),
+      description = "Saatlik ortalaması 350 µg/m3'ü aşan istasyonlar ve kaç defa aştıkları"
+    )
+  }
+  if (!"so2_6" %in% all_views) {
+    message("SO2_6 view does not exist.")
+  } else {
+    SO2$SO2_6 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".SO2_6")),
+      description = "Saatlik ortalaması 350 µg/m3'ü 24 defadan fazla aşan istasyonlar ve kaç defa aştıkları"
+    )
+  }
   if (!"so2_7" %in% all_views) {
     message("SO2_7 view does not exist.")
   } else {
@@ -409,6 +430,14 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
     SO2$SO2_11 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".SO2_11")),
       description = "Her bir istasyonun yıllık SO2 ortalaması"
+    )
+  }
+  if (!"so2_12" %in% all_views) {
+    message("SO2_12 view does not exist.")
+  } else {
+    SO2$SO2_12 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".SO2_12")),
+      description = "Üç ardışık saat 500  µg/m3 ve üstü istasyonların listesi ve toplam kaç saat aştığı (Uyarı eşiği)"
     )
   }
 
@@ -454,6 +483,14 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "NO2 %75 veri alınan istasyon sayısı"
     )
   }
+  if (!"no2_4" %in% all_views) {
+    message("NO2_4 view does not exist.")
+  } else {
+    NO2$NO2_4 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".NO2_4")),
+      description = "Saatlik ortalaması 200 µg/m3'ü 18 defadan fazla aşan istasyonlar ve kaç defa aştıkları (TR-AB)"
+    )
+  }
   if (!"no2_5" %in% all_views) {
     message("NO2_5 view does not exist.")
   } else {
@@ -492,6 +529,14 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
     NO2$NO2_9 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".NO2_9")),
       description = "İl NO2 yıllık ortalaması"
+    )
+  }
+  if (!"no2_10" %in% all_views) {
+    message("NO2_10 view does not exist.")
+  } else {
+    NO2$NO2_10 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".NO2_10")),
+      description = "Üç ardışık saat 400  µg/m3 ve üstü istasyonların listesi ve toplam kaç saat aştığı (Uyarı eşiği)"
     )
   }
 
@@ -670,6 +715,38 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
       description = "Nisan ayından Eylül ayına kadar AOT40 değerlerinin toplamı"
     )
   }
+  if (!"o3_14" %in% all_views) {
+    message("O3_14 view does not exist.")
+  } else {
+    O3$O3_14 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_14")),
+      description = "Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum değerlerinden 180 µg/m3'ü aşanların sayısı"
+    )
+  }
+  if (!"o3_15" %in% all_views) {
+    message("O3_15 view does not exist.")
+  } else {
+    O3$O3_15 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_15")),
+      description = "Nisan-Eylül aylarında 1 saatlik ortalamaların günlük maksimum değerlerinden 240 µg/m3'ü aşanların sayısı"
+    )
+  }
+  if (!"o3_16" %in% all_views) {
+    message("O3_16 view does not exist.")
+  } else {
+    O3$O3_16 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_16")),
+      description = "Nisan-Eylül aylarında 8 saatlik ortalamaların günlük maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"
+    )
+  }
+  if (!"o3_17" %in% all_views) {
+    message("O3_17 view does not exist.")
+  } else {
+    O3$O3_17 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".O3_17")),
+      description = "Nisan-Eylül aylarında 1 saatlik ortalamaların aylık maksimum değerlerinden 120 µg/m3'ü aşanların sayısı"
+    )
+  }
 
   # CO ----------------------------
   CO <- list()
@@ -695,6 +772,14 @@ save_views_to_drive <- function(schema_name, folder_id, parameters) {
     CO$CO_3 <- create_analysis_excel(
       data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".CO_3")),
       description = "CO %90 veri alınan istasyon sayısı"
+    )
+  }
+  if (!"co_4" %in% all_views) {
+    message("CO_4 view does not exist.")
+  } else {
+    CO$CO_4 <- create_analysis_excel(
+      data = dbGetQuery(con, paste0("SELECT * FROM ", schema_name, ".CO_4")),
+      description = "Maksimum günlük 8 saatlik ortalaması 10 mg/m3'ü (miligram/m3) aşan istasyonlar"
     )
   }
 
