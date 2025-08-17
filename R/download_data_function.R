@@ -200,21 +200,26 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
     startYear <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
     endYear <- format(as.Date(enddate, format = "%d.%m.%Y"), "%Y")
 
-
- 
     click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[1]/div/div/div/button')
-    # Increase wait time and log directory contents for debugging
-    timeout <- 60
-    start_wait <- Sys.time()
+
+    error_status <- check_page_errors(remDr)
+    if (error_status$error) {
+      log_message(sprintf("Warning: %s for station: %s", error_status$message, istasyon))
+      return(list(paste0("Error before download: ", error_status$message, " for station: ", istasyon)))
+    }
+    
+ 
+    click_element('css', "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel")
+    Sys.sleep(3)
+
+    indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
     downloaded <- FALSE
-    while(difftime(Sys.time(), start_wait, units="secs") < timeout) {
-      indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
-      log_message(paste("Waiting for detail file... Found files:", paste(indirilen_dosyalar, collapse=", ")))
-      if(length(indirilen_dosyalar) > 0) {
+    if (length(indirilen_dosyalar) > 0) {
+      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
+      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
         downloaded <- TRUE
-        break
       }
-      Sys.sleep(2)
+      
     }
     if (!downloaded) {
       log_message(paste("No detail data file found for station:", istasyon))

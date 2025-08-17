@@ -11,7 +11,7 @@ library(dbplyr)
 create_postgres_conn <- function() {
   tryCatch({
 
-      base_dir <- getOption("temizhavaR.base_dir")
+      base_dir <- getOption("temizhavaR.base_dir", getwd())
 
       env_file <- file.path(base_dir, ".env")
 
@@ -19,22 +19,25 @@ create_postgres_conn <- function() {
         dotenv::load_dot_env(file = env_file)
         cat(".env file loaded successfully.\n")
       } else {
-        stop(".env file not found at: ", env_file)
+        stop("'.env' not found at ", env_file,
+             ".\nPlease place a .env there or set option('temizhavaR.base_dir') correctly.")
       }
 
-      db_host <- Sys.getenv("POSTGRES_HOST")
-      db_name <- Sys.getenv("TEMIZHAVA_DB")
-      db_user <- Sys.getenv("POSTGRES_TUSER")
-      db_password <- Sys.getenv("POSTGRES_TUSER_PASSWORD")
-      db_port <- Sys.getenv("POSTGRES_PORT")
+      db_host     <- Sys.getenv("PGHOST",             Sys.getenv("POSTGRES_HOST"))
+      db_port     <- Sys.getenv("PGPORT",             Sys.getenv("POSTGRES_PORT"))
+      db_name     <- Sys.getenv("PGDATABASE",         Sys.getenv("TEMIZHAVA_DB"))
+      db_user     <- Sys.getenv("PGUSER",             Sys.getenv("POSTGRES_TUSER"))
+      db_password <- Sys.getenv("PGPASSWORD",         Sys.getenv("POSTGRES_TUSER_PASSWORD"))
 
 
-      con <- dbConnect(RPostgres::Postgres(),
-                     dbname = db_name,
-                     host = db_host,
-                     port = db_port,
-                     user = db_user,
-                     password = db_password)
+      con <- dbConnect(
+        RPostgres::Postgres(),
+        dbname   = db_name,
+        host     = db_host,
+        port     = as.integer(db_port),
+        user     = db_user,
+        password = db_password
+      )
       return(con)
   }, error = function(e) {
     message("Failed to connect to database: ", e$message)
