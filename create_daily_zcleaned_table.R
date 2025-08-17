@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 # Create a daily aggregated version of the zcleaned hourly table in Turkey timezone
+# Uses Tarih_NOTZ (timestamp without timezone) for daily aggregation 
 # Includes all dates even if no hourly data exists (values will be NULL)
 # Optimized with indexes and console progress messages
 
@@ -56,17 +57,17 @@ for (yr in seq(start_year, end_year)) {
        SELECT generate_series('%s'::date, '%s'::date, '1 day') AS day
      ),
      stations AS (
-       SELECT DISTINCT \"location_id\", \"Istasyon_modified\" AS istasyon_modified
+       SELECT DISTINCT \"location_id\", \"Istasyon_modified\"
        FROM public.hourly_detail_zcleaned
      ),
      days_stations AS (
-       SELECT day, location_id, istasyon_modified FROM dates CROSS JOIN stations
+       SELECT day, \"location_id\", \"Istasyon_modified\" FROM dates CROSS JOIN stations
      ),
      agg AS (
        SELECT
          date_trunc('day', \"Tarih_NOTZ\") AS day,
-         \"location_id\" AS location_id,
-         \"Istasyon_modified\" AS istasyon_modified,
+         \"location_id\",
+         \"Istasyon_modified\",
          AVG(\"PM10\") AS \"PM10\",
          AVG(\"PM25\") AS \"PM25\",
          AVG(\"SO2\") AS \"SO2\",
@@ -77,18 +78,18 @@ for (yr in seq(start_year, end_year)) {
          AVG(\"O3\")  AS \"O3\"
        FROM public.hourly_detail_zcleaned
        WHERE \"Tarih_NOTZ\"::date BETWEEN '%s' AND '%s'
-       GROUP BY 1,2,3
+       GROUP BY 1, 2, 3
      )
      SELECT
-       ds.location_id,
-       ds.istasyon_modified,
-       ds.day AS date,
+       ds.\"location_id\",
+       ds.\"Istasyon_modified\",
+       ds.day::timestamp AS \"Tarih_NOTZ\",
        a.\"PM10\", a.\"PM25\", a.\"SO2\", a.\"CO\",
        a.\"NO2\", a.\"NOX\", a.\"NO\", a.\"O3\"
      FROM days_stations ds
      LEFT JOIN agg a ON ds.day = a.day
-       AND ds.location_id = a.location_id
-       AND ds.istasyon_modified = a.istasyon_modified",
+       AND ds.\"location_id\" = a.\"location_id\"
+       AND ds.\"Istasyon_modified\" = a.\"Istasyon_modified\"",
     y_start, y_end, y_start, y_end
   )
 
@@ -114,8 +115,8 @@ message("Aggregation loop completed and committed.")
 
 # 3) Add indexes for performance
 message("Creating indexes...")
-dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_daily_date ON public.daily_detail_zcleaned (date);")
-dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_daily_station ON public.daily_detail_zcleaned (location_id);")
+dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_daily_date ON public.daily_detail_zcleaned (\"Tarih_NOTZ\");")
+dbExecute(con, "CREATE INDEX IF NOT EXISTS idx_daily_station ON public.daily_detail_zcleaned (\"location_id\");")
 
 # 4) Final verification
 message("Final table verification:")
