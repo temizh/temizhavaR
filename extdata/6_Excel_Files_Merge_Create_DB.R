@@ -27,6 +27,125 @@ track_data_loss <- function(data_frame, stage_name, parameter) {
   return(data_frame)
 }
 
+debug_timezone <- function(datetime_col, stage_name, sample_size = 5) {
+  cat(sprintf("\n=== TIMEZONE DEBUG: %s ===\n", stage_name))
+  cat(sprintf("Class: %s\n", class(datetime_col)[1]))
+  cat(sprintf("Length: %d\n", length(datetime_col)))
+  cat(sprintf("Timezone: %s\n", attr(datetime_col, "tzone") %||% "NULL"))
+  
+  if (length(datetime_col) > 0) {
+    sample_indices <- head(which(!is.na(datetime_col)), sample_size)
+    if (length(sample_indices) > 0) {
+      cat("Sample values:\n")
+      for (i in sample_indices) {
+        # Check for Turkey timezone history
+        sample_date <- datetime_col[i]
+        utc_equivalent <- with_tz(sample_date, "UTC")
+        offset_hours <- as.numeric(difftime(sample_date, utc_equivalent, units = "hours"))
+        
+        cat(sprintf("  [%d] Raw: %s | Formatted: %s | UTC: %s | Offset: %+.1fh\n", 
+                   i, 
+                   as.character(sample_date),
+                   format(sample_date, "%Y-%m-%d %H:%M:%S %Z"),
+                   format(utc_equivalent, "%Y-%m-%d %H:%M:%S UTC"),
+                   offset_hours))
+      }
+    }
+  }
+  cat("========================\n\n")
+}
+
+convert_to_dual_timezone <- function(df) {
+  cat("\n🕐 Starting enhanced timezone conversion for Turkey...\n")
+  
+  if (!"Tarih" %in% names(df)) {
+    cat("❌ No 'Tarih' column found\n")
+    return(df)
+  }
+  
+  debug_timezone(df$Tarih, "BEFORE conversion")
+  
+  if (!inherits(df$Tarih, "POSIXct")) {
+    cat("⚠️  Converting to POSIXct first...\n")
+    df <- df %>%
+      mutate(Tarih = as.POSIXct(Tarih))
+  }
+  
+  debug_timezone(df$Tarih, "AFTER POSIXct conversion")
+  
+  validate_turkey_timezone <- function(datetime_utc) {
+    if (is.na(datetime_utc)) return(NA)
+    
+    date_part <- as.Date(datetime_utc)
+    year <- as.numeric(format(date_part, "%Y"))
+    
+    if (year >= 2016) {
+      # Since 2016: UTC+3 year-round (no DST)
+      expected_offset <- 3
+    } else if (year >= 2011) {
+      # 2011-2015: DST was observed
+      month <- as.numeric(format(date_part, "%m"))
+      if (month >= 3 && month <= 10) {
+        expected_offset <- 3 
+      } else {
+        expected_offset <- 2 
+      }
+    } else {
+      expected_offset <- 2  
+    }
+    
+    return(expected_offset)
+  }
+  
+  df <- df %>%
+    mutate(
+      Tarih_cleaned = as.POSIXct(
+        as.numeric(Tarih),
+        origin = "1970-01-01",
+        tz     = "UTC"
+      ),
+      
+      Tarih_NOTZ = as.POSIXct(
+        format(Tarih_cleaned, "%Y-%m-%d %H:%M:%S"),
+        tz = "UTC"
+      ),
+      
+      Tarih = with_tz(force_tz(Tarih_cleaned, "Europe/Istanbul"), "UTC")
+    ) %>%
+    select(-Tarih_cleaned)  
+  
+  debug_timezone(df$Tarih, "FINAL Tarih (TIMESTAMPTZ)")
+  debug_timezone(df$Tarih_NOTZ, "FINAL Tarih_NOTZ (TIMESTAMP)")
+  
+  if (nrow(df) > 0) {
+    sample_idx <- which(!is.na(df$Tarih))[1]
+    if (!is.na(sample_idx)) {
+      sample_tarih <- df$Tarih[sample_idx]
+      sample_notz <- df$Tarih_NOTZ[sample_idx]
+      
+      cat(sprintf("✅ Enhanced timezone validation sample:\n"))
+      cat(sprintf("   Original (as Turkey time): %s\n", format(sample_tarih, "%Y-%m-%d %H:%M:%S %Z")))
+      cat(sprintf("   No timezone version: %s\n", format(sample_notz, "%Y-%m-%d %H:%M:%S")))
+      cat(sprintf("   UTC equivalent: %s\n", format(with_tz(sample_tarih, "UTC"), "%Y-%m-%d %H:%M:%S UTC")))
+      
+      offset_hours <- as.numeric(difftime(sample_tarih, with_tz(sample_tarih, "UTC"), units = "hours"))
+      cat(sprintf("   Turkey offset: %+.0f hours\n", offset_hours))
+      
+      sample_year <- as.numeric(format(sample_tarih, "%Y"))
+      if (sample_year >= 2016 && abs(offset_hours - 3) > 0.5) {
+        cat("   ⚠️  WARNING: Unexpected offset for post-2016 date (should be +3)\n")
+      } else if (sample_year < 2016 && !(abs(offset_hours - 2) < 0.5 || abs(offset_hours - 3) < 0.5)) {
+        cat("   ⚠️  WARNING: Unexpected offset for pre-2016 date (should be +2 or +3)\n")
+      } else {
+        cat("   ✅ Timezone offset looks correct for this date\n")
+      }
+    }
+  }
+  
+  cat("🕐 Enhanced timezone conversion completed\n\n")
+  return(df)
+}
+
 remove_duplicates <- function(df) {
   before_count <- nrow(df)
   
@@ -56,7 +175,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                                start_hour = 0, end_hour = 23,
                                start_meridiem = NULL, end_meridiem = NULL,
                                time_format = "24h", all_files = FALSE,
-                               verbose = TRUE, bolge = NULL
+                               verbose = TRUE, bolge = NULL, debug_timezone_enabled = TRUE
                                ) {
   
   if (time_format == "AMPM") {
@@ -173,18 +292,14 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
   
   data_dir <-  getOption("temizhavaR.base_dir")
 
-  # Modified helper function to determine target table based on filename and file content
   determine_target_table <- function(file) {
-    # First try to verify if it's actually a summary file regardless of filename
     is_summary <- tryCatch({
-      # Try different ranges to catch summary headers
       possible_ranges <- c("A1:D5", "A1:E5", "B1:D1")
       
       for (range in possible_ranges) {
         header_content <- readxl::read_excel(file, range = range, col_names = FALSE)
         header_text <- paste(as.character(unlist(header_content)), collapse = " ")
         
-        # Check for common summary indicators
         if (any(grepl("özet|min.*değer|max.*değer|ortalama|minimum|maximum|average", 
                       tolower(header_text), perl = TRUE))) {
           return(NA_character_)
@@ -200,21 +315,19 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       return(NA_character_)
     }
     
-    # Then check filename patterns
     if (grepl("ozet", tolower(basename(file)))) {
       cat("Summary file detected (from filename) in", basename(file), 
           "- skipping file for detail processing.\n")
       return(NA_character_)
     }
     
-    # Determine if daily or hourly
+    # determine if daily or hourly
     table <- dplyr::case_when(
       stringr::str_detect(tolower(file), "gunluk|daily") ~ "daily_detail",
       stringr::str_detect(tolower(file), "saatlik|hourly") ~ "hourly_detail",
       TRUE ~ NA_character_
     )
     
-    # If still unsure, try to determine from content
     if (is.na(table)) {
       tryCatch({
         first_rows <- readxl::read_excel(file, n_max = 5, col_names = FALSE)
@@ -282,7 +395,6 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     }
     if (str_detect(file, "Konya-Selçuklu-Belediye")) next
     
-    # Determine the target table based on both filename and file contents
     target_table <- determine_target_table(file)
     
     if (is.na(target_table)) {
@@ -326,6 +438,8 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     }
     
     raw_data <- tryCatch({
+      cat(sprintf("\n📁 Processing file: %s\n", basename(file)))
+      
       df <- read_excel(file, col_names = FALSE) %>%
         as_tibble()
       
@@ -342,26 +456,46 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
       names(df) <- combined_header
       df <- df[-c(1, 2), ]
       
-      # df <- df %>%
-      #   mutate(
-      #     Tarih = case_when(
-      #       grepl("^[0-9.]+$", Tarih) ~ as.POSIXct("1900-01-01", tz="UTC") + 
-      #         (as.numeric(Tarih) - 2) * 86400,
-      #       TRUE ~ as.POSIXct(strptime(Tarih, "%d.%m.%Y %H:%M:%S"), tz="UTC")
-      #     )
-      #   )
-
-      # Convert date format to POSIXct
+      cat("📅 Converting Excel date format with enhanced precision...\n")
+      
       df <- df %>%
         mutate(
-          Tarih = as.POSIXct(as.numeric(Tarih) * 86400, origin="1899-12-30", tz="UTC")
-        )
+          Tarih_Raw = Tarih, 
 
-      # Convert to Istanbul timezone (force)
-      df <- df %>%
-        mutate(
-          Tarih = force_tz(Tarih, tzone = "Europe/Istanbul"),
-        )
+          ist_local = as.POSIXct(
+            as.numeric(Tarih) * 86400,
+            origin = "1899-12-30",
+            tz     = "Europe/Istanbul"
+          ),
+
+          # store UTC timestamp
+          Tarih = with_tz(ist_local, "UTC"),
+
+          # store naive Istanbul timestamp (no tz attribute)
+          Tarih_NOTZ = {
+            tmp <- ist_local
+            attr(tmp, "tzone") <- ""
+            tmp
+          }
+        ) %>%
+        select(-ist_local) 
+
+      if (debug_timezone_enabled) {
+        debug_timezone(df$Tarih, "After Excel conversion (UTC, cleaned)")
+      }
+      
+      if (debug_timezone_enabled) {
+        df <- convert_to_dual_timezone(df)
+      } else {
+        df <- df %>%
+          mutate(
+            Tarih_cleaned = as.POSIXct(round(as.numeric(Tarih) / 60) * 60, 
+                                      origin = "1970-01-01", tz = "UTC"),
+            Tarih_NOTZ = as.POSIXct(format(Tarih_cleaned, "%Y-%m-%d %H:%M:%S"), tz = "UTC"),
+            Tarih = force_tz(Tarih_cleaned, "Europe/Istanbul")
+          ) %>%
+          select(-Tarih_cleaned)
+      }
       
       measurement_cols <- c("PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3")
       df <- df %>%
@@ -380,7 +514,7 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                        })
                        
                        problem_idx <- which(!is.na(values) & is.na(num_values))
-                       if(length(problem_idx) > 0) {
+                       if(length(problem_idx) > 0 && verbose) {
                          cat(sprintf("Warning: Could not convert values in %s: %s\n",
                                    deparse(substitute(.)),
                                    paste(orig_values[problem_idx], collapse=", ")))
@@ -390,22 +524,33 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                              num_values, NA_real_)
                      }))
 
-      cat("\nSample of raw values before conversion:\n")
-      print(head(df[intersect(names(df), measurement_cols)]))
+      if (verbose) {
+        cat("\nSample of raw values before conversion:\n")
+        print(head(df[intersect(names(df), measurement_cols)]))
+      }
       
       df <- track_data_loss(df, "After first cleaning", "PM10")
       
       df
     }, error = function(e) {
-      cat("Error processing file:", file, "\n", e$message, "\n")
+      cat("❌ Error processing file:", file, "\n", e$message, "\n")
       return(NULL)
     })
     
     if (is.null(raw_data)) next
     
     target_ref <- if(target_table == "daily_detail") daily_tbl else hourly_tbl
-    min_date <- format(min(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
-    max_date <- format(max(raw_data$Tarih), "%Y-%m-%d %H:%M:%S")
+    
+    if (debug_timezone_enabled && nrow(raw_data) > 0) {
+      cat("\n📊 File date range analysis:\n")
+      cat(sprintf("Min Tarih (TZ): %s\n", format(min(raw_data$Tarih, na.rm = TRUE), "%Y-%m-%d %H:%M:%S %Z")))
+      cat(sprintf("Max Tarih (TZ): %s\n", format(max(raw_data$Tarih, na.rm = TRUE), "%Y-%m-%d %H:%M:%S %Z")))
+      cat(sprintf("Min Tarih_NOTZ: %s\n", format(min(raw_data$Tarih_NOTZ, na.rm = TRUE), "%Y-%m-%d %H:%M:%S")))
+      cat(sprintf("Max Tarih_NOTZ: %s\n", format(max(raw_data$Tarih_NOTZ, na.rm = TRUE), "%Y-%m-%d %H:%M:%S")))
+    }
+    
+    min_date <- format(min(raw_data$Tarih, na.rm = TRUE), "%Y-%m-%d %H:%M:%S")
+    max_date <- format(max(raw_data$Tarih, na.rm = TRUE), "%Y-%m-%d %H:%M:%S")
     
     tarih_type_query <- sprintf(
       "SELECT data_type FROM information_schema.columns 
@@ -499,7 +644,6 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
     
     if (!should_process) next
 
-    ## Modified location lookup using ILIKE for case-insensitive match on Bolge
     if (!is.null(bolge)) {
       location_match <- location_tbl %>% 
         filter(Istasyon_modified == station_extracted, Bolge %ilike% !!bolge) %>% 
@@ -541,13 +685,26 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
                  values
                })
       ) %>%
-      select(any_of(c("location_id", "Tarih", "PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")))
+      select(any_of(c("location_id", "Tarih", "Tarih_NOTZ", "PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")))
 
-    expected_cols <- c("location_id", "Tarih", "PM10", "PM25", "SO2", 
-                      "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
+    expected_cols <- c("location_id", "Tarih", "Tarih_NOTZ", "PM10", "PM25", "SO2", "CO", "NO2", "NOX", "NO", "O3", "Istasyon_modified")
     
     for (col in setdiff(expected_cols, names(processed_data))) {
       processed_data[[col]] <- NA
+    }
+
+    if (debug_timezone_enabled && verbose) {
+      cat("\n🔍 Final processed data timezone check:\n")
+      if (nrow(processed_data) > 0) {
+        sample_row <- processed_data[1, ]
+        cat(sprintf("Sample Tarih: %s (class: %s, tz: %s)\n", 
+                   format(sample_row$Tarih, "%Y-%m-%d %H:%M:%S %Z"),
+                   class(sample_row$Tarih)[1],
+                   attr(sample_row$Tarih, "tzone") %||% "NULL"))
+        cat(sprintf("Sample Tarih_NOTZ: %s (class: %s)\n", 
+                   format(sample_row$Tarih_NOTZ, "%Y-%m-%d %H:%M:%S"),
+                   class(sample_row$Tarih_NOTZ)[1]))
+      }
     }
 
     processed_data <- track_data_loss(processed_data, "Before insertion", "PM10")
@@ -678,9 +835,10 @@ read_and_write_data <- function(delete_previous = FALSE, pattern, overwrite_data
 # rows_written <- read_and_write_data(pattern = "\\.xlsx$", delete_previous = FALSE)
 
 rows_written <- read_and_write_data(
-  pattern = "\\.xlsx$", 
+  pattern = "\\.xlsx$",
   delete_previous = TRUE,
-  # bolge = "Other"
+  debug_timezone_enabled = TRUE,
+  verbose = TRUE
 )
 
 
@@ -695,11 +853,51 @@ rows_written <- read_and_write_data(
 # rows_written <- read_and_write_data(
 #   pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx",
 #   overwrite_data_dict = overwrite_dict,
-#   start_hour = 4,
+  #   start_hour = 4,
 #   start_meridiem = "AM",
 #   end_hour = 1,
 #   end_meridiem = "PM",
 #   time_format = "AMPM"
+# )
+
+
+cat("Total rows written:", rows_written, "\n")
+#   overwrite_data_dict = overwrite_dict,
+  #   start_hour = 4,
+#   start_meridiem = "AM",
+#   end_hour = 1,
+#   end_meridiem = "PM",
+#   time_format = "AMPM"
+# )
+
+
+cat("Total rows written:", rows_written, "\n")
+# )
+
+
+cat("Total rows written:", rows_written, "\n")
+# rows_written <- read_and_write_data(
+#   pattern = "Adana-Seyhan_saatlik_detay_2014-2024.xlsx",
+#   overwrite_data_dict = overwrite_dict,
+  #   start_hour = 4,
+#   start_meridiem = "AM",
+#   end_hour = 1,
+#   end_meridiem = "PM",
+#   time_format = "AMPM"
+# )
+
+
+cat("Total rows written:", rows_written, "\n")
+#   overwrite_data_dict = overwrite_dict,
+  #   start_hour = 4,
+#   start_meridiem = "AM",
+#   end_hour = 1,
+#   end_meridiem = "PM",
+#   time_format = "AMPM"
+# )
+
+
+cat("Total rows written:", rows_written, "\n")
 # )
 
 
