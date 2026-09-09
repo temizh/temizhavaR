@@ -2,26 +2,44 @@ Package: temizhavaR
 Title: Clean Air Data Analysis Tools
 Version: 0.1.0
 Authors@R: 
-    person("Author", "Name", , "author@example.com", role = c("aut", "cre"))
+    person("Başak Dilara", "Çevik", email = "basak@pranageo.com", role = c("aut", "cre"))
 Description: Tools for analyzing and processing clean air data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    data.table,
     dplyr,
     dygraphs,
-    writexl,
-    rlang,
-    dotenv,
     DBI,
     dbplyr,
+    dotenv,
+    jsonlite,
+    lubridate,
+    magrittr,
+    openxlsx,
+    progress,
+    readxl,
+    rlang,
     RPostgres,
+    RSQLite,
+    stringr,
     tidyr,
-    wdman (>= 0.2.5)
+    wdman (>= 0.2.5),
+    writexl,
+    zoo
 Suggests:
-    testthat,
+    glue,
+    googledrive,
+    googlesheets4,
     knitr,
-    rmarkdown
+    later,
+    netstat,
+    promises,
+    rmarkdown,
+    RSelenium,
+    testthat,
+    websocket
+Config/roxygen2/version: 8.1.0

@@ -3,10 +3,11 @@ library(RPostgres)
 library(magrittr)  
 library(dbplyr)  
 
-#' @keywords internal
 #' Create a PostgreSQL database connection
+#'
 #' @return A PostgreSQL connection object
-#' @importFrom RPostgres Postgres dbConnect dbDisconnect dbIsValid dbListTables dbGetQuery
+#' @importFrom RPostgres Postgres
+#' @importFrom DBI dbConnect dbDisconnect dbGetQuery dbIsValid dbListTables
 #' @export
 create_postgres_conn <- function() {
   tryCatch({
@@ -46,8 +47,8 @@ create_postgres_conn <- function() {
 }
 
 
-#' @keywords internal
 #' Get the list of tables in the PostgreSQL database
+#'
 #' @param conn The database connection object
 #' @return A character vector of table names
 #' @export
@@ -63,8 +64,8 @@ get_postgres_tables <- function(conn) {
   })
 }
 
-#' @keywords internal
 #' Disconnect from PostgreSQL database
+#'
 #' @param conn The database connection object
 #' @return Boolean indicating success
 #' @export
@@ -81,8 +82,8 @@ disconnect_postgres <- function(conn) {
   })
 }
 
-#' @keywords internal
 #' Check if database connection is valid
+#'
 #' @param conn The database connection object
 #' @return Boolean indicating if connection is valid
 #' @export
@@ -94,8 +95,8 @@ is_postgres_connected <- function(conn) {
   })
 }
 
-#' @keywords internal
 #' Reconnect to PostgreSQL database if connection is lost
+#'
 #' @param conn The database connection object
 #' @return A new connection object or NULL if reconnection fails
 #' @export
@@ -109,8 +110,8 @@ reconnect_postgres <- function(conn) {
 }
 
 
-#' @keywords internal
 #' Check how many rows are in a table
+#'
 #' @param conn The database connection object
 #' @param table_name The name of the table
 #' @return The number of rows in the table
@@ -134,4 +135,3 @@ get_table_row_count <- function(conn, table_name) {
     return(NULL)
   })
 }
-

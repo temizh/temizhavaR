@@ -11,10 +11,14 @@ library(openxlsx)
 #' @param enddate The end date for the data download (format: "DD.MM.YYYY").
 #' @param result_dir The directory where the downloaded data will be saved.
 #' @param remDr The remote driver object for the Selenium web browser.
+#' @param station_file_key Stable station key used in output file names.
+#' @param station_site_id Station identifier from the ministry catalogue.
 #' @return None. Downloads the data and saves it to the specified directory.
 #' @export
 
-download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate, result_dir, remDr) {
+download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
+                          result_dir, remDr, station_file_key = NULL,
+                          station_site_id = NULL) {
   retry <- function(f, retries = 3, sleep = 2, onError = NULL) {
     for (i in 1:retries) {
       tryCatch(
@@ -52,11 +56,6 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
         if (using == "xpath" && grepl("contains\\(text\\(\\), '", value)) {
           text_to_find <- gsub(".*contains\\(text\\(\\), '(.+?)'\\).*", "\\1", value)
           log_message(paste("Searching for text:", text_to_find))
-          if (tolower(text_to_find) == "other") {
-            log_message("Bolge is 'Other'; replacing 'Other' with 'None' in xpath search")
-            value <<- gsub("(?i)Other", "None", value, perl = TRUE)
-            text_to_find <- "None"
-          }
           element <- NULL
           # Try finding element with original xpath
           tryCatch({
@@ -103,8 +102,7 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
         }
         
         log_message(paste("Clicked element with", using, "=", value))
-
-        Sys.sleep(1)
+        Sys.sleep(0.5)
 
         return(TRUE)
         
@@ -125,30 +123,120 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
     })
   }
 
+  wait_for_new_xlsx <- function(files_before, timeout = 60, interval = 0.5) {
+    started_at <- Sys.time()
+    repeat {
+      files_now <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
+      new_files <- setdiff(files_now, files_before)
+      complete_files <- new_files[file.exists(new_files) & file.info(new_files)$size > 0]
+
+      if (length(complete_files) > 0) {
+        return(complete_files[which.max(file.info(complete_files)$mtime)])
+      }
+      if (difftime(Sys.time(), started_at, units = "secs") >= timeout) {
+        return(NULL)
+      }
+      Sys.sleep(interval)
+    }
+  }
+
+  wait_for_report <- function(timeout = 120, interval = 0.5) {
+    started_at <- Sys.time()
+    repeat {
+      query_state <- tryCatch(
+        remDr$executeScript(
+          "return window.__temizhavaQueryState || 'pending';"
+        )[[1]],
+        error = function(e) "pending"
+      )
+
+      if (identical(query_state, "no_data")) {
+        return("no_data")
+      }
+
+      detail_buttons <- tryCatch(
+        remDr$findElements(
+          "css selector",
+          "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel"
+        ),
+        error = function(e) list()
+      )
+      if (length(detail_buttons) > 0) {
+        return("ready")
+      }
+
+      if (difftime(Sys.time(), started_at, units = "secs") >= timeout) {
+        return("timeout")
+      }
+      Sys.sleep(interval)
+    }
+  }
+
+  move_downloaded_file <- function(downloaded_file, target_file, label) {
+    if (is.null(downloaded_file) || !file.exists(downloaded_file)) {
+      log_message(paste("No", label, "data file found for station:", istasyon))
+      return(FALSE)
+    }
+
+    if (!file.rename(downloaded_file, target_file)) {
+      log_message(paste("Could not move", downloaded_file, "to", target_file))
+      return(FALSE)
+    }
+
+    log_message(paste(label, "data successfully saved as:", basename(target_file)))
+    TRUE
+  }
+
+  export_grid_file <- function(selector, label, attempts = 3L) {
+    for (attempt in seq_len(attempts)) {
+      files_before <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
+      click_element("css selector", selector)
+      downloaded_file <- wait_for_new_xlsx(files_before, timeout = 20)
+      if (!is.null(downloaded_file)) return(downloaded_file)
+      log_message(sprintf(
+        "%s export did not produce a file (click %d/%d); retrying the export",
+        label, attempt, attempts
+      ))
+    }
+    NULL
+  }
+
   missing_files <- list()
 
   tryCatch({
     print(paste("Bolge: ", bolge))
     print(paste("Sehir: ", sehir))
     print(paste("Istasyon: ", istasyon))
-    click_element('id', 'dropdown12-contentDataDowloadNew')
-    Sys.sleep(1)
-    
-    click_element('xpath', paste0("//li[contains(text(), '", bolge, "')]") )
-    Sys.sleep(1)
+    # Stations without a ministry region are selected through the city filter.
+    use_region_filter <- !is.na(bolge) && nzchar(bolge) &&
+      !tolower(trimws(bolge)) %in% c("other", "none")
+
+    if (use_region_filter) {
+      click_element('id', 'dropdown12-contentDataDowloadNew')
+      Sys.sleep(1)
+      click_element('xpath', paste0("//li[contains(text(), '", bolge, "')]") )
+      Sys.sleep(1)
+    } else {
+      log_message("Station has no ministry region group; leaving the region filter empty")
+    }
 
     click_element('xpath', '//*[@id="page-wrapper"]/div[1]')
 
     click_element('id', 'dropdown1-contentDataDowloadNew')
     Sys.sleep(2) 
     
-    dropdown_items <- remDr$findElements("css selector", "#dropdown1-contentDataDowloadNew + .k-list-container .k-list-scroller li")
+    dropdown_items <- remDr$findElements(
+      "xpath",
+      "//ul[@aria-hidden='false']/li[normalize-space(text())!='']"
+    )
     if (length(dropdown_items) == 0) {
       log_message("City dropdown appears to be empty. Attempting recovery...")
-      click_element('id', 'dropdown12-contentDataDowloadNew')
-      Sys.sleep(1)
-      click_element('xpath', paste0("//li[contains(text(), '", bolge, "')]") )
-      Sys.sleep(2)
+      if (use_region_filter) {
+        click_element('id', 'dropdown12-contentDataDowloadNew')
+        Sys.sleep(1)
+        click_element('xpath', paste0("//li[contains(text(), '", bolge, "')]") )
+        Sys.sleep(2)
+      }
       click_element('id', 'dropdown1-contentDataDowloadNew')
       Sys.sleep(2)
     }
@@ -161,10 +249,26 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
     Sys.sleep(2)
     
-    click_element('css', "#dropdown2-contentDataDowloadNew .k-dropdown-wrap")
+    click_element('css selector', "#dropdown2-contentDataDowloadNew .k-dropdown-wrap")
     Sys.sleep(2) 
 
     click_element('xpath', sprintf("//ul[@aria-hidden='false']/li[normalize-space(text())='%s']", istasyon))
+
+    if (!is.null(station_site_id) && nzchar(station_site_id)) {
+      station_id_json <- jsonlite::toJSON(
+        as.character(station_site_id), auto_unbox = TRUE
+      )
+      remDr$executeScript(paste0(
+        "var element = $('[data-element=StationIds]');",
+        "var widget = element.data('kendoMultiSelect') || element.data('kendoDropDownList');",
+        "if (!widget) throw new Error('StationIds Kendo widget is unavailable');",
+        "if (element.data('kendoMultiSelect')) widget.value([", station_id_json, "]);",
+        "else widget.value(", station_id_json, ");",
+        "widget.trigger('change');"
+      ))
+      log_message(paste("Set ministry station ID explicitly:", station_site_id))
+      Sys.sleep(1)
+    }
 
     click_element('xpath', '//*[@id="page-wrapper"]/div[1]')
     Sys.sleep(1)
@@ -183,6 +287,17 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       log_message(paste("Tümünü Seç method failed for station:", istasyon, "-", e$message))
     })
 
+    selected_parameter_count <- remDr$executeScript(paste0(
+      "var widget = $('[data-element=Parameters]').data('kendoMultiSelect');",
+      "if (!widget) throw new Error('Parameters Kendo MultiSelect is unavailable');",
+      "var field = widget.listView.options.dataValueField;",
+      "var values = $.map(widget.dataSource.data(), function(item) { return item[field]; });",
+      "widget.value(values);",
+      "widget.trigger('change');",
+      "return values.length;"
+    ))[[1]]
+    log_message(paste("Selected parameter IDs explicitly:", selected_parameter_count))
+
     if (data_type == "hourly") {
       click_element('xpath', '//*[@id="dropdown4-contentDataDowloadNew"]/div/div/label[1]')
       Sys.sleep(1)
@@ -199,44 +314,107 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
 
     startYear <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
     endYear <- format(as.Date(enddate, format = "%d.%m.%Y"), "%Y")
+    modified_istasyon <- if (!is.null(station_file_key) && nzchar(station_file_key)) {
+      station_file_key
+    } else {
+      str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
+    }
+    period_label <- paste0(startYear, "-", endYear)
+    no_data_marker <- file.path(
+      city_dir,
+      paste0(
+        modified_istasyon, "_",
+        if (data_type == "hourly") "saatlik" else "gunluk",
+        "_no_data_", period_label, ".txt"
+      )
+    )
+
+    # Validate the submitted form before accepting a no-data response.
+    submitted_selection_json <- remDr$executeScript(paste0(
+      "var widgetValues = function(selector) {",
+      "var element = $(selector);",
+      "var widget = element.data('kendoMultiSelect') || element.data('kendoDropDownList');",
+      "var value = widget ? widget.value() : (element.val() || []);",
+      "return Array.isArray(value) ? value : (value ? [value] : []);",
+      "};",
+      "return JSON.stringify({",
+      "stationIds: widgetValues('[data-element=StationIds]'),",
+      "parameters: widgetValues('[data-element=Parameters]'),",
+      "dataPeriod: $('input[name=DataPeriods]:checked').val() || '',",
+      "startDate: $('#StationDataDownload_StartDateTime').val() || '',",
+      "endDate: $('#StationDataDownload_EndDateTime').val() || ''",
+      "});"
+    ))[[1]]
+    submitted_selection <- jsonlite::fromJSON(
+      submitted_selection_json, simplifyVector = TRUE
+    )
+    selected_station_ids <- as.character(unlist(submitted_selection$stationIds))
+    selected_parameters <- as.character(unlist(submitted_selection$parameters))
+    selected_period <- as.character(unlist(submitted_selection$dataPeriod))
+    selected_start <- trimws(as.character(unlist(submitted_selection$startDate)))
+    selected_end <- trimws(as.character(unlist(submitted_selection$endDate)))
+    expected_period <- if (data_type == "hourly") "8" else "16"
+    expected_start <- if (data_type == "hourly") paste0(startdate, " 00:00") else startdate
+    expected_end <- if (data_type == "hourly") paste0(enddate, " 00:00") else enddate
+    station_selected <- length(selected_station_ids) == 1 && (
+      is.null(station_site_id) || !nzchar(station_site_id) ||
+        identical(selected_station_ids, as.character(station_site_id))
+    )
+    dates_selected <- identical(selected_start, expected_start) &&
+      identical(selected_end, expected_end)
+    if (!station_selected || length(selected_parameters) == 0 ||
+        !identical(selected_period, expected_period) || !dates_selected) {
+      stop(paste0(
+        "Form selection validation failed for ", istasyon,
+        ": station IDs=", paste(selected_station_ids, collapse = ","),
+        "; parameter count=", length(selected_parameters),
+        "; period=", selected_period, " (expected ", expected_period, ")",
+        "; dates=", selected_start, " to ", selected_end,
+        " (expected ", expected_start, " to ", expected_end, ")"
+      ))
+    }
+
+    # The form returns Result=false when the selected period has no data.
+    remDr$executeScript(paste0(
+      "window.__temizhavaQueryState='pending';",
+      "$('#StationDataDownloadForm').off('success.temizhavaDownload')",
+      ".on('success.temizhavaDownload', function(e, resp) {",
+      "window.__temizhavaQueryState = (!resp || resp.Result === false) ? 'no_data' : 'success';",
+      "});"
+    ))
 
     click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[1]/div/div/div/button')
 
-    error_status <- check_page_errors(remDr)
-    if (error_status$error) {
-      log_message(sprintf("Warning: %s for station: %s", error_status$message, istasyon))
-      return(list(paste0("Error before download: ", error_status$message, " for station: ", istasyon)))
+    report_status <- wait_for_report()
+    if (identical(report_status, "no_data")) {
+      writeLines(
+        c(
+          paste("Station:", istasyon),
+          paste("Ministry station ID:", paste(selected_station_ids, collapse = ",")),
+          paste("Data type:", data_type),
+          paste("Selected parameter count:", length(selected_parameters)),
+          paste("Submitted period:", selected_start, "to", selected_end),
+          "Status: The ministry report returned Result=false (no data).",
+          paste("Checked at:", format(Sys.time(), tz = "Europe/Istanbul"))
+        ),
+        no_data_marker
+      )
+      log_message(paste("Ministry reports no data; saved marker:", basename(no_data_marker)))
+      return(list(paste0("NO_DATA: ", istasyon, " - ", data_type)))
     }
-    
- 
-    click_element('css', "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel")
-    Sys.sleep(3)
+    if (identical(report_status, "timeout")) {
+      return(list(paste0("Timed out waiting for report results for station: ", istasyon)))
+    }
 
-    indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
-    downloaded <- FALSE
-    if (length(indirilen_dosyalar) > 0) {
-      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
-      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
-        downloaded <- TRUE
-      }
-      
-    }
-    if (!downloaded) {
-      log_message(paste("No detail data file found for station:", istasyon))
+    if (file.exists(no_data_marker)) unlink(no_data_marker)
+    detail_name <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
+    detail_file <- export_grid_file(
+      "fieldset[data-element='DetailGrid'] a.k-button.k-button-icontext.k-grid-excel",
+      "Detail"
+    )
+
+    if (!move_downloaded_file(detail_file, file.path(city_dir, detail_name), "Detail")) {
       missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
-    } else {
-      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
-      log_message(paste("Detail file found:", mevcut_dosya))
-      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
-        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
-        yeni_dosya_adi <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
-        yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
-        file.rename(mevcut_dosya, yeni_dosya_yolu)
-        log_message(paste("Detail data successfully downloaded and renamed to:", yeni_dosya_adi))
-      } else {
-        log_message(paste("Detail data download failed for station:", istasyon))
-        missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
-      }
     }
 
     error_status <- check_page_errors(remDr)
@@ -252,56 +430,19 @@ download_data <- function(bolge, sehir, istasyon, data_type, startdate, enddate,
       return(list(paste0("Error during download: ", error_status$message, " for station: ", istasyon)))
     }
 
-    
-    indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
-    if (length(indirilen_dosyalar) > 0) {
-      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
-      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
-        year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
-        yeni_dosya_adi <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_detay_", startYear, "-", endYear, ".xlsx")
-        yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
-        file.rename(mevcut_dosya, yeni_dosya_yolu)
-        log_message(paste("Detail data successfully downloaded and renamed to:", yeni_dosya_adi))
-      } else {
-        log_message(paste("Detail data download failed for station:", istasyon))
-        missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
-      }
-    } else {
-      log_message(paste("No detail data file found for station:", istasyon))
-      missing_files <- c(missing_files, paste("Detail data for station:", istasyon))
-    }
+    summary_file <- export_grid_file(
+      "fieldset[data-element='SummaryGrid'] a.k-button.k-button-icontext.k-grid-excel",
+      "Summary"
+    )
+    summary_name <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", startYear, "-", endYear, ".xlsx")
 
-    click_element('css selector', "fieldset[data-element='SummaryGrid'] a.k-button.k-button-icontext.k-grid-excel")
-    Sys.sleep(3)  
-
-    indirilen_dosyalar <- list.files(result_dir, pattern = "\\.xlsx$", full.names = TRUE)
-    if (length(indirilen_dosyalar) > 0) {
-      mevcut_dosya <- indirilen_dosyalar[length(indirilen_dosyalar)]
-      if (!is.null(mevcut_dosya) && !is.na(mevcut_dosya) && file.exists(mevcut_dosya)) {
-        year <- format(as.Date(startdate, format = "%d.%m.%Y"), "%Y")
-        modified_istasyon <- str_replace_all(istasyon, c(" " = "", "\\." = "", "/" = "_"))
-        yeni_dosya_adi <- paste0(modified_istasyon, "_", if (data_type == "hourly") "saatlik" else "gunluk", "_ozet_", startYear, "-", endYear, ".xlsx")
-        yeni_dosya_yolu <- file.path(city_dir, yeni_dosya_adi)
-        file.rename(mevcut_dosya, yeni_dosya_yolu)
-        log_message(paste("Summary data successfully downloaded and renamed to:", yeni_dosya_adi))
-      } else {
-        log_message(paste("Summary data download failed for station:", istasyon))
-        missing_files <- c(missing_files, paste("Summary data for station:", istasyon))
-      }
-    } else {
-      log_message(paste("No summary data file found for station:", istasyon))
+    if (!move_downloaded_file(summary_file, file.path(city_dir, summary_name), "Summary")) {
       missing_files <- c(missing_files, paste("Summary data for station:", istasyon))
     }
 
-    click_element('xpath', '//*[@id="StationDataDownloadForm"]/fieldset[1]/div[1]/div[2]/div[2]/div/div/div/button ')
-    Sys.sleep(5)
-
   }, error = function(e) {
     log_message(paste("Critical error occurred at station:", istasyon, "-", e$message))
-    log_message("Closing Selenium driver and stopping the process.")
-    
-    return(list(paste0("Critical error: ", e$message, " for station: ", istasyon)))
+    missing_files <<- c(missing_files, paste0("Critical error: ", e$message, " for station: ", istasyon))
   })
 
   log_message("Download process completed.")
@@ -608,5 +749,3 @@ get_dropdown_options <- function(remDr, css_selector) {
   }
   return(sapply(options, function(option) option$getElementText()[[1]]))
 }
-
-

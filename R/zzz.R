@@ -1,3 +1,6 @@
+#' @importFrom lubridate day hour month year ymd_hms
+NULL
+
 .onLoad <- function(libname, pkgname) {
   base_dir <- getOption("temizhavaR.base_dir", default = "../temizhava_base/")
 
