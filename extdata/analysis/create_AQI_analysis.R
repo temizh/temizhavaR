@@ -8,11 +8,20 @@ create_AQI_analysis <- function(start_year, end_year, schema_name) {
   # Database
   message("Connecting to the database...")
   con <- create_postgres_conn()
+  on.exit(dbDisconnect(con), add = TRUE)
 
   # Ensure schema exists (create if not)
   dbExecute(con, paste0("CREATE SCHEMA IF NOT EXISTS ", DBI::dbQuoteIdentifier(con, schema_name)))
 
-  data <- tbl(con, "hourly_detail_zcleaned")
+  source_table <- "hourly_detail_zcleaned"
+  yearly_source <- paste0("hourly_detail_zcleaned_", start_year, "_full")
+  if (start_year == end_year && dbExistsTable(con, yearly_source)) {
+    source_table <- yearly_source
+  }
+  if (!dbExistsTable(con, source_table)) {
+    stop("Required AQI source table does not exist: ", source_table)
+  }
+  data <- tbl(con, source_table)
 
   stations <- tbl(con, "location") %>%
     select(Istasyon_modified, Sehir) %>%
@@ -139,9 +148,8 @@ create_AQI_analysis <- function(start_year, end_year, schema_name) {
   compute(yearly_city_data, in_schema(schema_name, "aqi_yearly_city_analysis"), temporary = FALSE)
   message("C")
 
-  # Close conection
-  dbDisconnect(con)
   message("AQI analysis are created.")
 }
 
-create_AQI_analysis(2024, 2024, "aqi_2024_13082025")
+# Example (does not run automatically):
+# create_AQI_analysis(2025, 2025, "aqi_2025")

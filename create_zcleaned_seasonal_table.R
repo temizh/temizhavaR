@@ -1,6 +1,6 @@
 library(DBI)
 
-# Seasonal Z-score outlier detection for 2022 data only
+# Seasonal Z-score outlier detection for the requested analysis years
 # Ozon: Nisan - Eylül (April - September) 
 # SO2, PM10, PM2.5: Ocak - Mart + Ekim - Aralık (January - March + October - December)
 # Creates separate tables to preserve existing clean datasets
@@ -10,6 +10,7 @@ con <- tryCatch(
   temizhavaR:::create_postgres_conn(),
   error = function(e) stop("DB bağlantısı başarısız: ", e$message)
 )
+if (is.null(con)) stop("DB bağlantısı başarısız")
 
 # 2) Detect source table
 tbls <- dbListTables(con)
@@ -21,8 +22,43 @@ if ("hourly_detail_cleaned" %in% tbls) {
   src <- fallback[1]
 }
 
-# 3) Define years to process
-years_to_process <- c(2022, 2023, 2024)
+# 3) Define years to process. Override before sourcing when needed, for example:
+# options(temizhavaR.analysis_years = c(2025L, 2024L))
+years_to_process <- getOption(
+  "temizhavaR.analysis_years",
+  c(2022L, 2023L, 2024L)
+)
+years_to_process <- unique(as.integer(years_to_process))
+if (length(years_to_process) == 0 || anyNA(years_to_process)) {
+  stop("temizhavaR.analysis_years must contain at least one valid year")
+}
+
+# Check full calendar coverage before replacing output tables.
+quoted_src <- as.character(dbQuoteIdentifier(con, src))
+for (year in years_to_process) {
+  start_date <- sprintf("%d-01-01", year)
+  end_date <- sprintf("%d-01-01", year + 1L)
+  expected_days <- as.integer(as.Date(end_date) - as.Date(start_date))
+  coverage <- dbGetQuery(con, sprintf(
+    paste(
+      "SELECT MIN(\"Tarih_NOTZ\"::date) AS first_day,",
+      "MAX(\"Tarih_NOTZ\"::date) AS last_day,",
+      "COUNT(DISTINCT \"Tarih_NOTZ\"::date) AS days, COUNT(*) AS rows",
+      "FROM public.%s",
+      "WHERE \"Tarih_NOTZ\" >= '%s'::date AND \"Tarih_NOTZ\" < '%s'::date"
+    ),
+    quoted_src, start_date, end_date
+  ))
+
+  actual_days <- as.integer(coverage$days[[1]])
+  if (is.na(actual_days) || actual_days != expected_days) {
+    stop(
+      "Source table ", src, " has only ", actual_days, " distinct day(s) for ", year,
+      "; expected ", expected_days, ". Import and clean the complete ", year,
+      " downloads before recreating annual tables. Existing output tables were not changed."
+    )
+  }
+}
 
 # Get field structure for table creation
 fields <- dbListFields(con, src)
@@ -264,7 +300,7 @@ for(year in years_to_process) {
 }
 
 message("\n=== SUMMARY ===")
-message("Tables created for each year (2022, 2023, 2024):")
+message("Tables created for years: ", paste(years_to_process, collapse = ", "))
 message("- hourly_detail_zcleaned_seasonal_YYYY: Seasonal outlier detection")  
 message("  * O3: Nisan-Eylül (April-September)")
 message("  * SO2, PM10, PM2.5: Ocak-Mart + Ekim-Aralık (Jan-Mar + Oct-Dec)")

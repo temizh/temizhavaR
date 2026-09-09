@@ -9,11 +9,18 @@ create_hourly_intermediate_analysis <- function(start_date, end_date, schema_nam
   # Database
   message("Connecting to the database...")
   con <- create_postgres_conn()
+  on.exit(dbDisconnect(con), add = TRUE)
 
-  data <- tbl(con, "hourly_detail_zcleaned_seasonal_2024")
+  analysis_year <- as.integer(format(as.POSIXct(start_date, tz = "Europe/Istanbul"), "%Y"))
+  source_table <- paste0("hourly_detail_zcleaned_seasonal_", analysis_year)
+  if (!dbExistsTable(con, source_table)) {
+    stop("Required hourly analysis table does not exist: ", source_table)
+  }
 
-  start_date <- as.POSIXct(start_date)
-  end_date <- as.POSIXct(end_date)
+  data <- tbl(con, source_table)
+
+  start_date <- as.POSIXct(start_date, tz = "Europe/Istanbul")
+  end_date <- as.POSIXct(end_date, tz = "Europe/Istanbul")
 
   message(start_date)
   message(end_date)
@@ -28,7 +35,7 @@ create_hourly_intermediate_analysis <- function(start_date, end_date, schema_nam
     mutate(Saat = hour(Tarih)) %>%
     mutate(Dakika = minute(Tarih)) %>%
     mutate(Saat = ifelse(Dakika > 30, Saat + 1, Saat)) %>%
-    filter(Tarih >= start_date, Tarih <= end_date)
+    filter(Tarih >= start_date, Tarih < end_date)
 
   # Filter data by station
   if (length(stations) > 0) {
@@ -157,7 +164,5 @@ create_hourly_intermediate_analysis <- function(start_date, end_date, schema_nam
   message("Saving data...")
   compute(analysed_data, in_schema(schema_name, "hourly_intermediate_analysis"), temporary = FALSE)
 
-  # Close conection
-  dbDisconnect(con)
   message("Intermediate analysis for hourly data is created.")
 }
