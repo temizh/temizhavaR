@@ -335,15 +335,6 @@ klasöre konmaz.
 
 ## 9. Sorun olduğunda
 
-### `zsh: no matches found: options(...)`
-
-R kodu terminal kabuğuna yazılmıştır. Önce `R` oturumunu açın; `>` istemini
-gördükten sonra R komutlarını çalıştırın.
-
-### `R: command not found`
-
-Bu iş istasyonunda toolbox komutunu kullanın. Komut 1. bölümde bulunuyor.
-
 ### `download_check masks temizhavaR::download_check()`
 
 Aynı oturumda script kaynaklandıktan sonra `load_all()` çağrılmıştır. R'yi
