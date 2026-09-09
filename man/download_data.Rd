@@ -12,7 +12,9 @@ download_data(
   startdate,
   enddate,
   result_dir,
-  remDr
+  remDr,
+  station_file_key = NULL,
+  station_site_id = NULL
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ download_data(
 \item{result_dir}{The directory where the downloaded data will be saved.}
 
 \item{remDr}{The remote driver object for the Selenium web browser.}
+
+\item{station_file_key}{Stable station key used in output file names.}
+
+\item{station_site_id}{Station identifier from the ministry catalogue.}
 }
 \value{
 None. Downloads the data and saves it to the specified directory.

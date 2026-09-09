@@ -12,6 +12,8 @@ calculate_percentage(data, parameter, data_in_year, season = NULL)
 \item{parameter}{The parameter to calculate the percentage for}
 
 \item{data_in_year}{The number of data entries in a year}
+
+\item{season}{Optional month numbers used for seasonal completeness.}
 }
 \description{
 Calculate the percentage of available data

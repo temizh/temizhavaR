@@ -10,8 +10,19 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
   # Database
   message("Connecting to the database...")
   con <- create_postgres_conn()
+  on.exit(dbDisconnect(con), add = TRUE)
 
-  data <- tbl(con, "daily_detail_zcleaned_seasonal")
+  analysis_year <- as.integer(format(as.POSIXct(start_date, tz = "Europe/Istanbul"), "%Y"))
+  source_table <- paste0("daily_detail_zcleaned_seasonal_", analysis_year)
+  if (!dbExistsTable(con, source_table) && analysis_year == 2024L &&
+      dbExistsTable(con, "daily_detail_zcleaned_seasonal")) {
+    source_table <- "daily_detail_zcleaned_seasonal"
+  }
+  if (!dbExistsTable(con, source_table)) {
+    stop("Required daily analysis table does not exist: ", source_table)
+  }
+
+  data <- tbl(con, source_table)
 
   # Prepare data
   data <- data %>%
@@ -20,7 +31,7 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
     mutate(Yıl = year(Tarih)) %>%
     mutate(Ay = month(Tarih)) %>%
     mutate(Gün = day(Tarih)) %>%
-    filter(Tarih >= start_date, Tarih <= end_date)
+    filter(Tarih >= start_date, Tarih < end_date)
 
   # Filter stations
   if (length(stations) > 0) {
@@ -217,7 +228,5 @@ create_daily_intermediate_analysis <- function(start_date, end_date, schema_name
   message("Saving data...")
   compute(analysed_data, in_schema(schema_name, "daily_intermediate_analysis"), temporary = FALSE)
 
-  # Close conection
-  dbDisconnect(con)
   message("Intermediate analysis for daily data is created.")
 }

@@ -190,11 +190,30 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
   message("Starting analysis...")
   send_notification("Analysis started")
 
+  start_instant <- as.POSIXct(start_date, tz = "Europe/Istanbul")
+  end_instant <- as.POSIXct(end_date, tz = "Europe/Istanbul")
+  if (is.na(start_instant) || is.na(end_instant) || start_instant >= end_instant) {
+    stop("start_date and end_date must define a valid increasing date range")
+  }
+  if ((daily || hourly) && format(start_instant, "%m-%d %H:%M") != "01-01 00:00") {
+    stop("Annual daily/hourly analysis must start at 01 January 00:00")
+  }
+  expected_end <- as.POSIXct(
+    sprintf("%d-01-01 00:00", as.integer(format(start_instant, "%Y")) + 1L),
+    tz = "Europe/Istanbul"
+  )
+  if ((daily || hourly) && end_instant != expected_end) {
+    stop("Run daily/hourly analysis one calendar year at a time; end_date must be next 01 January 00:00")
+  }
+
   message(paste0("Shema name: ", schema_name))
   # Shema name
   if(is.null(schema_name) || schema_name == "") {
     timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
     schema_name <- paste0("analysis_", timestamp)
+  }
+  if (!grepl("^[A-Za-z_][A-Za-z0-9_]*$", schema_name)) {
+    stop("schema_name may contain only letters, numbers and underscores")
   }
   
   # Load functions (relative to the script's location)
@@ -203,7 +222,7 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
   source("extdata/analysis/create_daily_analysis_views.R")
   source("extdata/analysis/create_hourly_analysis_views.R")
   source("extdata/analysis/create_AQI_analysis.R")
-  source("extdata/analysis/save_views_to_drive.R")
+  if (save_to_drive) source("extdata/analysis/save_views_to_drive.R")
 
   con <- create_postgres_conn()
 
@@ -229,7 +248,9 @@ create_analysis <- function(start_date, end_date, schema_name = NULL, folder_id 
 
   # Calculate AQI
   if(aqi_analysis) {
-    create_AQI_analysis(start_date, end_date, schema_name)
+    start_year <- as.integer(format(start_instant, "%Y"))
+    end_year <- as.integer(format(end_instant - 1, "%Y"))
+    create_AQI_analysis(start_year, end_year, schema_name)
     send_notification("AQI analysis created")
   }
 

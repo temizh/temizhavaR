@@ -1,10 +1,14 @@
 .Rproj.user
 .Rhistory
+.RData
 .env
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 renv/library/
 renv
 .Rprofile 
 .RBuildignore
-.env
 logs/
 .secrets

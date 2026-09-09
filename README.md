@@ -1,65 +1,63 @@
 # temizhavaR
 
-# Ham Veriler
-Hava kalitesi ham verileri https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew 
-adresinden indirilmektedir.
+Türkiye hava kalitesi verilerini Bakanlığın SIM sistemi üzerinden indirir,
+PostgreSQL'de saklar ve yıllık analiz tabloları üretir.
 
-Yeni DB yaratmak için : 
-.Rprofile dosyasına ham verilerin bulunduğu dizin ismini belirtin
+Bu depo iki ayrı iş akışı içerir:
 
-`options(temizhavaR.base_dir = "..../HamVeriler_2022")`
+- **Güncel ham veri akışı:** indirme, dosya doğrulama, sürümlü snapshot'a
+  aktarma ve eski-yeni karşılaştırması. 2024 ve 2025 için doğrulanmıştır.
+- **Yıllık analiz akışı:** `public` şemasındaki temizlenmiş tablolardan günlük,
+  saatlik ve AQI tablolarını üretir. Bu akış snapshot'ı doğrudan okumaz.
 
-Bu dizinin içine `init.temizhavaR_data.R` adlı dosya yaratın. Örnek dosya :
-`extdata/init.temizhavaR_data.R.sample`
+İlk kez çalıştıracaksanız veya süreci devralıyorsanız önce
+[Operasyon Rehberi](docs/OPERATIONS.md) dosyasını okuyun. Kurulumdan son
+kontrole kadar kullanılacak komutlar, yaklaşık süreler, çıktıların anlamı ve
+eski scriptlerin durumu orada yer alıyor.
 
-Veritabanı şemalarını yaratmak için `SQLite.R` adlı script'i çalıştırın.
+## Kısa yol: 2024 ve 2025 ham veri akışı
 
+R oturumunu proje kökünde açın:
 
-```
-library(temizhavaR)
-create_SQL_schema()
-```
-
-
-## Eksik dosya analizi
-
-```
-extdata/eksik_dosyalar_analizi.R
+```r
+pkgload::load_all(".")
+options(temizhavaR.base_dir = "/mutlak/yol/TemizHava_base_dir")
 ```
 
-## SQLite veritabani şeması
+Ardından sırasıyla:
 
-### 2022
-`make_location_table_2022.R` dosyasinda bulunan `create_location_table_2022()` fonksiyonu
-2023 verilerini baz alip location_2022 tablosuna kaydedin.
+```r
+source("extdata/5_Download_Raw_Data.R")
+download_temizhava_data(mode = "yearly", year = 2025)
+download_temizhava_data(mode = "yearly", year = 2024)
 
-## Gunluk verileri iceren Excel dosyalarını SQLite veritabanına kaydedilmesi :
-Excel verilerini elle SQL veritabanına yazmak için save_excel_to_database.R 
-script dosyasını kullanın. 
+source("extdata/validate_raw_downloads.R")
+stopifnot(validate_raw_downloads(2025, check_content = TRUE)$ok)
+stopifnot(validate_raw_downloads(2024, check_content = TRUE)$ok)
 
-Mesela sadece "Erzurum - Palandöken" istasyonunu yazmak isterseniz location tablosunu
-aşağıdakini benzer bir komutla filtreleyebilirsiniz :
+source("extdata/import_raw_snapshot.R")
+import_raw_snapshot(
+  years = c(2025L, 2024L),
+  schema = "raw_YYYYMMDD"
+)
 
-```  
-locationT <- locationT[grep("Erzurum - Palandöken", locationT$Istasyonlar),]
+source("extdata/validate_raw_snapshot.R")
+stopifnot(validate_raw_snapshot(schema = "raw_YYYYMMDD")$ok)
 ```
 
+`YYYYMMDD`, indirme kataloğunun alındığı tarihtir. Her yeni indirmede yeni bir
+şema adı kullanın. Böylece önceki ham veri korunur.
 
-## 2022 verileri
-2022 ham verileri elle indirildiği zaman halihazırda mevcut olmayan bir formatta 
-indirmek mümkün idi. Bu formatta bakanlığın web sitesinden bir şehre ait bütün 
-istasyonları tek seferde tek bir Excel dosyasında indirmek mümkün idi. 
+## Güvenlik notu
 
-temizhavaR paketindeki veri ithal fonksiyonları bu veri tipini desteklememektedir. 
-O yüzden istisnai olarak 2022 verileri için `extdata/convert 2022 to 2023.R` 
-dosyasındaki script ile 2022 formatı (bir şehre ait bütün istasyonlar tek Excel dosyasında) 2023 formatına 
-yeni formata (her istasyon için ayrı Excel dosyası) çevrilmiştir. Bu çevrimden sonra
-`detail_savesqlite.R` dosyasinda bulunan `detail_save_to_database()` 
-fonksiyonu ile günlük ve saatlik verileri SQLite veritabanına yazılmıştır.
+`extdata/6_Excel_Files_Merge_Create_DB.R` legacy yükleyicidir. Fonksiyonları
+korunmuştur ancak aktif arşiv üzerinde kullanılmamalıdır; `public` ham
+tablolarını topluca değiştirebilir. Güncel yol `import_raw_snapshot()`
+fonksiyonudur.
 
-## Analizler
+Gerçek `.env` dosyaları repoya eklenmez. Örnek değişkenler için
+[.env.example](.env.example) kullanılmalıdır.
 
-Analizleri yapan scriptler aşağıdaki dizinlerde bulunmaktadır : 
-- extdata/daily_detail
-- extdata/hourly_detail
+## Veri kaynağı
 
+<https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew>
